@@ -5,6 +5,6 @@ services:
   - docker
 # command to install dependencies
 install:
-  - pip install -r requirements.txt
+  - ./scripts/build_docker.sh
 script:
-  - "./scripts/test.sh"
+  - ./scripts/test_docker.sh
