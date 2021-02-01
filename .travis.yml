@@ -3,7 +3,6 @@ python:
   - "3.8"
 services:
   - docker
-# command to install dependencies
 install:
   - ./scripts/build_docker.sh
 script:
