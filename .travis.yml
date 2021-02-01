@@ -4,6 +4,6 @@ python:
 services:
   - docker
 install:
-  - ./scripts/build_docker.sh
+  - ./scripts/setup.sh
 script:
-  - ./scripts/test_docker.sh
+  - ./scripts/test.sh
