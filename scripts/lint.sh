@@ -31,9 +31,10 @@ function decode_pylint_exit_code() {
     [[ $((exit_code & USAGE_ERROR_MASK)) -gt 0 ]] && echo "pylint: usage error"
 }
 
-function exclude_convention_errors() {
-    exit_code=$1
-    [[ $((exit_code & CONVENTION_MASK)) -gt 0 ]] && echo $((exit_code-CONVENTION_MASK))
+function exclude_from_return_code() {
+    exclude_mask=$1
+    exit_code=$2
+    [[ $((exit_code & exclude_mask)) -gt 0 ]] && echo $((exit_code-exclude_mask))
 }
 
 SRC_DIR=$(realpath "${my_dir}/../${APP_NAME}")
@@ -42,5 +43,9 @@ pylint ./*
 lint_result=$?
 decode_pylint_exit_code ${lint_result}
 popd >/dev/null || exit "$FALSE"
-exit_code=$(exclude_convention_errors "$lint_result")
+exit_code=${lint_result}
+EXCLUSION_LIST="${REFACTOR_MASK} ${CONVENTION_MASK}"
+for result_to_exclude in ${EXCLUSION_LIST}; do
+    exit_code=$(exclude_from_return_code ${result_to_exclude} "${exit_code}")
+done
 exit "${exit_code}"
