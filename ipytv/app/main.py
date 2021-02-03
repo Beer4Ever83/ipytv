@@ -38,7 +38,7 @@ def main():
     infile = sys.argv[1]
     outfile = sys.argv[2]
     M3UFileDoctor.fix_split_quoted_string(infile, outfile)
-    pl = M3UPlaylist.loadf(outfile)
+    # pl = M3UPlaylist.loadf(outfile)
     # create_one_file_per_group(pl, out)
     # create_m3u8_file(pl, out)
 

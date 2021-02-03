@@ -66,7 +66,7 @@ class TestLoadaM3UPlusHuge(unittest.TestCase):
         with open("test/resources/iptv-org.m3u") as file:
             buffer = file.readlines()
             # Let's copy the same content over and over again
-            for i in range(5):
+            for _ in range(5):
                 buffer += buffer[1:]
         pl = M3UPlaylist.loada(buffer)
         self.assertEqual(147264, len(pl.list), "The size of the playlist is not the expected one")
