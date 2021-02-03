@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -x
+
 my_dir=$(dirname "$(readlink -f "${0}")")
 # shellcheck source=scripts/common.sh
 source "${my_dir}/common.sh"
