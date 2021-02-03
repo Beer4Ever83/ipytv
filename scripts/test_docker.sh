@@ -11,7 +11,7 @@ function delete_test_container() {
 trap delete_test_container EXIT INT
 
 pushd "${my_dir}/.." >/dev/null || exit "$FALSE"
-docker run --name "${TEST_CONTAINER_NAME}" --entrypoint "${TEST_IN_CONTAINER}" "${TAG_NAME}" || exit "$FALSE"
+docker run --name "${TEST_CONTAINER_NAME}" --entrypoint "${TEST_IN_CONTAINER}" "${TAG_NAME}"
 test_result=$(docker inspect "${TEST_CONTAINER_NAME}" --format='{{.State.ExitCode}}')
 delete_test_container || exit "$FALSE"
 popd >/dev/null || exit "$FALSE"

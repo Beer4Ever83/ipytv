@@ -7,3 +7,4 @@ install:
   - ./scripts/setup.sh
 script:
   - ./scripts/test.sh
+  - ./scripts/lint.sh
