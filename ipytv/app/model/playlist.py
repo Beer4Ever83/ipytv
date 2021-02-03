@@ -128,7 +128,7 @@ class M3UPlaylist:
                     "Failure while opening {}.\nResponse status code: {}".format(url, response.status_code)
                 )
         except RequestException as exception:
-            raise URLException("Failure while opening {}.\nError: {}".format(url, exception))
+            raise URLException("Failure while opening {}.\nError: {}".format(url, exception)) from exception
 
     def reset(self):
         self.list = []

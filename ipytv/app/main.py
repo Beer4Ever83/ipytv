@@ -25,10 +25,10 @@ def create_one_file_per_group(pl, outfile):
             print("file {} created".format(group_outfile))
 
 
-def create_m3u8_file(pl, outfile):
-    m3u8_filename = outfile.replace(".m3u", ".m3u8")
-    with open(m3u8_filename, "w") as outfile:
-        outfile.write(pl.to_m3u8_playlist())
+def create_m3u8_file(pl, out):
+    m3u8_filename = out.replace(".m3u", ".m3u8")
+    with open(m3u8_filename, "w") as out:
+        out.write(pl.to_m3u8_playlist())
         print("file {} created".format(m3u8_filename))
 
 
@@ -38,9 +38,9 @@ def main():
     infile = sys.argv[1]
     outfile = sys.argv[2]
     M3UFileDoctor.fix_split_quoted_string(infile, outfile)
-    pl = M3UPlaylist.loadf(outfile)
-    # create_one_file_per_group(pl, outfile)
-    # create_m3u8_file(pl, outfile)
+    # pl = M3UPlaylist.loadf(outfile)
+    # create_one_file_per_group(pl, out)
+    # create_m3u8_file(pl, out)
 
 
 if __name__ == "__main__":

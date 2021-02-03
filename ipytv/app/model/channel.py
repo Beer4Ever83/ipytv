@@ -31,9 +31,9 @@ class IPTVAttr(Enum):
 
 
 class IPTVChannel(M3UEntry):
-    M3U_EXTINF_REGEX = '^#EXTINF:[-0-9\.]+,.*$'
-    M3U_PLUS_EXTINF_REGEX = '^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
-    M3U_PLUS_EXTINF_PARSE_REGEX = '^#EXTINF:(?P<duration_g>[-0-9\.]+)(?P<attributes_g>(\s+[\w-]+="[^"]*")*),(?P<name_g>.*)'
+    M3U_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+,.*$'
+    M3U_PLUS_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
+    M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)(?P<attributes_g>(\s+[\w-]+="[^"]*")*),(?P<name_g>.*)'
 
     def __init__(self, url="", name="", duration=-1, attributes=None):
         super().__init__(url, name, duration)

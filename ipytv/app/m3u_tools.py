@@ -11,14 +11,6 @@ class M3UFileDoctor:
         with open(outfile, "w") as file:
             file.write(output)
 
-    @staticmethod
-    def fix_extra_empty_rows(infile, outfile):
-        with open(infile) as file:
-            buffer = file.readlines()
-        output = M3UDoctor.fix_extra_empty_rows(buffer)
-        with open(outfile, "w") as file:
-            file.write("".join(output))
-
 
 class M3UDoctor:
     '''
@@ -37,4 +29,3 @@ class M3UDoctor:
                 buffer[index] = buffer[index].replace("\"", "", 1)
                 buffer[index-1] = buffer[index-1].rstrip() + "\""
         return "".join(buffer)
-

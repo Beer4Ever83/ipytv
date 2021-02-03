@@ -10,7 +10,8 @@ COPY ipytv /app/ipytv
 COPY ./scripts /app/scripts
 
 RUN ln -s /app/scripts/app.sh /usr/bin/myapp && \
-    ln -s /app/scripts/test.sh /usr/bin/mytest
+    ln -s /app/scripts/test.sh /usr/bin/mytest && \
+    ln -s /app/scripts/lint.sh /usr/bin/mylint
 
 WORKDIR /app/webcrawler
 ENTRYPOINT [ "/app/scripts/app.sh" ]
