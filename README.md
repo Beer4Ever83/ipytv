@@ -45,3 +45,8 @@ real-life problems
     transformation rules and to apply these rules to playlists on-the-fly. 
 ## Nice to have:
 * Export playlist in other formats.
+
+# License
+This project is licensed under the terms of the MIT license.
+
+See LICENSE.md for details.
