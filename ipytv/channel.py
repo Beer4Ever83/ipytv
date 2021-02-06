@@ -2,7 +2,7 @@ import re
 import shlex
 from enum import Enum
 
-from exceptions import MalformedExtinfException
+from ipytv.exceptions import MalformedExtinfException
 
 
 class M3UEntry:

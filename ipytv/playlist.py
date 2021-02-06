@@ -4,8 +4,8 @@ import math
 import requests
 from requests import RequestException
 
-from channel import IPTVChannel, IPTVAttr
-from exceptions import MalformedPlaylistException, URLException, WrongTypeException
+from ipytv.channel import IPTVChannel, IPTVAttr
+from ipytv.exceptions import MalformedPlaylistException, URLException, WrongTypeException
 
 
 class M3UPlaylist:
