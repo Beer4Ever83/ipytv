@@ -4,7 +4,7 @@ import math
 import requests
 from requests import RequestException
 
-from ipytv import IPTVChannel, IPTVAttr
+from channel import IPTVChannel, IPTVAttr
 from exceptions import MalformedPlaylistException, URLException, WrongTypeException
 
 
