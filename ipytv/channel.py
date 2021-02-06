@@ -2,7 +2,7 @@ import re
 import shlex
 from enum import Enum
 
-from app.model.exceptions import MalformedExtinfException
+from exceptions import MalformedExtinfException
 
 
 class M3UEntry:

@@ -2,13 +2,10 @@
 TRUE=$(true; echo $?)
 FALSE=$(false; echo $?)
 VIRTUALENV_DIR=.venv
-APP_NAME=ipytv
-APP_ENTRYPOINT=main.py
+LIB_NAME=ipytv
 TAG_NAME=ipytv
-APP_CONTAINER_NAME=ipytv
 TEST_CONTAINER_NAME=test_ipytv
 LINT_CONTAINER_NAME=lint_ipytv
-APP_IN_CONTAINER=/usr/bin/myapp
 TEST_IN_CONTAINER=/usr/bin/mytest
 LINT_IN_CONTAINER=/usr/bin/mylint
 
