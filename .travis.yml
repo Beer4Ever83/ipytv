@@ -8,3 +8,5 @@ install:
 script:
   - ./scripts/test.sh
   - ./scripts/lint.sh
+  - ./scripts/build_docker.sh
+  - ./scripts/test_docker.sh

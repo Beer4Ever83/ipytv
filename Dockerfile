@@ -10,8 +10,8 @@ COPY ./ipytv /app/ipytv
 COPY ./tests /app/tests
 COPY ./scripts /app/scripts
 
-RUN ln -s /app/scripts/test.sh /usr/bin/mytest && \
-    ln -s /app/scripts/lint.sh /usr/bin/mylint
+RUN ln -s /app/scripts/test.sh /usr/bin/runtest && \
+    ln -s /app/scripts/lint.sh /usr/bin/runlint
 
 WORKDIR /app/ipytv
 ENTRYPOINT [ "/app/scripts/test.sh" ]
