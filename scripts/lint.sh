@@ -37,8 +37,8 @@ function exclude_from_return_code() {
     [[ $((exit_code & exclude_mask)) -gt 0 ]] && echo $((exit_code-exclude_mask))
 }
 
-SRC_DIR=$(realpath "${my_dir}/../${APP_NAME}")
-pushd "${SRC_DIR}" >/dev/null || exit "$FALSE"
+LIB_DIR=$(realpath "${my_dir}/../${LIB_NAME}")
+pushd "${LIB_DIR}" >/dev/null || exit "$FALSE"
 pylint ./*
 lint_result=$?
 decode_pylint_exit_code ${lint_result}
@@ -46,6 +46,6 @@ popd >/dev/null || exit "$FALSE"
 exit_code=${lint_result}
 EXCLUSION_LIST="${REFACTOR_MASK} ${CONVENTION_MASK}"
 for result_to_exclude in ${EXCLUSION_LIST}; do
-    exit_code=$(exclude_from_return_code ${result_to_exclude} "${exit_code}")
+    exit_code=$(exclude_from_return_code "${result_to_exclude}" "${exit_code}")
 done
 exit "${exit_code}"

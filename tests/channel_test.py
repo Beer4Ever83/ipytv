@@ -1,7 +1,6 @@
 import unittest
 
-from app.model.channel import IPTVAttr, IPTVChannel
-from app.model.exceptions import MalformedExtinfException
+from ipytv import IPTVAttr, IPTVChannel, MalformedExtinfException
 
 
 class TestIsM3UPlusExtinfString(unittest.TestCase):
