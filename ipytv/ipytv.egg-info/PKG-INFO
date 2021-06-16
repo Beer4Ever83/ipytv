@@ -1,3 +1,30 @@
+Metadata-Version: 2.1
+Name: ipytv
+Version: 0.0.1
+Summary: A library for handling M3U playlists for IPTV (AKA m3u_plus)
+Home-page: https://github.com/Beer4Ever83/ipytv
+Author: Francesco Rainone
+Author-email: 
+License: UNKNOWN
+Project-URL: Bug Reports, https://github.com/Beer4Ever83/ipytv/issues
+Project-URL: Funding, https://www.buymeacoffee.com/beer4ever83
+Project-URL: Source, https://github.com/Beer4Ever83/ipytv
+Keywords: m3u,m3u_plus,iptv,playlist
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3 :: Only
+Requires-Python: >=3.6, <4
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
 # IPyTV
 A python library to parse IPTV playlists in the M3U Plus format.
 
@@ -91,3 +118,5 @@ static void parseEXTINFIptvDiots( char *psz_string,
 This project is licensed under the terms of the MIT license.
 
 See [LICENSE.md](./LICENSE.txt) for details.
+
+

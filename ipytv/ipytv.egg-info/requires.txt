@@ -1,0 +1,6 @@
+deepdiff[murmur]==5.0.2
+httpretty==1.0.2
+m3u8==0.7.1
+regex==2020.11.13
+requests==2.25.0
+pylint==2.6.0
