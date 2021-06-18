@@ -1,9 +1,0 @@
-LICENSE.txt
-README.md
-setup.cfg
-setup.py
-ipytv/ipytv.egg-info/PKG-INFO
-ipytv/ipytv.egg-info/SOURCES.txt
-ipytv/ipytv.egg-info/dependency_links.txt
-ipytv/ipytv.egg-info/requires.txt
-ipytv/ipytv.egg-info/top_level.txt
