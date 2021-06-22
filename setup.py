@@ -44,7 +44,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=os.getenv('TRAVIS_TAG', '0.0.1'),  # Required
+    version=os.getenv('PACKAGE_VERSION', '0.0.1'),  # Required
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
@@ -125,7 +125,7 @@ setup(
 
     # When your source code is in a subdirectory under the project root, e.g.
     # `src/`, it is necessary to specify the `package_dir` argument.
-    package_dir={'': 'ipytv'},  # Optional
+    # package_dir={'': 'ipytv'},  # Optional
 
     # You can just specify package directories manually here if your project is
     # simple. Or you can use find_packages().
@@ -136,7 +136,7 @@ setup(
     #
     #   py_modules=["my_module"],
     #
-    packages=find_packages(where='ipytv'),  # Required
+    packages=find_packages(where='.'),  # Required
 
     # Specify which Python versions you support. In contrast to the
     # 'Programming Language' classifiers above, 'pip install' will check this
