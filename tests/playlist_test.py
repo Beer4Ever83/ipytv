@@ -62,7 +62,7 @@ class TestChunkArray3(unittest.TestCase):
 
 class TestLoadaM3UPlusHuge(unittest.TestCase):
     def runTest(self):
-        with open("resources/iptv-org.m3u") as file:
+        with open("tests/resources/iptv-org.m3u") as file:
             buffer = file.readlines()
             # Let's copy the same content over and over again
             for _ in range(5):
@@ -73,20 +73,20 @@ class TestLoadaM3UPlusHuge(unittest.TestCase):
 
 class TestLoadfM3UPlus(unittest.TestCase):
     def runTest(self):
-        pl = M3UPlaylist.loadf("resources/m3u_plus.m3u")
+        pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
         self.assertTrue(pl == test_data.expected_m3u_plus, "The two playlists are not equal")
 
 
 class TestLoadfM3U8(unittest.TestCase):
     def runTest(self):
-        pl = M3UPlaylist.loadf("resources/m3u8.m3u")
+        pl = M3UPlaylist.loadf("tests/resources/m3u8.m3u")
         self.assertTrue(pl == test_data.expected_m3u8, "The two playlists are not equal")
 
 
 class TestLoaduM3UPlus(unittest.TestCase):
     def runTest(self):
         url = "http://myown.link:80/luke/playlist.m3u"
-        with open("resources/m3u_plus.m3u") as content:
+        with open("tests/resources/m3u_plus.m3u") as content:
             body = "".join(content.readlines())
         with httpretty.enabled():
             httpretty.register_uri(
@@ -105,7 +105,7 @@ class TestLoaduM3UPlus(unittest.TestCase):
 class TestLoaduM3U8(unittest.TestCase):
     def runTest(self):
         url = "http://myown.link:80/luke/playlist.m3u"
-        with open("resources/m3u8.m3u") as content:
+        with open("tests/resources/m3u8.m3u") as content:
             body = "".join(content.readlines())
         with httpretty.enabled():
             httpretty.register_uri(
@@ -143,8 +143,8 @@ class TestLoaduErrors(unittest.TestCase):
 
 class TestToM3UPlusPlaylist(unittest.TestCase):
     def runTest(self):
-        pl = M3UPlaylist.loadf("resources/m3u_plus.m3u")
-        with open("resources/m3u_plus.m3u") as file:
+        pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
+        with open("tests/resources/m3u_plus.m3u") as file:
             expected_content = "".join(file.readlines())
             content = pl.to_m3u_plus_playlist()
             self.assertTrue(content == expected_content, "The two playlists are not equal")
@@ -152,7 +152,7 @@ class TestToM3UPlusPlaylist(unittest.TestCase):
 
 class TestToM3U8Playlist(unittest.TestCase):
     def runTest(self):
-        pl = M3UPlaylist.loadf("resources/m3u_plus.m3u")
+        pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
         pl_string = pl.to_m3u8_playlist()
         pl_m3u8 = m3u8.loads(pl_string)
         pl_m3u8_string = pl_m3u8.dumps()
@@ -161,7 +161,7 @@ class TestToM3U8Playlist(unittest.TestCase):
 
 class TestClone(unittest.TestCase):
     def runTest(self):
-        pl = M3UPlaylist.loadf("resources/m3u_plus.m3u")
+        pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
         newpl = pl.copy()
         newpl.add_channel(
             IPTVChannel(name="mynewchannel", url="mynewurl")
@@ -173,7 +173,7 @@ class TestClone(unittest.TestCase):
 
 class TestGroupByAttribute(unittest.TestCase):
     def runTest(self):
-        pl = M3UPlaylist.loadf("resources/m3u_plus.m3u")
+        pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
         groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_group_title, ignore_order=True)
         self.assertTrue(len(diff) == 0)
@@ -181,7 +181,7 @@ class TestGroupByAttribute(unittest.TestCase):
 
 class TestGroupByAttributeWithNoGroupEnabled(unittest.TestCase):
     def runTest(self):
-        pl = M3UPlaylist.loadf("resources/m3u_plus.m3u")
+        pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
         empty_group_channel = IPTVChannel(
             url="http://emptygroup.channel/mychannel",
             attributes={
@@ -205,7 +205,7 @@ class TestGroupByAttributeWithNoGroupEnabled(unittest.TestCase):
 
 class TestGroupByAttributeWithNoGroupDisabled(unittest.TestCase):
     def runTest(self):
-        pl = M3UPlaylist.loadf("resources/m3u_plus.m3u")
+        pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
         empty_group_channel = IPTVChannel(
             url="http://emptygroup.channel/mychannel",
             attributes={
@@ -227,7 +227,7 @@ class TestGroupByAttributeWithNoGroupDisabled(unittest.TestCase):
 
 class TestGroupByUrlWithNoGroupDisabled(unittest.TestCase):
     def runTest(self):
-        pl = M3UPlaylist.loadf("resources/m3u_plus.m3u")
+        pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
         groups = pl.group_by_url(include_no_group=False)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_url, ignore_order=True)
         self.assertTrue(len(diff) == 0)
@@ -235,7 +235,7 @@ class TestGroupByUrlWithNoGroupDisabled(unittest.TestCase):
 
 class TestGroupByUrlWithNoGroupEnabled(unittest.TestCase):
     def runTest(self):
-        pl = M3UPlaylist.loadf("resources/m3u_plus.m3u")
+        pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
         first_empty_url_channel = IPTVChannel(
             url="",
             attributes={

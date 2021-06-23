@@ -125,7 +125,7 @@ setup(
 
     # When your source code is in a subdirectory under the project root, e.g.
     # `src/`, it is necessary to specify the `package_dir` argument.
-    # package_dir={'': 'ipytv'},  # Optional
+    package_dir={'ipytv': 'ipytv'},  # Optional
 
     # You can just specify package directories manually here if your project is
     # simple. Or you can use find_packages().
@@ -136,7 +136,7 @@ setup(
     #
     #   py_modules=["my_module"],
     #
-    packages=find_packages(where='.'),  # Required
+    packages=find_packages(where='.', exclude=['tests']),  # Required
 
     # Specify which Python versions you support. In contrast to the
     # 'Programming Language' classifiers above, 'pip install' will check this

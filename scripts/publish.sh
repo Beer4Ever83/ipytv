@@ -11,6 +11,6 @@ fi
 REPO_DIR=$(realpath "${my_dir}/..")
 
 pushd "${REPO_DIR}" >/dev/null || exit "$FALSE"
-twine upload ${TWINE_REPO} dist/*
+twine upload "${TWINE_REPO}" "${DIST_DIR}"/*
 popd >/dev/null || exit "$FALSE"
 exit "$TRUE"

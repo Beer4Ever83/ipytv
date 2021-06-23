@@ -2,6 +2,7 @@
 TRUE=$(true; echo $?)
 FALSE=$(false; echo $?)
 VIRTUALENV_DIR=.venv
+DIST_DIR=dist
 LIB_NAME=ipytv
 TAG_NAME=ipytv
 TEST_CONTAINER_NAME=test_ipytv

@@ -11,7 +11,6 @@ from ipytv.exceptions import MalformedPlaylistException, URLException, WrongType
 class M3UPlaylist:
     NO_GROUP_KEY = '_NO_GROUP_'
     NO_URL_KEY = '_NO_URL_'
-    FAKE_COMMENT_ROW = "# COMMENT"
     # The value of MIN_CHUNK_SIZE cannot be smaller than 2
     MIN_CHUNK_SIZE = 20
 
@@ -56,10 +55,9 @@ class M3UPlaylist:
         if end == -1:
             end = len(array)
         entry = []
-        previous_row = M3UPlaylist.FAKE_COMMENT_ROW
-        if array[begin].startswith("#EXTINF:"):
+        previous_row = array[begin]
+        if previous_row.startswith("#EXTINF:"):
             entry.append(array[begin])
-            previous_row = array[begin]
         for index in range(begin+1, end):
             row = array[index].strip()
             if row.startswith("#EXTINF:"):

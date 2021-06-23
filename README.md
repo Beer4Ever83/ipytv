@@ -90,4 +90,4 @@ static void parseEXTINFIptvDiots( char *psz_string,
 ## License
 This project is licensed under the terms of the MIT license.
 
-See [LICENSE.md](./LICENSE.txt) for details.
+See [LICENSE.txt](./LICENSE.txt) for details.
