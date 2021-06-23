@@ -18,8 +18,8 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 
 def parse_requirements(requirements_file):
-    with open(requirements_file) as f:
-        return f.read().strip().split('\n')
+    with open(requirements_file) as req:
+        return req.read().strip().split('\n')
 
 
 # Arguments marked as "Required" below must be included for upload to PyPI.
@@ -85,7 +85,7 @@ setup(
 
     # This should be a valid email address corresponding to the author listed
     # above.
-    author_email='',  # Optional
+    # author_email='',  # Optional
 
     # Classifiers help users find your project by categorizing it.
     #

@@ -1,3 +1,6 @@
+# Global settings --------------------------------------------------------------
+set -o pipefail
+
 # Variables --------------------------------------------------------------------
 TRUE=$(true; echo $?)
 FALSE=$(false; echo $?)
@@ -9,6 +12,8 @@ TEST_CONTAINER_NAME=test_ipytv
 LINT_CONTAINER_NAME=lint_ipytv
 TEST_IN_CONTAINER=/usr/bin/runtest
 LINT_IN_CONTAINER=/usr/bin/runlint
+VERSION=${TRAVIS_TAG}
+TEST_VERSION="0.0.${TRAVIS_BUILD_NUMBER}"
 
 # Functions --------------------------------------------------------------------
 function delete_container() {
