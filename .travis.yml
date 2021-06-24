@@ -10,6 +10,8 @@ script:
   - ./scripts/lint.sh
   - ./scripts/build_docker.sh
   - ./scripts/test_docker.sh
+after_success:
+  # package and publish the library to test pypi repository
   - ./scripts/deploy.sh --test
 deploy:
   # package and publish the library to pypi repository
