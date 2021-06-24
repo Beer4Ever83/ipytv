@@ -27,7 +27,6 @@ if [[ $1 == '--test' ]]; then
 fi
 
 pushd "${REPO_DIR}" >/dev/null || exit "$FALSE"
-pip show build || pip3 install build || exit "$FALSE"
 cleanup
 python3 -m build --sdist || exit "$FALSE"
 twine check dist/* || exit "$FALSE"

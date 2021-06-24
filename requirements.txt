@@ -1,6 +1,12 @@
-deepdiff[murmur]==5.0.2
-httpretty==1.0.2
-m3u8==0.7.1
 regex==2020.11.13
 requests==2.25.0
+
+# needed for test
 pylint==2.6.0
+m3u8==0.7.1
+httpretty==1.0.2
+deepdiff[murmur]==5.0.2
+
+# needed for build
+twine==3.4.1
+build==0.4.0
