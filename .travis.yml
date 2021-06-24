@@ -10,12 +10,13 @@ script:
   - ./scripts/lint.sh
   - ./scripts/build_docker.sh
   - ./scripts/test_docker.sh
+  - ./scripts/deploy.sh --test
 deploy:
-  # package and publish the library to pypi test repository
+  # package and publish the library to pypi repository
   - provider: script
-    script: ./scripts/package.sh --test
-  - provider: script
-    script: ./scripts/publish.sh --test
+    script: ./scripts/deploy.sh
+    on:
+      tags: true
 env:
   global:
     - PYPI_USERNAME='__token__'
