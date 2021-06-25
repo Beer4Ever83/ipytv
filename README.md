@@ -11,27 +11,92 @@ The M3U Plus format is a _de facto_ standard for distributing IPTV playlists on
 the Internet.
 
 The terms _IPTV playlist_ and _M3U Plus playlist_ are generally used
-interchangeably, but in this repository I will use **M3U Plus** when talking
-about the format of the data, while I will prefer **IPTV Playlist** when talking
-about playlists.
+interchangeably, but in this repository **M3U Plus** refers to the data format,
+while **IPTV Playlist** refers to playlists in M3U Plus format.
 
 M3U Plus stems from the [`extended M3U8`](https://en.wikipedia.org/wiki/M3U#Extended_M3U)
 format, of which it supports only 2 tags (`#EXTM3U` and `#EXTINF`).
  
 The syntax of the `#EXTINF` tag has been extended for adding extra attributes
-(e.g. logo, group, language). Unfortunately this broke the backward
+(e.g., logo, group, language). Unfortunately this broke the backward
 compatibility with the original M3U8 standard (as explained in detail
 [here](#format-considerations)).
 
 This library has been created from scratch to parse and handle the M3U Plus
-format only. Regular M3U8 playlists are not (currently?) supported.
+format only. It does not fully support regular M3U8 playlists.
 
 
 ## Usage
-TO BE DONE
 
-### Examples
-TO BE DONE
+### Load an IPTV Playlist from a file
+```python
+import ipytv
+file = "~/Documents/my_playlist.m3u"
+pl = ipytv.playlist.M3UPlaylist.loadf(file)
+print(len(pl.list))
+```
+
+### Load an IPTV Playlist from a URL
+```python
+import ipytv
+url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
+pl = ipytv.playlist.M3UPlaylist.loadu(url)
+print(len(pl.list))
+```
+
+### Other loading methods
+M3U Playlists can be loaded as a string as well an array with the following
+methods respectively:
+```python
+ipytv.playlist.M3UPlaylist.loads(string)
+ipytv.playlist.M3UPlaylist.loada(array)
+```
+
+### Access the channels in the playlist
+Once loaded, the channels in a playlist can be accessed by using the
+`list` property:
+```python
+import ipytv
+url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
+pl = ipytv.playlist.M3UPlaylist.loadu(url)
+firstChannel = pl.list[0]
+```
+
+### Access the properties of a channel
+The `list` property of an M3UPlaylist object contains a list of `IPTVChannel`
+objects.
+
+An `IPTVChannel` object has 3 basic properties (`url`, `name` and
+`duration`) and an optional `attributes` field.
+
+The `attributes` property is a dictionary in the format:
+```
+{
+    "attribute_1_name": "attribute_1_value",
+    "attribute_2_name": "attribute_2_value",
+    ...
+    "attribute_N_name": "attribute_N_value"
+}
+```
+For example:
+
+```python
+from ipytv.channel import IPTVAttr, IPTVChannel
+
+channel = IPTVChannel(
+    url="http://myown.link:80/luke/210274/78482",
+    name="Rai 1",
+    duration=-1,
+    attributes={
+        IPTVAttr.TVG_ID.value: "Rai 1",
+        IPTVAttr.TVG_NAME.value: "Rai 1",
+        IPTVAttr.TVG_LOGO.value: "https://static.epg.best/it/RaiUno.it.png",
+        IPTVAttr.GROUP_TITLE.value: "RAI"
+    }
+)
+```
+The `IPTVAttr` enum class contains tags that are commonly found in IPT
+Playlists.
 
 ## Format considerations
 The extensions to the `#EXTINF` tag introduced by the M3U Plus format have

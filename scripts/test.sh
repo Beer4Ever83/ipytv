@@ -11,7 +11,6 @@ export PYTHONPATH=${PYTHONPATH}:${REPO_DIR}:${LIB_DIR}:${TEST_DIR}
 
 pushd "${REPO_DIR}" >/dev/null || exit "$FALSE"
 python3 -m unittest discover -s "${TEST_DIR}" -p '*_test.py'
-# python3 -m unittest discover -p '*_test.py'
 test_result=$?
 popd >/dev/null || exit "$FALSE"
 exit "$test_result"
