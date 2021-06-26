@@ -10,11 +10,13 @@ function cleanup() {
 }
 
 function test_package() {
+    # shellcheck disable=SC2155
     local TEMP_DIR=$(mktemp -dt)
     python3 -m venv "${TEMP_DIR}/.testvenv" || exit "$FALSE"
     source "${TEMP_DIR}/.testvenv/bin/activate" || exit "$FALSE"
-    pip3 install "${DIST_DIR}/${LIB_NAME}-${PACKAGE_VERSION}.tar.gz" || exit "$FALSE"
-    local SHOW_OUTPUT=$(pip3 show "${LIB_NAME}")
+    pip3 install "${DIST_DIR}/${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz" || exit "$FALSE"
+    # shellcheck disable=SC2155
+    local SHOW_OUTPUT=$(pip3 show "${PACKAGE_NAME}")
     echo "$SHOW_OUTPUT" | grep -q "Version: ${PACKAGE_VERSION}" || exit "$FALSE"
     deactivate
     rm -rf "${TEMP_DIR}"

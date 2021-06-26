@@ -36,7 +36,7 @@ setup(
     # There are some restrictions on what makes a valid project name
     # specification here:
     # https://packaging.python.org/specifications/core-metadata/#name
-    name='ipytv',  # Required
+    name=os.getenv('PACKAGE_NAME', 'm3u-ipytv'),  # Required
 
     # Versions should comply with PEP 440:
     # https://www.python.org/dev/peps/pep-0440/
