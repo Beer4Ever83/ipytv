@@ -15,4 +15,4 @@ docker run --name "${TEST_CONTAINER_NAME}" --entrypoint "${TEST_IN_CONTAINER}" "
 test_result=$(docker inspect "${TEST_CONTAINER_NAME}" --format='{{.State.ExitCode}}')
 delete_test_container || exit "$FALSE"
 popd >/dev/null || exit "$FALSE"
-exit "$test_result"
+exit "${test_result:-1}"
