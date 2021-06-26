@@ -25,6 +25,12 @@ function create_venv() {
     echo "source ${PWD}/${VIRTUALENV_DIR}/bin/activate"
 }
 
+function upgrade_pip() {
+    echo "upgrading pip..."
+    pip3 install --upgrade pip >/dev/null || exit "$FALSE"
+    echo "done"
+}
+
 function install_requirements() {
     echo "installing python dependencies from requirements.txt..."
     # shellcheck source=.venv/bin/activate
@@ -39,6 +45,7 @@ if is_virtualenv; then
 else
     create_venv
 fi
+upgrade_pip
 install_requirements
 popd >/dev/null || exit "$FALSE"
 

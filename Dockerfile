@@ -2,7 +2,7 @@ FROM python:3-alpine
 
 RUN mkdir -p /app
 
-RUN apk add build-base bash
+RUN apk add build-base bash libffi-dev openssl-dev python3-dev musl-dev cargo
 COPY requirements.txt /app
 RUN pip3 install -r /app/requirements.txt
 
