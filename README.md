@@ -18,13 +18,12 @@ M3U Plus stems from the [`extended M3U8`](https://en.wikipedia.org/wiki/M3U#Exte
 format, of which it supports only 2 tags (`#EXTM3U` and `#EXTINF`).
  
 The syntax of the `#EXTINF` tag has been extended for adding extra attributes
-(e.g., logo, group, language). Unfortunately this broke the backward
+(e.g., logo, group, language). Unfortunately this has broken the backward
 compatibility with the original M3U8 standard (as explained in detail
 [here](#format-considerations)).
 
 This library has been created from scratch to parse and handle the M3U Plus
 format only. It does not fully support regular M3U8 playlists.
-
 
 ## Usage
 
@@ -45,9 +44,9 @@ print(len(pl.list))
 ```
 
 ### Other loading methods
-M3U Playlists can be loaded as a string as well an array with the following
+M3U Playlists can be loaded as a string as well as an array with the following
 methods respectively:
-```python
+```
 ipytv.playlist.M3UPlaylist.loads(string)
 ipytv.playlist.M3UPlaylist.loada(array)
 ```
@@ -94,6 +93,8 @@ channel = IPTVChannel(
         IPTVAttr.GROUP_TITLE.value: "RAI"
     }
 )
+print(channel.name)
+print(channel.attributes[IPTVAttr.GROUP_TITLE.value])
 ```
 The `IPTVAttr` enum class contains tags that are commonly found in IPT
 Playlists.
@@ -150,7 +151,6 @@ static void parseEXTINFIptvDiots( char *psz_string,
                                   char *(*pf_dup)(const char *),
                                   struct entry_meta_s *meta )
 ```
-
 
 ## License
 This project is licensed under the terms of the MIT license.
