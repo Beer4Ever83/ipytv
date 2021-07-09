@@ -6,31 +6,24 @@ orbs:
 workflows:
   untagged-build:
     jobs:
-      - test-lint
+      - test-lint:
+          filters:
+            tags:
+              ignore: /.*/
+      - test-lint-docker:
+          filters:
+            tags:
+              ignore: /.*/
       - deploy-test:
           requires:
             - test-lint
+            - test-lint-docker
           filters:
             tags:
               ignore: /.*/
   tagged-build:
     jobs:
-      - test-lint:
-          filters:
-            tags:
-              only: /^\d+\.\d+\.\d+$/
-            branches:
-              ignore: /.*/
-      - test-lint-docker:
-          filters:
-            tags:
-              only: /^\d+\.\d+\.\d+$/
-            branches:
-              ignore: /.*/
       - deploy:
-          requires:
-            - test-lint
-            - test-lint-docker
           filters:
             tags:
               only: /^\d+\.\d+\.\d+$/
