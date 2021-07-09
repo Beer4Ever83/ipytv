@@ -14,7 +14,13 @@ LINT_CONTAINER_NAME=lint_ipytv
 TEST_IN_CONTAINER=/usr/bin/runtest
 LINT_IN_CONTAINER=/usr/bin/runlint
 VERSION=${TRAVIS_TAG}
+if [[ -n "${CIRCLE_TAG}" ]]; then
+    VERSION="${CIRCLE_TAG}"
+fi
 TEST_VERSION="0.0.${TRAVIS_BUILD_NUMBER}"
+if [[ -n "${CIRCLE_BUILD_NUM}" ]]; then
+    TEST_VERSION="0.0.${CIRCLE_BUILD_NUM}"
+fi
 
 # Functions --------------------------------------------------------------------
 function delete_container() {

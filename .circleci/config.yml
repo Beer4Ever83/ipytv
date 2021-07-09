@@ -8,14 +8,27 @@ orbs:
   python: circleci/python@1.2
 
 workflows:
-  sample:  # This is the name of the workflow, feel free to change it to better match your workflow.
+  untagged-build:  # This is the name of the workflow, feel free to change it to better match your workflow.
     # Inside the workflow, you define the jobs you want to run.
     # For more details on extending your workflow, see the configuration docs: https://circleci.com/docs/2.0/configuration-reference/#workflows
     jobs:
-      - test-lint-deploy
+      - test-lint
+      - deploy-test
+  tagged-build:
+    jobs:
+      - test-lint:
+          filters:
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - deploy:
+        filters:
+          tags:
+            only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          branches:
+            ignore: /.*/
 
 jobs:
-  test-lint-deploy:  # This is the name of the job, feel free to change it to better match what you're trying to do!
+  test-lint:  # This is the name of the job, feel free to change it to better match what you're trying to do!
     # These next lines defines a Docker executors: https://circleci.com/docs/2.0/executor-types/
     # You can specify an image from Dockerhub or use one of the convenience images from CircleCI's Developer Hub
     # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
@@ -40,6 +53,23 @@ jobs:
       - run:
           name: Lint
           command: scripts/lint.sh
+  deploy-test:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+      - run:
+          name: Deploy (to test)
+          command: scripts/deploy.sh --test
+  deploy:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
       - run:
           name: Deploy
-          command: scripts/deploy.sh --test
+          command: scripts/deploy.sh
