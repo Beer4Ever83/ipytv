@@ -8,6 +8,8 @@ workflows:
     jobs:
       - test-lint
       - deploy-test:
+          requires:
+            - test-lint
           filters:
             tags:
               ignore: /.*/
