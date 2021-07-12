@@ -85,7 +85,7 @@ setup(
 
     # This should be a valid email address corresponding to the author listed
     # above.
-    # author_email='',  # Optional
+    author_email='beer4evah@gmail.com',  # Optional
 
     # Classifiers help users find your project by categorizing it.
     #
@@ -99,7 +99,9 @@ setup(
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
-        'Topic :: Software Development :: Build Tools',
+        'Topic :: Software Development :: Libraries',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Multimedia :: Video',
 
         # Pick your license as you wish
         'License :: OSI Approved :: MIT License',

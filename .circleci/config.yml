@@ -1,0 +1,80 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@1.2
+
+workflows:
+  untagged-build:
+    jobs:
+      - test-lint:
+          filters:
+            tags:
+              ignore: /.*/
+      - test-lint-docker:
+          filters:
+            tags:
+              ignore: /.*/
+      - deploy-test:
+          requires:
+            - test-lint
+            - test-lint-docker
+          filters:
+            tags:
+              ignore: /.*/
+  tagged-build:
+    jobs:
+      - deploy:
+          filters:
+            tags:
+              only: /^\d+\.\d+\.\d+$/
+            branches:
+              ignore: /.*/
+
+jobs:
+  test-lint:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+      - run:
+          name: Test
+          command: scripts/test.sh
+      - run:
+          name: Lint
+          command: scripts/lint.sh
+  test-lint-docker:
+    machine:
+      image: ubuntu-2004:202104-01
+    steps:
+      - checkout
+      - run:
+          name: Build docker
+          command: scripts/build_docker.sh
+      - run:
+          name: Test
+          command: scripts/test_docker.sh
+      - run:
+          name: Lint
+          command: scripts/lint_docker.sh
+  deploy-test:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+      - run:
+          name: Deploy (to test)
+          command: scripts/deploy.sh --test
+  deploy:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+      - run:
+          name: Deploy
+          command: scripts/deploy.sh
