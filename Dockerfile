@@ -1,10 +1,9 @@
-FROM python:3-alpine
+FROM python:3-slim
 
 RUN mkdir -p /app
 
-RUN apk add build-base bash libffi-dev openssl-dev python3-dev musl-dev cargo
 COPY requirements.txt /app
-RUN pip3 install -r /app/requirements.txt
+RUN pip3 install --upgrade pip && pip3 install -r /app/requirements.txt
 
 COPY ./ipytv /app/ipytv
 COPY ./tests /app/tests
