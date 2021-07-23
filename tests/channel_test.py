@@ -39,7 +39,7 @@ class TestParseM3UPlusExtinfString(unittest.TestCase):
         expected = IPTVChannel(
             url="",
             name="Rai 1 SuperHD",
-            duration=-1,
+            duration="-1",
             attributes=expected_attributes
         )
         ch = IPTVChannel()
@@ -59,7 +59,7 @@ class TestParseM3UPlusExtinfStringWithCommas(unittest.TestCase):
         expected = IPTVChannel(
             url="",
             name="Io, Leonardo (2019)",
-            duration=-1,
+            duration="-1",
             attributes=expected_attributes
         )
         ch = IPTVChannel()
@@ -91,7 +91,7 @@ class TestParseM3UExtinfString(unittest.TestCase):
         expected = IPTVChannel(
             url="",
             name="SANTUÁRIO DE FÁTIMA",
-            duration=-1,
+            duration="-1",
             attributes=expected_attributes
         )
         ch = IPTVChannel()
@@ -110,7 +110,7 @@ class TestCopy(unittest.TestCase):
         original = IPTVChannel(
             url="",
             name="Rai 1 SuperHD",
-            duration=-1,
+            duration="-1",
             attributes=original_attributes
         )
         clone = original.copy()
@@ -131,7 +131,7 @@ class TestToString(unittest.TestCase):
         original = IPTVChannel(
             url="",
             name="Rai 1 SuperHD",
-            duration=-1,
+            duration="-1",
             attributes=original_attributes
         )
         expected_output = '{name: "Rai 1 SuperHD", duration: "-1", url: "", attributes: {tvg-id: "Rai1.it", tvg-name: "Rai 1 SuperHD", tvg-logo: "https://static.epg.best/it/RaiUno.it.png", group-title: "SuperHD"}}'

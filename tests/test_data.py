@@ -3,7 +3,7 @@ from ipytv import IPTVChannel, IPTVAttr, M3UPlaylist
 m3u_plus_channel_0 = IPTVChannel(
     url="http://myown.link:80/luke/210274/78482",
     name="Rai 1",
-    duration=-1,
+    duration="-1",
     attributes={
         IPTVAttr.TVG_ID.value: "Rai 1",
         IPTVAttr.TVG_NAME.value: "Rai 1",
@@ -14,7 +14,7 @@ m3u_plus_channel_0 = IPTVChannel(
 m3u_plus_channel_1 = IPTVChannel(
     url="http://myown.link:80/luke/210274/89844",
     name="Cielo",
-    duration=-1,
+    duration="-1",
     attributes={
         IPTVAttr.TVG_ID.value: "",
         IPTVAttr.TVG_NAME.value: "Cielo",
@@ -25,7 +25,7 @@ m3u_plus_channel_1 = IPTVChannel(
 m3u_plus_channel_2 = IPTVChannel(
     url="http://myown.link:80/luke/109163/89800",
     name="TEMATICO MASSIMO TROISI",
-    duration=-1,
+    duration="-1",
     attributes={
         IPTVAttr.TVG_ID.value: "",
         IPTVAttr.TVG_NAME.value: "TEMATICO MASSIMO TROISI",
@@ -36,7 +36,7 @@ m3u_plus_channel_2 = IPTVChannel(
 m3u_plus_channel_3 = IPTVChannel(
     url="http://myown.link:80/luke/109163/78282",
     name="----I N T R A T T E N I M E N T O----",
-    duration=-1,
+    duration="-1",
     attributes={
         IPTVAttr.TVG_ID.value: "",
         IPTVAttr.TVG_NAME.value: "----I N T R A T T E N I M E N T O----",
@@ -68,21 +68,21 @@ expected_m3u8.list = [
     IPTVChannel(
         url="http://myown.link.com:8000/localchannels/jack53ls83j/564",
         name="CA: HBO",
-        duration=-1,
+        duration="-1",
     ),
     IPTVChannel(
         url="http://myown.link.com:8000/localchannels/jack53ls83j/559",
         name="CA: NBC HD",
-        duration=-1,
+        duration="-1",
     ),
     IPTVChannel(
         url="http://myown.link.com:8000/localchannels/jack53ls83j/560",
         name="CA: PBS KIDS HD",
-        duration=-1,
+        duration="-1",
     ),
     IPTVChannel(
         url="http://myown.link.com:8000/localchannels/jack53ls83j/601",
         name="SANTUÁRIO DE FÁTIMA",
-        duration=-1,
+        duration="-1",
     )
 ]
