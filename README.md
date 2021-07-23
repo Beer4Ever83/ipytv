@@ -85,7 +85,7 @@ from ipytv.channel import IPTVAttr, IPTVChannel
 channel = IPTVChannel(
     url="http://myown.link:80/luke/210274/78482",
     name="Rai 1",
-    duration=-1,
+    duration="-1",
     attributes={
         IPTVAttr.TVG_ID.value: "Rai 1",
         IPTVAttr.TVG_NAME.value: "Rai 1",
