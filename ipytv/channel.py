@@ -12,8 +12,14 @@ class M3UEntry:
         self.name = name
         self.duration = str(duration)
 
-    def __eq__(self, other: 'M3UEntry') -> bool:
-        return self.url == other.url and self.name == other.name and self.duration == other.duration
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, M3UEntry) \
+               and self.url == other.url \
+               and self.name == other.name \
+               and self.duration == other.duration
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class IPTVAttr(Enum):
@@ -40,14 +46,12 @@ class IPTVChannel(M3UEntry):
         super().__init__(url, name, duration)
         self.attributes = attributes if attributes is not None else {}
 
-    def __eq__(self, other: 'IPTVChannel') -> bool:
-        if isinstance(other, IPTVChannel) and \
-                super().__eq__(other) and \
-                self.attributes == other.attributes:
-            return True
-        return False
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, IPTVChannel) \
+               and super().__eq__(other) \
+               and self.attributes == other.attributes
 
-    def __ne__(self, other: 'IPTVChannel') -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
     def copy(self) -> 'IPTVChannel':

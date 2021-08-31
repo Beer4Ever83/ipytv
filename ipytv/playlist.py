@@ -140,7 +140,7 @@ class M3UPlaylist:
         self.list.append(channel)
 
     def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value, include_no_group: bool = True) -> Dict:
-        groups = {}
+        groups: Dict[str, List] = {}
         for i in range(len(self.list)):
             ch = self.list[i]
             group = self.NO_GROUP_KEY
@@ -153,7 +153,7 @@ class M3UPlaylist:
         return groups
 
     def group_by_url(self, include_no_group: bool = True) -> Dict:
-        groups = {}
+        groups: Dict[str, List] = {}
         for i in range(len(self.list)):
             ch = self.list[i]
             group = self.NO_URL_KEY
@@ -202,7 +202,7 @@ class M3UPlaylist:
             newpl.add_channel(channel.copy())
         return newpl
 
-    def __eq__(self, other: 'M3UPlaylist') -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, M3UPlaylist) or \
                 len(other.list) != len(self.list):
             return False
@@ -211,7 +211,7 @@ class M3UPlaylist:
                 return False
         return True
 
-    def __ne__(self, other: 'M3UPlaylist') -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
     def __str__(self) -> str:

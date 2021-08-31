@@ -6,7 +6,7 @@ source "${my_dir}/common.sh"
 
 LIB_DIR=$(realpath "${my_dir}/../${LIB_NAME}")
 pushd "${LIB_DIR}" >/dev/null || abort
-mypy .
+mypy --install-types --non-interactive .
 result=$?
 popd >/dev/null || abort
 
