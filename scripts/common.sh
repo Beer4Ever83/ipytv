@@ -14,7 +14,7 @@ LINT_CONTAINER_NAME=lint_ipytv
 TEST_IN_CONTAINER=/usr/bin/runtest
 LINT_IN_CONTAINER=/usr/bin/runlint
 VERSION="${CIRCLE_TAG}"
-TEST_VERSION="0.0.${CIRCLE_BUILD_NUM}"
+TEST_VERSION="0.1.${CIRCLE_BUILD_NUM}"
 
 # Functions --------------------------------------------------------------------
 function delete_container() {
