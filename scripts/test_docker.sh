@@ -10,9 +10,10 @@ function delete_test_container() {
 
 trap delete_test_container EXIT INT
 
-pushd "${my_dir}/.." >/dev/null || exit "$FALSE"
+pushd "${my_dir}/.." >/dev/null || abort
 docker run --name "${TEST_CONTAINER_NAME}" --entrypoint "${TEST_IN_CONTAINER}" "${TAG_NAME}"
 test_result=$(docker inspect "${TEST_CONTAINER_NAME}" --format='{{.State.ExitCode}}')
-delete_test_container || exit "$FALSE"
-popd >/dev/null || exit "$FALSE"
+delete_test_container || abort
+popd >/dev/null || abort
+
 exit "${test_result:-1}"

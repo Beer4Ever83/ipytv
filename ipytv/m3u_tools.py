@@ -1,15 +1,17 @@
 #!/usr/env/bin python3
-import regex
+from typing import List
+
+import re
 
 
 class M3UFileDoctor:
     @staticmethod
-    def fix_split_quoted_string(infile, outfile):
+    def fix_split_quoted_string(infile: str, outfile: str):
         with open(infile) as file:
             buffer = file.readlines()
-        output = M3UDoctor.fix_split_quoted_string(buffer)
+        output_str = "".join(M3UDoctor.fix_split_quoted_string(buffer))
         with open(outfile, "w") as file:
-            file.write(output)
+            file.write(output_str)
 
 
 class M3UDoctor:
@@ -20,12 +22,10 @@ class M3UDoctor:
         " tvg-name="Cinema1" group-title="Cinema",Cinema One
     '''
     @staticmethod
-    def fix_split_quoted_string(buffer):
-        if isinstance(buffer, str):
-            buffer = buffer.split("\n")
+    def fix_split_quoted_string(buffer: List) -> List:
         lines = len(buffer)
         for index in range(lines):
-            if regex.match("^[[:space:]]*\"", buffer[index]):
+            if re.match("^[[:space:]]*\"", buffer[index]):
                 buffer[index] = buffer[index].replace("\"", "", 1)
                 buffer[index-1] = buffer[index-1].rstrip() + "\""
-        return "".join(buffer)
+        return buffer

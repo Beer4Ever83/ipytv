@@ -6,9 +6,11 @@ source "${my_dir}/common.sh"
 
 if [[ $# -gt 0 && $# -ne 1 && "$1" != '--test' ]]; then
     echo "The only supported, optional parameter is --test" >&2
-    exit "$FALSE"
+    abort
 fi
 
 # deployment in this case means packaging and publishing the library to pypi
-"${my_dir}/package.sh" "$1" || exit "$FALSE"
-"${my_dir}/publish.sh" "$1" || exit "$FALSE"
+"${my_dir}/package.sh" "$1" || abort
+"${my_dir}/publish.sh" "$1" || abort
+
+exit "${TRUE}"
