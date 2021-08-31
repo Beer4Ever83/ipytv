@@ -12,13 +12,13 @@ function cleanup() {
 function test_package() {
     # shellcheck disable=SC2155
     local TEMP_DIR=$(mktemp -dt)
-    [[ -z "$TEMP_DIR" ]] && exit "$FALSE"
-    python3 -m venv "${TEMP_DIR}/.testvenv" || exit "$FALSE"
-    source "${TEMP_DIR}/.testvenv/bin/activate" || exit "$FALSE"
-    pip3 install "${DIST_DIR}/${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz" || exit "$FALSE"
+    [[ -z "$TEMP_DIR" ]] && abort "Failure while creating a temporary directory (${TEMP_DIR})"
+    python3 -m venv "${TEMP_DIR}/.testvenv" || abort "Failure while creating virtual environment (.testvenv)"
+    source "${TEMP_DIR}/.testvenv/bin/activate" || abort "Failure while activating the test virtual environment"
+    pip3 install "${DIST_DIR}/${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz" || abort "Failure while installing the package"
     # shellcheck disable=SC2155
     local SHOW_OUTPUT=$(pip3 show "${PACKAGE_NAME}")
-    echo "$SHOW_OUTPUT" | grep -q "Version: ${PACKAGE_VERSION}" || exit "$FALSE"
+    echo "$SHOW_OUTPUT" | grep -q "Version: ${PACKAGE_VERSION}" || abort "Package is not installed"
     deactivate
     rm -rf "${TEMP_DIR}"
 }
@@ -29,10 +29,11 @@ if [[ $1 == '--test' ]]; then
     export PACKAGE_VERSION=${TEST_VERSION}
 fi
 
-pushd "${REPO_DIR}" >/dev/null || exit "$FALSE"
+pushd "${REPO_DIR}" >/dev/null || abort
 cleanup
-python3 -m build --sdist || exit "$FALSE"
-twine check dist/* || exit "$FALSE"
+python3 -m build --sdist || abort "Failure while building the package"
+twine check dist/* || abort "twine reported an error"
 test_package
-popd >/dev/null || exit "$FALSE"
+popd >/dev/null || abort
+
 exit "$TRUE"

@@ -19,8 +19,14 @@ TEST_VERSION="0.1.${CIRCLE_BUILD_NUM}"
 # Functions --------------------------------------------------------------------
 function delete_container() {
     container_name=$1
-    local container_id=$(docker ps -q -a -f name="${container_name}")
+    local container_id
+    container_id=$(docker ps -q -a -f name="${container_name}")
     if [[ -n "${container_id}" ]]; then
         docker rm -f "${container_id}" >/dev/null
     fi
+}
+
+function abort() {
+    [[ $# -gt 0 ]] && echo "$*" >&2
+    exit "${FALSE}"
 }

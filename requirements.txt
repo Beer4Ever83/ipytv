@@ -7,6 +7,7 @@ pylint==2.8.3
 m3u8==0.9.0
 httpretty==1.1.3
 deepdiff[murmur]==5.5.0
+mypy
 
 # needed for build
 twine==3.4.1
