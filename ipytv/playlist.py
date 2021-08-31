@@ -1,4 +1,5 @@
 import multiprocessing as mp
+from typing import List, Dict
 
 import math
 import requests
@@ -19,9 +20,9 @@ class M3UPlaylist:
         self.reset()
 
     @staticmethod
-    def chunk_array(array, chunks):
+    def chunk_array(array: List, chunk_count: int) -> List:
         length = len(array)
-        chunk_size = math.floor(length/chunks) + 1
+        chunk_size = math.floor(length / chunk_count) + 1
         if chunk_size < M3UPlaylist.MIN_CHUNK_SIZE:
             return [
                 {
@@ -50,7 +51,7 @@ class M3UPlaylist:
         return chunk_list
 
     @staticmethod
-    def populate(array, begin=0, end=-1):
+    def populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
         pl = M3UPlaylist()
         if end == -1:
             end = len(array)
@@ -62,17 +63,17 @@ class M3UPlaylist:
             row = array[index].strip()
             if row.startswith("#EXTINF:"):
                 if previous_row.startswith("#EXTINF:"):
-                    # we are in the case of two adjacent #EXTINF rows, so we add a url-less entry.
+                    # we are in the case of two adjacent #EXTINF rows; so we add a url-less entry.
                     # This shouldn't be theoretically allowed, but I've seen it happening in some IPTV playlists
                     # where isolated #EXTINF rows are used as group separators.
                     pl.add_entry(entry)
                     entry = []
                 entry.append(row)
             elif row.startswith('#'):
-                # case of a row with an unsupported tag or a comment, so we do nothing
+                # case of a row with a non-supported tag or a comment; so we do nothing
                 pass
             else:
-                # case of a plain url row (no matter if preceded by an #EXTINF row)
+                # case of a plain url row (regardless if preceded by an #EXTINF row or not)
                 entry.append(row)
                 pl.add_entry(entry)
                 entry = []
@@ -80,7 +81,7 @@ class M3UPlaylist:
         return pl
 
     @staticmethod
-    def loada(array):
+    def loada(array: List) -> 'M3UPlaylist':
         if not isinstance(array, list):
             raise WrongTypeException("Wrong type: array expected")
         first_row = array[0].strip()
@@ -103,20 +104,20 @@ class M3UPlaylist:
         return out_pl
 
     @staticmethod
-    def loads(string):
+    def loads(string: str) -> 'M3UPlaylist':
         if isinstance(string, str):
             return M3UPlaylist.loada(string.split("\n"))
         else:
             raise WrongTypeException("Wrong type: string expected")
 
     @staticmethod
-    def loadf(filename):
+    def loadf(filename: str) -> 'M3UPlaylist':
         with open(filename) as file:
             buffer = file.readlines()
             return M3UPlaylist.loada(buffer)
 
     @staticmethod
-    def loadu(url):
+    def loadu(url: str) -> 'M3UPlaylist':
         try:
             response = requests.get(url, timeout=10)
             if response.ok:
@@ -128,17 +129,17 @@ class M3UPlaylist:
         except RequestException as exception:
             raise URLException("Failure while opening {}.\nError: {}".format(url, exception)) from exception
 
-    def reset(self):
+    def reset(self) -> None:
         self.list = []
 
-    def add_entry(self, entry):
+    def add_entry(self, entry: List):
         channel = IPTVChannel.from_playlist_entry(entry)
         self.add_channel(channel)
 
-    def add_channel(self, channel):
+    def add_channel(self, channel: IPTVChannel) -> None:
         self.list.append(channel)
 
-    def group_by_attribute(self, attribute=IPTVAttr.GROUP_TITLE.value, include_no_group=True):
+    def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value, include_no_group: bool = True) -> Dict:
         groups = {}
         for i in range(len(self.list)):
             ch = self.list[i]
@@ -151,7 +152,7 @@ class M3UPlaylist:
             groups[group].append(i)
         return groups
 
-    def group_by_url(self, include_no_group=True):
+    def group_by_url(self, include_no_group: bool = True) -> Dict:
         groups = {}
         for i in range(len(self.list)):
             ch = self.list[i]
@@ -164,7 +165,7 @@ class M3UPlaylist:
             groups[group].append(i)
         return groups
 
-    def to_m3u_plus_playlist(self):
+    def to_m3u_plus_playlist(self) -> str:
         header = "#EXTM3U"
         out = header
         entry_pattern = '\n#EXTINF:{}{},{}\n{}'
@@ -180,7 +181,7 @@ class M3UPlaylist:
             )
         return out
 
-    def to_m3u8_playlist(self):
+    def to_m3u8_playlist(self) -> str:
         header = "#EXTM3U\n"
         out = header
         entry_pattern = "#EXTINF:{},{}\n{}\n"
@@ -192,16 +193,16 @@ class M3UPlaylist:
             )
         return out
 
-    def concatenate(self, pl):
+    def concatenate(self, pl: 'M3UPlaylist') -> None:
         self.list += pl.list
 
-    def copy(self):
+    def copy(self) -> 'M3UPlaylist':
         newpl = M3UPlaylist()
         for channel in self.list:
             newpl.add_channel(channel.copy())
         return newpl
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'M3UPlaylist') -> bool:
         if not isinstance(other, M3UPlaylist) or \
                 len(other.list) != len(self.list):
             return False
@@ -210,10 +211,10 @@ class M3UPlaylist:
                 return False
         return True
 
-    def __ne__(self, other):
+    def __ne__(self, other: 'M3UPlaylist') -> bool:
         return not self.__eq__(other)
 
-    def __str__(self):
+    def __str__(self) -> str:
         out = ''
         index = 0
         for c in self.list:
