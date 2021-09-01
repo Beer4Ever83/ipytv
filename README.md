@@ -1,9 +1,5 @@
 # IPyTV
-A python library to parse IPTV playlists in the M3U Plus format.
-
-
-## Index (table of contents)
-TO BE DONE
+A python3 library to parse IPTV playlists in the M3U Plus format.
 
 
 ## M3U Plus and IPTV
@@ -24,6 +20,19 @@ compatibility with the original M3U8 standard (as explained in detail
 
 This library has been created from scratch to parse and handle the M3U Plus
 format only. It does not fully support regular M3U8 playlists.
+
+## Installation
+This library requires python3 (and the related pip3 installer).
+To install the library system-wide, run:
+```shell
+pip install m3u-ipytv
+```
+To install it within a virtual environment, run:
+```shell
+python3 -m venv .venv
+source .venv/bin/activate
+pip install m3u-ipytv
+```
 
 ## Usage
 
@@ -54,11 +63,12 @@ ipytv.playlist.M3UPlaylist.loada(array)
 ### Access the channels in the playlist
 Once loaded, the channels in a playlist can be accessed by using the
 `list` property:
-```python
+```python3
 import ipytv
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = ipytv.playlist.M3UPlaylist.loadu(url)
-firstChannel = pl.list[0]
+for channel in pl.list:
+    print("channel \"{}\": {}".format(channel.name, channel.url))
 ```
 
 ### Access the properties of a channel
@@ -96,7 +106,7 @@ channel = IPTVChannel(
 print(channel.name)
 print(channel.attributes[IPTVAttr.GROUP_TITLE.value])
 ```
-The `IPTVAttr` enum class contains tags that are commonly found in IPT
+The `IPTVAttr` enum class contains tags that are commonly found in IPTV
 Playlists.
 
 ## Format considerations
@@ -132,7 +142,7 @@ break the previous definition for the `#EXTINF` tag):
 1. a title
 
 The attributes in point 4 are in the `attribute="value"` format, where _value_
-may also contain non-escaped commas (which really complicates the parsing
+may also contain non-escaped commas (and this really complicates the parsing
 logic).
 
 It's worth noting that the M3U8 RFC document specifies how
@@ -147,10 +157,9 @@ On a funny note, this is how the VLC programmers named the
 [parsing function](https://github.com/videolan/vlc/blob/474c90392ede9916f068fcb3f860ba220d4c5b11/modules/demux/playlist/m3u.c#L398)
 for the IPTV playlists in the M3U Plus format:
 ```c
-static void parseEXTINFIptvDiots( char *psz_string,
-                                  char *(*pf_dup)(const char *),
-                                  struct entry_meta_s *meta )
+static void parseEXTINFIptvDiots(...)
 ```
+Just saying... :sweat_smile:
 
 ## License
 This project is licensed under the terms of the MIT license.
