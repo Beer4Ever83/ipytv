@@ -12,8 +12,8 @@ from ipytv.exceptions import MalformedPlaylistException, URLException, WrongType
 class M3UPlaylist:
     NO_GROUP_KEY = '_NO_GROUP_'
     NO_URL_KEY = '_NO_URL_'
-    # The value of MIN_CHUNK_SIZE cannot be smaller than 2
-    MIN_CHUNK_SIZE = 20
+    # The value of __MIN_CHUNK_SIZE cannot be smaller than 2
+    __MIN_CHUNK_SIZE = 20
 
     def __init__(self):
         self.list = None
@@ -23,7 +23,7 @@ class M3UPlaylist:
     def chunk_array(array: List, chunk_count: int) -> List:
         length = len(array)
         chunk_size = math.floor(length / chunk_count) + 1
-        if chunk_size < M3UPlaylist.MIN_CHUNK_SIZE:
+        if chunk_size < M3UPlaylist.__MIN_CHUNK_SIZE:
             return [
                 {
                     "begin": 0,
@@ -66,7 +66,7 @@ class M3UPlaylist:
                     # we are in the case of two adjacent #EXTINF rows; so we add a url-less entry.
                     # This shouldn't be theoretically allowed, but I've seen it happening in some IPTV playlists
                     # where isolated #EXTINF rows are used as group separators.
-                    pl.add_entry(entry)
+                    pl.__add_entry(entry)
                     entry = []
                 entry.append(row)
             elif row.startswith('#'):
@@ -75,7 +75,7 @@ class M3UPlaylist:
             else:
                 # case of a plain url row (regardless if preceded by an #EXTINF row or not)
                 entry.append(row)
-                pl.add_entry(entry)
+                pl.__add_entry(entry)
                 entry = []
             previous_row = row
         return pl
@@ -100,7 +100,7 @@ class M3UPlaylist:
             pool.close()
             for result in results:
                 pl = result.get()
-                out_pl.concatenate(pl)
+                out_pl.__concatenate(pl)
         return out_pl
 
     @staticmethod
@@ -132,7 +132,7 @@ class M3UPlaylist:
     def reset(self) -> None:
         self.list = []
 
-    def add_entry(self, entry: List):
+    def __add_entry(self, entry: List):
         channel = IPTVChannel.from_playlist_entry(entry)
         self.add_channel(channel)
 
@@ -193,7 +193,7 @@ class M3UPlaylist:
             )
         return out
 
-    def concatenate(self, pl: 'M3UPlaylist') -> None:
+    def __concatenate(self, pl: 'M3UPlaylist') -> None:
         self.list += pl.list
 
     def copy(self) -> 'M3UPlaylist':

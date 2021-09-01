@@ -38,9 +38,9 @@ class IPTVAttr(Enum):
 
 
 class IPTVChannel(M3UEntry):
-    M3U_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+,.*$'
-    M3U_PLUS_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
-    M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)(?P<attributes_g>(\s+[\w-]+="[^"]*")*),(?P<name_g>.*)'
+    __M3U_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+,.*$'
+    __M3U_PLUS_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
+    __M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)(?P<attributes_g>(\s+[\w-]+="[^"]*")*),(?P<name_g>.*)'
 
     def __init__(self, url: str = "", name: str = "", duration: str = "-1", attributes: Dict = None):
         super().__init__(url, name, duration)
@@ -64,14 +64,14 @@ class IPTVChannel(M3UEntry):
 
     @staticmethod
     def is_m3u_extinf_string(extinf_string: str) -> bool:
-        return re.search(IPTVChannel.M3U_EXTINF_REGEX, extinf_string) is not None
+        return re.search(IPTVChannel.__M3U_EXTINF_REGEX, extinf_string) is not None
 
     @staticmethod
     def is_m3u_plus_extinf_string(extinf_string: str) -> bool:
-        return re.search(IPTVChannel.M3U_PLUS_EXTINF_REGEX, extinf_string) is not None
+        return re.search(IPTVChannel.__M3U_PLUS_EXTINF_REGEX, extinf_string) is not None
 
     def parse_extinf_string(self, extinf_string: str) -> None:
-        m = re.match(IPTVChannel.M3U_PLUS_EXTINF_PARSE_REGEX, extinf_string)
+        m = re.match(IPTVChannel.__M3U_PLUS_EXTINF_PARSE_REGEX, extinf_string)
         if m is None:
             raise MalformedExtinfException("Malformed EXTINF string:\n{}".format(extinf_string))
         self.duration = m.group("duration_g")
