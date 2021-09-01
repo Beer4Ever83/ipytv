@@ -112,7 +112,7 @@ class M3UPlaylist:
 
     @staticmethod
     def loadf(filename: str) -> 'M3UPlaylist':
-        with open(filename) as file:
+        with open(filename, encoding='utf-8') as file:
             buffer = file.readlines()
             return M3UPlaylist.loada(buffer)
 

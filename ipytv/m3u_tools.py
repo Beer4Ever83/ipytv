@@ -7,10 +7,10 @@ import re
 class M3UFileDoctor:
     @staticmethod
     def fix_split_quoted_string(infile: str, outfile: str):
-        with open(infile) as file:
+        with open(infile, encoding='utf-8') as file:
             buffer = file.readlines()
         output_str = "".join(M3UDoctor.fix_split_quoted_string(buffer))
-        with open(outfile, "w") as file:
+        with open(outfile, "w", encoding='utf-8') as file:
             file.write(output_str)
 
 
