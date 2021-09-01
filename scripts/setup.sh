@@ -32,11 +32,15 @@ function upgrade_pip() {
 }
 
 function install_requirements() {
-    echo "installing python dependencies from requirements.txt..."
     # shellcheck source=.venv/bin/activate
     is_virtualenv || source "${PWD}/${VIRTUALENV_DIR}/bin/activate"
-    pip3 install -r ./requirements.txt >/dev/null || abort "Failure while installing dependencies from requirements.txt"
-    echo "done"
+    local requirement_files=''
+    requirement_files=$(find . -name 'requirements*.txt' -maxdepth 1)
+    for reqs in $requirement_files; do
+        echo "installing python dependencies from ${reqs}..."
+        pip3 install -r "${reqs}" >/dev/null || abort "Failure while installing dependencies from ${reqs}"
+        echo "done"
+    done
 }
 
 pushd "${my_dir}/.." >/dev/null || abort
