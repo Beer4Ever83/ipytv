@@ -63,7 +63,7 @@ ipytv.playlist.M3UPlaylist.loada(array)
 ### Access the channels in the playlist
 Once loaded, the channels in a playlist can be accessed by using the
 `list` property:
-```python3
+```python
 import ipytv
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = ipytv.playlist.M3UPlaylist.loadu(url)
