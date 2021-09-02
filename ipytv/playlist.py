@@ -52,7 +52,7 @@ class M3UPlaylist:
 
     @staticmethod
     def populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
-        pl: M3UPlaylist = M3UPlaylist()
+        pl = M3UPlaylist()
         if end == -1:
             end = len(array)
         entry = []
