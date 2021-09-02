@@ -38,7 +38,9 @@ export PACKAGE_VERSION=${VERSION}
 if [[ $1 == '--test' ]]; then
     export PACKAGE_VERSION=${TEST_VERSION}
 fi
-
+if [[ -z "${PACKAGE_NAME}" || -z "${PACKAGE_VERSION}" ]]; then
+    abort "Missing one or more mandatory variables"
+fi
 pushd "${REPO_DIR}" >/dev/null || abort
 cleanup
 python3 -m build --sdist || abort "Failure while building the package"

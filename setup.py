@@ -15,17 +15,8 @@ here = pathlib.Path(__file__).parent.resolve()
 
 # Get the long description from the README file
 long_description = (here / 'README.md').read_text(encoding='utf-8')
-
 package_name = os.getenv('PACKAGE_NAME')
-if package_name is None:
-    print("missing environment variable: PACKAGE_NAME")
-    exit(1)
-print("PACKAGE_NAME={}".format(package_name))
 package_version = os.getenv('PACKAGE_VERSION')
-if package_version is None:
-    print("missing environment variable: PACKAGE_VERSION")
-    exit(1)
-print("PACKAGE_VERSION={}".format(package_version))
 
 
 def parse_requirements(requirements_file):
