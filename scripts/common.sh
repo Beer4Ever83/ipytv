@@ -16,7 +16,7 @@ export LINT_IN_CONTAINER=/usr/bin/runlint
 export VERSION="${CIRCLE_TAG}"
 export TEST_VERSION="0.1.${CIRCLE_BUILD_NUM:-0}"
 export MYPY_CACHE_DIR='.mypy_cache'
-export PKGDATA_FILE=pkgdata.yaml
+export PKGDATA_FILE=pkgdata.txt
 
 # Functions --------------------------------------------------------------------
 function delete_container() {

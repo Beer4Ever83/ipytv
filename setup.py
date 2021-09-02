@@ -1,6 +1,5 @@
 import pathlib
 
-import yaml
 from setuptools import setup, find_packages
 
 
@@ -10,8 +9,15 @@ def parse_requirements(requirements_file):
 
 
 def get_pkgdata():
-    with open("pkgdata.yaml") as f:
-        data = yaml.load(f, Loader=yaml.CLoader)
+    data = {}
+    with open("pkgdata.txt") as f:
+        lines = f.readlines()
+    for row in lines:
+        row_s = str(row).strip()
+        if not row_s.startswith("#"):
+            key = row_s.split("=")[0]
+            value = row_s.split("=")[1]
+            data[key] = value
     return data
 
 
@@ -21,8 +27,8 @@ print(pkgdata)
 
 # Get the long description from the README file
 long_description = (here / 'README.md').read_text(encoding='utf-8')
-package_name = pkgdata["package"]["name"]
-package_version = pkgdata["package"]["version"]
+package_name = pkgdata["package.name"]
+package_version = pkgdata["package.version"]
 
 
 setup(
@@ -53,7 +59,7 @@ setup(
     package_dir={'ipytv': 'ipytv'},
     packages=find_packages(where='.', exclude=['tests']),
     python_requires='>=3.6, <4',
-    install_requires=parse_requirements("requirements.txt"),
+    install_requires=parse_requirements("requirements.txt").append(parse_requirements("requirements-deploy.txt")),
     extras_require={},
     package_data={},
     data_files=[],
