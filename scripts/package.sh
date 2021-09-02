@@ -33,17 +33,27 @@ function test_package() {
     rm -rf "${TEMP_DIR}"
 }
 
+function build_pkgdata() {
+    if [[ -z "${PACKAGE_NAME}" || -z "${PACKAGE_VERSION}" ]]; then
+        abort "Missing one or more mandatory variables"
+    fi
+    cat >"${PKGDATA_FILE}" << HEREDOC
+# Auto-generated file. Do not edit.
+package:
+    name: "${PACKAGE_NAME}"
+    version: "${PACKAGE_VERSION}"
+HEREDOC
+}
+
 REPO_DIR=$(realpath "${my_dir}/..")
 export PACKAGE_VERSION=${VERSION}
 if [[ $1 == '--test' ]]; then
     export PACKAGE_VERSION=${TEST_VERSION}
 fi
-if [[ -z "${PACKAGE_NAME}" || -z "${PACKAGE_VERSION}" ]]; then
-    abort "Missing one or more mandatory variables"
-fi
 pushd "${REPO_DIR}" >/dev/null || abort
 cleanup
-python3 -m build --sdist || abort "Failure while building the package"
+build_pkgdata
+python3 -m build --no-isolation --sdist || abort "Failure while building the package"
 twine check dist/* || abort "twine reported an error"
 test_package
 popd >/dev/null || abort
