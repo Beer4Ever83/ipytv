@@ -16,8 +16,16 @@ here = pathlib.Path(__file__).parent.resolve()
 # Get the long description from the README file
 long_description = (here / 'README.md').read_text(encoding='utf-8')
 
-print("PACKAGE_NAME={}".format(os.getenv('PACKAGE_NAME')))
-print("PACKAGE_VERSION={}".format(os.getenv('PACKAGE_VERSION')))
+package_name = os.getenv('PACKAGE_NAME')
+if package_name is None:
+    print("missing environment variable: PACKAGE_NAME")
+    exit(1)
+print("PACKAGE_NAME={}".format(package_name))
+package_version = os.getenv('PACKAGE_VERSION')
+if package_version is None:
+    print("missing environment variable: PACKAGE_VERSION")
+    exit(1)
+print("PACKAGE_VERSION={}".format(package_version))
 
 
 def parse_requirements(requirements_file):
@@ -39,7 +47,7 @@ setup(
     # There are some restrictions on what makes a valid project name
     # specification here:
     # https://packaging.python.org/specifications/core-metadata/#name
-    name=os.getenv('PACKAGE_NAME'),  # Required
+    name=package_name,  # Required
 
     # Versions should comply with PEP 440:
     # https://www.python.org/dev/peps/pep-0440/
@@ -47,7 +55,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=os.getenv('PACKAGE_VERSION'),  # Required
+    version=package_version,  # Required
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
