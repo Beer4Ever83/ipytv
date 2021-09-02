@@ -59,7 +59,7 @@ setup(
     package_dir={'ipytv': 'ipytv'},
     packages=find_packages(where='.', exclude=['tests']),
     python_requires='>=3.6, <4',
-    install_requires=parse_requirements("requirements.txt").append(parse_requirements("requirements-deploy.txt")),
+    install_requires=parse_requirements("requirements.txt"),
     extras_require={},
     package_data={},
     data_files=[],

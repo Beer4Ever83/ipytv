@@ -5,4 +5,4 @@
 dist/
 **/m3u_ipytv.egg-info
 **/.mypy_cache/
-pkgdata.yaml
+pkgdata.txt
