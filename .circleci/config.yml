@@ -69,9 +69,6 @@ jobs:
       - checkout
       - python/install-packages:
           pkg-manager: pip
-          pip-dependency-file: requirements.txt
-      - python/install-packages:
-          pkg-manager: pip
           pip-dependency-file: requirements-deploy.txt
       - run:
           name: Deploy (to test)
@@ -81,9 +78,6 @@ jobs:
       - image: cimg/python:3.8
     steps:
       - checkout
-      - python/install-packages:
-          pkg-manager: pip
-          pip-dependency-file: requirements.txt
       - python/install-packages:
           pkg-manager: pip
           pip-dependency-file: requirements-deploy.txt
