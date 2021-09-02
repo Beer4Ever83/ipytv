@@ -15,8 +15,8 @@ here = pathlib.Path(__file__).parent.resolve()
 
 # Get the long description from the README file
 long_description = (here / 'README.md').read_text(encoding='utf-8')
-package_name = os.getenv('PACKAGE_NAME')
-package_version = os.getenv('PACKAGE_VERSION')
+package_name = os.getenv('PACKAGE_NAME', 'm3u-ipytv')
+package_version = os.getenv('PACKAGE_VERSION', '0.0.9')
 
 
 def parse_requirements(requirements_file):
