@@ -5,8 +5,16 @@ my_dir=$(dirname "$(readlink -f "${0}")")
 source "${my_dir}/common.sh"
 
 function cleanup() {
-    rm "${DIST_DIR}"/*
-    find . -type d -path "./${VIRTUALENV_DIR}" -prune -false -o -name '*.egg-info' -exec rm -rf {} \;
+    local egg_info_dirs=''
+    egg_info_dirs=$(
+        find . -type d \
+        \( -path "./${VIRTUALENV_DIR}" -o -path "./${MYPY_CACHE_DIR}" -o -path ./.git -o -path ./.idea \) \
+        -prune -false -o -name '*.egg-info'
+    )
+    local dirs_to_cleanup="${DIST_DIR:?} ${MYPY_CACHE_DIR:?} ${egg_info_dirs}"
+    for dir in ${dirs_to_cleanup}; do
+        [[ -d "${dir}" ]] && rm -rf "${dir}"
+    done
 }
 
 function test_package() {
@@ -15,6 +23,8 @@ function test_package() {
     [[ -z "$TEMP_DIR" ]] && abort "Failure while creating a temporary directory (${TEMP_DIR})"
     python3 -m venv "${TEMP_DIR}/.testvenv" || abort "Failure while creating virtual environment (.testvenv)"
     source "${TEMP_DIR}/.testvenv/bin/activate" || abort "Failure while activating the test virtual environment"
+    pip3 install --upgrade pip || abort "Failure while upgrading pip"
+    pip3 install -r requirements-deploy.txt || abort "Failure while installing deploy requirements"
     pip3 install "${DIST_DIR}/${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz" || abort "Failure while installing the package"
     # shellcheck disable=SC2155
     local SHOW_OUTPUT=$(pip3 show "${PACKAGE_NAME}")

@@ -3,4 +3,5 @@
 **/__pycache__
 **/.DS_Store
 dist/
-**/ipytv.egg-info
+**/m3u_ipytv.egg-info
+**/.mypy_cache/
