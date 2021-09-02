@@ -1,3 +1,0 @@
-# Auto-generated file. Do not edit.
-package.name=m3u-ipytv
-package.version=0.1.0
