@@ -2,20 +2,20 @@
 set -o pipefail
 
 # Variables --------------------------------------------------------------------
-TRUE=$(true; echo $?)
-FALSE=$(false; echo $?)
-VIRTUALENV_DIR=.venv
-DIST_DIR=dist
-LIB_NAME=ipytv
-TAG_NAME=ipytv
-PACKAGE_NAME=m3u-ipytv
-TEST_CONTAINER_NAME=test_ipytv
-LINT_CONTAINER_NAME=lint_ipytv
-TEST_IN_CONTAINER=/usr/bin/runtest
-LINT_IN_CONTAINER=/usr/bin/runlint
-VERSION="${CIRCLE_TAG}"
-TEST_VERSION="0.1.${CIRCLE_BUILD_NUM:-0}"
-MYPY_CACHE_DIR='.mypy_cache'
+export TRUE=$(true; echo $?)
+export FALSE=$(false; echo $?)
+export VIRTUALENV_DIR=.venv
+export DIST_DIR=dist
+export LIB_NAME=ipytv
+export TAG_NAME=ipytv
+export PACKAGE_NAME=m3u-ipytv
+export TEST_CONTAINER_NAME=test_ipytv
+export LINT_CONTAINER_NAME=lint_ipytv
+export TEST_IN_CONTAINER=/usr/bin/runtest
+export LINT_IN_CONTAINER=/usr/bin/runlint
+export VERSION="${CIRCLE_TAG}"
+export TEST_VERSION="0.1.${CIRCLE_BUILD_NUM:-0}"
+export MYPY_CACHE_DIR='.mypy_cache'
 
 # Functions --------------------------------------------------------------------
 function delete_container() {

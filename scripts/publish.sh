@@ -16,7 +16,7 @@ fi
 REPO_DIR=$(realpath "${my_dir}/..")
 
 pushd "${REPO_DIR}" >/dev/null || abort
-twine upload ${TWINE_REPO} "${DIST_DIR}"/* || abort "Failure while uploading the package"
+twine upload "${TWINE_REPO}" "${DIST_DIR}"/* || abort "Failure while uploading the package"
 popd >/dev/null || abort
 
 exit "$TRUE"

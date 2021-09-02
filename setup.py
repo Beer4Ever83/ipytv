@@ -16,6 +16,9 @@ here = pathlib.Path(__file__).parent.resolve()
 # Get the long description from the README file
 long_description = (here / 'README.md').read_text(encoding='utf-8')
 
+print("PACKAGE_NAME={}".format(os.getenv('PACKAGE_NAME')))
+print("PACKAGE_VERSION={}".format(os.getenv('PACKAGE_VERSION')))
+
 
 def parse_requirements(requirements_file):
     with open(requirements_file) as req:
@@ -36,7 +39,7 @@ setup(
     # There are some restrictions on what makes a valid project name
     # specification here:
     # https://packaging.python.org/specifications/core-metadata/#name
-    name=os.getenv('PACKAGE_NAME', 'm3u-ipytv'),  # Required
+    name=os.getenv('PACKAGE_NAME'),  # Required
 
     # Versions should comply with PEP 440:
     # https://www.python.org/dev/peps/pep-0440/
@@ -44,7 +47,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=os.getenv('PACKAGE_VERSION', '0.0.1'),  # Required
+    version=os.getenv('PACKAGE_VERSION'),  # Required
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
