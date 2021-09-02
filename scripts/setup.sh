@@ -23,6 +23,9 @@ function create_venv() {
     fi
     echo "Please activate this virtual env by running the following command in your shell:"
     echo "source ${PWD}/${VIRTUALENV_DIR}/bin/activate"
+    echo "activating virtual env..."
+    source "${VIRTUALENV_DIR}/bin/activate"
+    echo "done"
 }
 
 function upgrade_pip() {

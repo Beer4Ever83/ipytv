@@ -12,8 +12,8 @@ from ipytv.exceptions import MalformedPlaylistException, URLException, WrongType
 class M3UPlaylist:
     NO_GROUP_KEY = '_NO_GROUP_'
     NO_URL_KEY = '_NO_URL_'
-    # The value of MIN_CHUNK_SIZE cannot be smaller than 2
-    MIN_CHUNK_SIZE = 20
+    # The value of __MIN_CHUNK_SIZE cannot be smaller than 2
+    __MIN_CHUNK_SIZE = 20
 
     def __init__(self):
         self.list = None
@@ -23,7 +23,7 @@ class M3UPlaylist:
     def chunk_array(array: List, chunk_count: int) -> List:
         length = len(array)
         chunk_size = math.floor(length / chunk_count) + 1
-        if chunk_size < M3UPlaylist.MIN_CHUNK_SIZE:
+        if chunk_size < M3UPlaylist.__MIN_CHUNK_SIZE:
             return [
                 {
                     "begin": 0,
