@@ -16,6 +16,7 @@ fi
 REPO_DIR=$(realpath "${my_dir}/..")
 
 pushd "${REPO_DIR}" >/dev/null || abort
+# shellcheck disable=SC2086
 twine upload ${TWINE_REPO} "${DIST_DIR}"/* || abort "Failure while uploading the package"
 popd >/dev/null || abort
 
