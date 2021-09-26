@@ -40,9 +40,12 @@ class IPTVAttr(Enum):
 class IPTVChannel(M3UEntry):
     __M3U_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+,.*$'
     __M3U_PLUS_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
-    __M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)(?P<attributes_g>(\s+[\w-]+="[^"]*")*),(?P<name_g>.*)'
+    __M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)'\
+                                    r'(?P<attributes_g>(\s+[\w-]+="[^"]*")*),'\
+                                    r'(?P<name_g>.*)'
 
-    def __init__(self, url: str = "", name: str = "", duration: str = "-1", attributes: Dict = None):
+    def __init__(self, url: str = "", name: str = "",
+                 duration: str = "-1", attributes: Dict = None):
         super().__init__(url, name, duration)
         self.attributes = attributes if attributes is not None else {}
 
@@ -71,17 +74,17 @@ class IPTVChannel(M3UEntry):
         return re.search(IPTVChannel.__M3U_PLUS_EXTINF_REGEX, extinf_string) is not None
 
     def parse_extinf_string(self, extinf_string: str) -> None:
-        m = re.match(IPTVChannel.__M3U_PLUS_EXTINF_PARSE_REGEX, extinf_string)
-        if m is None:
-            raise MalformedExtinfException("Malformed EXTINF string:\n{}".format(extinf_string))
-        self.duration = m.group("duration_g")
-        attributes = m.group("attributes_g")
+        match = re.match(IPTVChannel.__M3U_PLUS_EXTINF_PARSE_REGEX, extinf_string)
+        if match is None:
+            raise MalformedExtinfException(f"Malformed EXTINF string:\n{extinf_string}")
+        self.duration = match.group("duration_g")
+        attributes = match.group("attributes_g")
         for entry in shlex.split(attributes):
-            kv = entry.split("=")
-            key = kv[0]
-            value = kv[1]
+            pair = entry.split("=")
+            key = pair[0]
+            value = pair[1]
             self.attributes[key] = value
-        self.name = m.group("name_g")
+        self.name = match.group("name_g")
 
     @staticmethod
     def from_playlist_entry(entry: List) -> 'IPTVChannel':
@@ -100,10 +103,9 @@ class IPTVChannel(M3UEntry):
         attr_str = ''
         if len(self.attributes) > 0:
             for attr in self.attributes:
-                attr_str += '{}: "{}", '.format(attr, self.attributes[attr])
+                attr_str += f'{attr}: "{self.attributes[attr]}", '
         if attr_str.endswith(', '):
             attr_str = attr_str[:-2]
-        out = '{{name: "{}", duration: "{}", url: "{}", attributes: {{{}}}}}'.format(
-            self.name, self.duration, self.url, attr_str
-        )
+        out = f'{{name: "{self.name}", duration: "{self.duration}", '\
+              f'url: "{self.url}", attributes: {{{attr_str}}}}}'
         return out
