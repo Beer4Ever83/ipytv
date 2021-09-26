@@ -86,3 +86,31 @@ expected_m3u8.list = [
         duration="-1",
     )
 ]
+
+expected_urlencoded = M3UPlaylist()
+expected_urlencoded.list = [
+    IPTVChannel(
+        url="http://myown.link:80/luke/109163/78281",
+        name="Vacanze 83",
+        duration="-1",
+        attributes={"tvg-logo": "https://some.image.service.com/images/V1_UY268_CR4%2C0%2C182%2C268_AL_.jpg"}
+    ),
+    IPTVChannel(
+        url="http://myown.link:80/luke/109163/78282",
+        name="Vacanze 90",
+        duration="-1",
+        attributes={"tvg-logo": "https://some.image.service.com/images/%2C%2C%2C%2C%2C.png"}
+    ),
+    IPTVChannel(
+        url="http://myown.link:80/luke/109163/78283",
+        name="Vacanze 91",
+        duration="-1",
+        attributes={"tvg-logo": "https://some.image.service.com/images/vacanze.jpg"}
+    ),
+    IPTVChannel(
+        url="http://myown.link:80/luke/109163/78284",
+        name="Vacanze 95",
+        duration="-1",
+        attributes={"tvg-logo": "https://some.image.service.com/images/M/MV5BOTVkOWExNmYtZDdjMy00ODlhLTlhMTYtMjRmYzRhMmMwZWRlXkEyXkFqcGdeQXVyMzU0NzkwMDg%40._V1_UY268_CR2%2C0%2C182%2C268_AL_.jpg"}
+    )
+]
