@@ -14,4 +14,6 @@ from ipytv.exceptions import \
 
 from ipytv.m3u_tools import \
     M3UDoctor, \
-    M3UFileDoctor
+    M3UFileDoctor, \
+    IPTVChannelDoctor, \
+    M3UPlaylistDoctor
