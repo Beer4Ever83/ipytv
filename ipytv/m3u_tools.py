@@ -1,9 +1,7 @@
 #!/usr/env/bin python3
-from typing import List
-
 import re
-
 import urllib.parse
+from typing import List
 
 from ipytv import M3UPlaylist
 from ipytv.channel import IPTVChannel, IPTVAttr
@@ -48,27 +46,45 @@ class IPTVChannelDoctor:
 
     @staticmethod
     def sanitize_attributes(channel: IPTVChannel) -> IPTVChannel:
+        attr: str
+        new_channel = channel.copy()
+        for attr in channel.attributes.keys():
+            IPTVChannelDoctor.__sanitize_commas(new_channel, attr)
+            IPTVChannelDoctor.__attributes_to_lowercase(new_channel, attr)
+        return new_channel
+
+    @staticmethod
+    def __attributes_to_lowercase(channel: IPTVChannel, attribute_name: str):
         """
         This covers the case of well-known attributes (i.e. the ones in IPTVAttr)
         spelled wrongly.
         Example:
             tvg-ID="" (should be tvg-id="")
         """
-        attr: str
-        new_channel = channel.copy()
-        for attr in channel.attributes.keys():
+        try:
+            IPTVAttr(attribute_name)
+        except ValueError:
             try:
-                IPTVAttr(attr)
+                key = IPTVAttr(attribute_name.lower()).value
+                value = channel.attributes[attribute_name]
+                del channel.attributes[attribute_name]
+                channel.attributes[key] = value
             except ValueError:
-                try:
-                    key = IPTVAttr(attr.lower()).value
-                    value = new_channel.attributes[attr]
-                    del new_channel.attributes[attr]
-                    new_channel.attributes[key] = value
-                except ValueError:
-                    # It seems not a well-known attribute, so we leave it untouched.
-                    pass
-        return new_channel
+                # It seems not a well-known attribute, so we leave it untouched.
+                pass
+
+    @staticmethod
+    def __sanitize_commas(channel: IPTVChannel, attribute_name: str):
+        """"
+        This covers the case of attributes values containing a comma, which can confuse some
+        parsing libraries (not this one, though)
+        """
+        if attribute_name == IPTVAttr.TVG_LOGO.value:
+            return
+        value: str = channel.attributes[attribute_name]
+        if "," in value:
+            value = value.replace(",", "_")
+            channel.attributes[attribute_name] = value
 
 
 class M3UPlaylistDoctor:
@@ -86,7 +102,8 @@ class M3UPlaylistDoctor:
     @staticmethod
     def sanitize_all_attributes(playlist: M3UPlaylist):
         """
-        This makes sure that all well-known attributes in the playlist are spelled correctly.
+        This makes sure that all well-known attributes in the playlist are spelled correctly
+        and that no commas appear in the attributes value.
         """
         new_playlist: M3UPlaylist = M3UPlaylist()
         channel: IPTVChannel

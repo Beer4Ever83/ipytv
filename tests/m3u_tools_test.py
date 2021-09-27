@@ -37,10 +37,11 @@ class TestURLEncodeLogo(unittest.TestCase):
 
 class TestSanitizeAttributes(unittest.TestCase):
     def runTest(self):
-        extinf_string = """#EXTINF:-1 tvg-ID="a" Tvg-name="b" tvG-Logo="c" GROUP-TITLE="d",My channel"""
+        extinf_string = """#EXTINF:-1 tvg-ID="a" Tvg-name="contains, some,,commas" """ \
+                """tvG-Logo="c" GROUP-TITLE="d",My channel"""
         expected_attributes = {
             IPTVAttr.TVG_ID.value: "a",
-            IPTVAttr.TVG_NAME.value: "b",
+            IPTVAttr.TVG_NAME.value: "contains_ some__commas",
             IPTVAttr.TVG_LOGO.value: "c",
             IPTVAttr.GROUP_TITLE.value: "d"
         }
@@ -68,24 +69,24 @@ class TestSanitizeAllAttributes(unittest.TestCase):
     def runTest(self):
         playlist = M3UPlaylist()
         playlist.add_channel(
-            IPTVChannel("", "", "", {"tvg-ID": "a"})
+            IPTVChannel(attributes={"tvg-ID": "a"})
         )
         playlist.add_channel(
-            IPTVChannel("", "", "", {"TVG-LOGO": "b"})
+            IPTVChannel(attributes={"TVG-LOGO": "b"})
         )
         playlist.add_channel(
-            IPTVChannel("", "", "", {"GrOuP-TiTlE": "c"})
+            IPTVChannel(attributes={"GrOuP-TiTlE": "c,d,,e"})
         )
 
         expected = M3UPlaylist()
         expected.add_channel(
-            IPTVChannel("", "", "", {IPTVAttr.TVG_ID.value: "a"})
+            IPTVChannel(attributes={IPTVAttr.TVG_ID.value: "a"})
         )
         expected.add_channel(
-            IPTVChannel("", "", "", {IPTVAttr.TVG_LOGO.value: "b"})
+            IPTVChannel(attributes={IPTVAttr.TVG_LOGO.value: "b"})
         )
         expected.add_channel(
-            IPTVChannel("", "", "", {IPTVAttr.GROUP_TITLE.value: "c"})
+            IPTVChannel(attributes={IPTVAttr.GROUP_TITLE.value: "c_d__e"})
         )
         self.assertFalse(playlist.__eq__(expected))
         fixed_playlist = M3UPlaylistDoctor.sanitize_all_attributes(playlist)
