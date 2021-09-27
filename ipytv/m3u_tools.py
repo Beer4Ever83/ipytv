@@ -9,52 +9,84 @@ from ipytv import M3UPlaylist
 from ipytv.channel import IPTVChannel, IPTVAttr
 
 
-class M3UFileDoctor:
-    @staticmethod
-    def fix_split_quoted_string(infile: str, outfile: str):
-        with open(infile, encoding='utf-8') as file:
-            m3u_rows = file.readlines()
-        output_str = "".join(M3UDoctor.fix_split_quoted_string(m3u_rows))
-        with open(outfile, "w", encoding='utf-8') as file:
-            file.write(output_str)
-
-
 class M3UDoctor:
-    """
-    This covers the case of rows beginning with double quotes that belong to the previous row.
-    Example:
-        #EXTINF:-1 tvg-id="Cinema1
-        " tvg-name="Cinema1" group-title="Cinema",Cinema One
-    """
     @staticmethod
     def fix_split_quoted_string(m3u_rows: List) -> List:
+        """
+        This covers the case of rows beginning with double quotes that belong to the previous row.
+        Example:
+            #EXTINF:-1 tvg-id="Cinema1
+            " tvg-name="Cinema1" group-title="Cinema",Cinema One
+        """
+        fixed_m3u_rows: List = []
         lines = len(m3u_rows)
+        index: int
         for index in range(lines):
-            if re.match("^[[:space:]]*\"", m3u_rows[index]):
-                m3u_rows[index] = m3u_rows[index].replace("\"", "", 1)
-                m3u_rows[index - 1] = m3u_rows[index - 1].rstrip() + "\""
-        return m3u_rows
+            current_row: str = m3u_rows[index]
+            previous_row: str = m3u_rows[index-1]
+            if index > 0 and re.match(r"^\s*\"", current_row) and previous_row.startswith("#EXTINF:"):
+                fixed_m3u_rows.pop()
+                fixed_m3u_rows.append(previous_row.rstrip() + current_row.lstrip())
+            else:
+                fixed_m3u_rows.append(current_row)
+        return fixed_m3u_rows
 
 
 class IPTVChannelDoctor:
-    """
-    This covers the case of tvg-logo attributes not being correctly url-encoded.
-    Example (commas in the url):
-        tvg-logo="https://some.image.com/images/V1_UX182_CR0,0,182,268_AL_.jpg"
-    """
     @staticmethod
     def urlencode_logo(channel: IPTVChannel) -> IPTVChannel:
-        logo = channel.attributes[IPTVAttr.TVG_LOGO.value]
-        channel.attributes[IPTVAttr.TVG_LOGO.value] = urllib.parse.quote(logo, safe=':/%')
-        return channel
+        """
+        This covers the case of tvg-logo attributes not being correctly url-encoded.
+        Example (commas in the url):
+            tvg-logo="https://some.image.com/images/V1_UX182_CR0,0,182,268_AL_.jpg"
+        """
+        new_channel = channel.copy()
+        logo = new_channel.attributes[IPTVAttr.TVG_LOGO.value]
+        new_channel.attributes[IPTVAttr.TVG_LOGO.value] = urllib.parse.quote(logo, safe=':/%')
+        return new_channel
+
+    @staticmethod
+    def sanitize_attributes(channel: IPTVChannel) -> IPTVChannel:
+        """
+        This covers the case of well-known attributes (i.e. the ones in IPTVAttr)
+        spelled wrongly.
+        Example:
+            tvg-ID="" (should be tvg-id="")
+        """
+        attr: str
+        new_channel = channel.copy()
+        for attr in channel.attributes.keys():
+            try:
+                IPTVAttr(attr)
+            except ValueError:
+                try:
+                    key = IPTVAttr(attr.lower()).value
+                    value = new_channel.attributes[attr]
+                    del new_channel.attributes[attr]
+                    new_channel.attributes[key] = value
+                except ValueError:
+                    # It seems not a well-known attribute, so we leave it untouched.
+                    pass
+        return new_channel
 
 
 class M3UPlaylistDoctor:
-    """
-    This makes sure that all logo URLs in the playlist are encoded correctly.
-    """
     @staticmethod
-    def urlencode_logos(playlist: M3UPlaylist):
+    def urlencode_all_logos(playlist: M3UPlaylist):
+        """
+        This makes sure that all logo URLs in the playlist are encoded correctly.
+        """
+        index: int
         channel: IPTVChannel
-        for channel in playlist.list:
-            IPTVChannelDoctor.urlencode_logo(channel)
+        for index, channel in enumerate(playlist.list):
+            playlist.list[index] = IPTVChannelDoctor.urlencode_logo(channel)
+
+    @staticmethod
+    def sanitize_all_attributes(playlist: M3UPlaylist):
+        """
+        This makes sure that all well-known attributes in the playlist are spelled correctly.
+        """
+        index: int
+        channel: IPTVChannel
+        for index, channel in playlist.list:
+            playlist.list[index] = IPTVChannelDoctor.sanitize_attributes(channel)
