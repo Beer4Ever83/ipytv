@@ -86,3 +86,44 @@ expected_m3u8.list = [
         duration="-1",
     )
 ]
+
+split_quoted_string = """#EXTM3U
+#EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1
+" tvg-logo="https://static.epg.best/it/RaiUno.it.png" group-title="RAI",Rai 1
+http://myown.link:80/luke/210274/78482
+#EXTINF:-1 tvg-id="" tvg-name="Cielo" tvg-logo="" group-title="Italia",Cielo
+http://myown.link:80/luke/210274/89844
+#EXTINF:-1 tvg-id="" tvg-name="TEMATICO MASSIMO TROISI" tvg-logo="" group-title="Italia
+",TEMATICO MASSIMO TROISI
+http://myown.link:80/luke/109163/89800
+#EXTINF:-1 tvg-id="
+" tvg-name="----I N T R A T T E N I M E N T O----" tvg-logo="" group-title="Intrattenimento",----I N T R A T T E N I M E N T O----
+http://myown.link:80/luke/109163/78282"""
+
+expected_urlencoded = M3UPlaylist()
+expected_urlencoded.list = [
+    IPTVChannel(
+        url="http://myown.link:80/luke/109163/78281",
+        name="Vacanze 83",
+        duration="-1",
+        attributes={"tvg-logo": "https://some.image.service.com/images/V1_UY268_CR4%2C0%2C182%2C268_AL_.jpg"}
+    ),
+    IPTVChannel(
+        url="http://myown.link:80/luke/109163/78282",
+        name="Vacanze 90",
+        duration="-1",
+        attributes={"tvg-logo": "https://some.image.service.com/images/%2C%2C%2C%2C%2C.png"}
+    ),
+    IPTVChannel(
+        url="http://myown.link:80/luke/109163/78283",
+        name="Vacanze 91",
+        duration="-1",
+        attributes={"tvg-logo": "https://some.image.service.com/images/vacanze.jpg"}
+    ),
+    IPTVChannel(
+        url="http://myown.link:80/luke/109163/78284",
+        name="Vacanze 95",
+        duration="-1",
+        attributes={"tvg-logo": "https://some.image.service.com/images/M/MV5BOTVkOWExNmYtZDdjMy00ODlhLTlhMTYtMjRmYzRhMmMwZWRlXkEyXkFqcGdeQXVyMzU0NzkwMDg%40._V1_UY268_CR2%2C0%2C182%2C268_AL_.jpg"}
+    )
+]

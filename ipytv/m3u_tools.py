@@ -3,29 +3,93 @@ from typing import List
 
 import re
 
+import urllib.parse
 
-class M3UFileDoctor:
-    @staticmethod
-    def fix_split_quoted_string(infile: str, outfile: str):
-        with open(infile, encoding='utf-8') as file:
-            buffer = file.readlines()
-        output_str = "".join(M3UDoctor.fix_split_quoted_string(buffer))
-        with open(outfile, "w", encoding='utf-8') as file:
-            file.write(output_str)
+from ipytv import M3UPlaylist
+from ipytv.channel import IPTVChannel, IPTVAttr
 
 
 class M3UDoctor:
-    '''
-    This covers the case of rows beginning with double quotes that belong to the previous row.
-    Example:
-        #EXTINF:-1 tvg-id="Cinema1
-        " tvg-name="Cinema1" group-title="Cinema",Cinema One
-    '''
     @staticmethod
-    def fix_split_quoted_string(buffer: List) -> List:
-        lines = len(buffer)
+    def fix_split_quoted_string(m3u_rows: List) -> List:
+        """
+        This covers the case of rows beginning with double quotes that belong to the previous row.
+        Example:
+            #EXTINF:-1 tvg-id="Cinema1
+            " tvg-name="Cinema1" group-title="Cinema",Cinema One
+        """
+        fixed_m3u_rows: List = []
+        lines = len(m3u_rows)
+        index: int
         for index in range(lines):
-            if re.match("^[[:space:]]*\"", buffer[index]):
-                buffer[index] = buffer[index].replace("\"", "", 1)
-                buffer[index-1] = buffer[index-1].rstrip() + "\""
-        return buffer
+            current_row: str = m3u_rows[index]
+            previous_row: str = m3u_rows[index-1]
+            if index > 0 and re.match(r"^\s*\"", current_row) and \
+                    previous_row.startswith("#EXTINF:"):
+                fixed_m3u_rows.pop()
+                fixed_m3u_rows.append(previous_row.rstrip() + current_row.lstrip())
+            else:
+                fixed_m3u_rows.append(current_row)
+        return fixed_m3u_rows
+
+
+class IPTVChannelDoctor:
+    @staticmethod
+    def urlencode_logo(channel: IPTVChannel) -> IPTVChannel:
+        """
+        This covers the case of tvg-logo attributes not being correctly url-encoded.
+        Example (commas in the url):
+            tvg-logo="https://some.image.com/images/V1_UX182_CR0,0,182,268_AL_.jpg"
+        """
+        new_channel = channel.copy()
+        logo = new_channel.attributes[IPTVAttr.TVG_LOGO.value]
+        new_channel.attributes[IPTVAttr.TVG_LOGO.value] = urllib.parse.quote(logo, safe=':/%')
+        return new_channel
+
+    @staticmethod
+    def sanitize_attributes(channel: IPTVChannel) -> IPTVChannel:
+        """
+        This covers the case of well-known attributes (i.e. the ones in IPTVAttr)
+        spelled wrongly.
+        Example:
+            tvg-ID="" (should be tvg-id="")
+        """
+        attr: str
+        new_channel = channel.copy()
+        for attr in channel.attributes.keys():
+            try:
+                IPTVAttr(attr)
+            except ValueError:
+                try:
+                    key = IPTVAttr(attr.lower()).value
+                    value = new_channel.attributes[attr]
+                    del new_channel.attributes[attr]
+                    new_channel.attributes[key] = value
+                except ValueError:
+                    # It seems not a well-known attribute, so we leave it untouched.
+                    pass
+        return new_channel
+
+
+class M3UPlaylistDoctor:
+    @staticmethod
+    def urlencode_all_logos(playlist: M3UPlaylist):
+        """
+        This makes sure that all logo URLs in the playlist are encoded correctly.
+        """
+        new_playlist: M3UPlaylist = M3UPlaylist()
+        channel: IPTVChannel
+        for channel in playlist.list:
+            new_playlist.add_channel(IPTVChannelDoctor.urlencode_logo(channel))
+        return new_playlist
+
+    @staticmethod
+    def sanitize_all_attributes(playlist: M3UPlaylist):
+        """
+        This makes sure that all well-known attributes in the playlist are spelled correctly.
+        """
+        new_playlist: M3UPlaylist = M3UPlaylist()
+        channel: IPTVChannel
+        for channel in playlist.list:
+            new_playlist.add_channel(IPTVChannelDoctor.sanitize_attributes(channel))
+        return new_playlist

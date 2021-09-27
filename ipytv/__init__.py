@@ -11,3 +11,8 @@ from ipytv.exceptions import \
     MalformedPlaylistException, \
     URLException, \
     WrongTypeException
+
+from ipytv.m3u_tools import \
+    M3UDoctor, \
+    IPTVChannelDoctor, \
+    M3UPlaylistDoctor
