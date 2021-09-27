@@ -60,8 +60,36 @@ class TestURLEncodeAllLogos(unittest.TestCase):
     def runTest(self):
         playlist = M3UPlaylist.loadf("tests/resources/m3u_plus_unencoded_logo.m3u")
         self.assertFalse(playlist.__eq__(tests.test_data.expected_urlencoded))
-        M3UPlaylistDoctor.urlencode_all_logos(playlist)
-        self.assertTrue(playlist.__eq__(tests.test_data.expected_urlencoded))
+        fixed_playlist = M3UPlaylistDoctor.urlencode_all_logos(playlist)
+        self.assertTrue(fixed_playlist.__eq__(tests.test_data.expected_urlencoded))
+
+
+class TestSanitizeAllAttributes(unittest.TestCase):
+    def runTest(self):
+        playlist = M3UPlaylist()
+        playlist.add_channel(
+            IPTVChannel("", "", "", {"tvg-ID": "a"})
+        )
+        playlist.add_channel(
+            IPTVChannel("", "", "", {"TVG-LOGO": "b"})
+        )
+        playlist.add_channel(
+            IPTVChannel("", "", "", {"GrOuP-TiTlE": "c"})
+        )
+
+        expected = M3UPlaylist()
+        expected.add_channel(
+            IPTVChannel("", "", "", {"tvg-id": "a"})
+        )
+        expected.add_channel(
+            IPTVChannel("", "", "", {"tvg-logo": "b"})
+        )
+        expected.add_channel(
+            IPTVChannel("", "", "", {"group-title": "c"})
+        )
+        self.assertFalse(playlist.__eq__(expected))
+        fixed_playlist = M3UPlaylistDoctor.sanitize_all_attributes(playlist)
+        self.assertTrue(fixed_playlist.__eq__(expected))
 
 
 if __name__ == '__main__':

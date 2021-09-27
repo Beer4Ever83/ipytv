@@ -76,17 +76,21 @@ class M3UPlaylistDoctor:
         """
         This makes sure that all logo URLs in the playlist are encoded correctly.
         """
+        new_playlist: M3UPlaylist = M3UPlaylist()
         index: int
         channel: IPTVChannel
         for index, channel in enumerate(playlist.list):
-            playlist.list[index] = IPTVChannelDoctor.urlencode_logo(channel)
+            new_playlist.add_channel(IPTVChannelDoctor.urlencode_logo(channel))
+        return new_playlist
 
     @staticmethod
     def sanitize_all_attributes(playlist: M3UPlaylist):
         """
         This makes sure that all well-known attributes in the playlist are spelled correctly.
         """
+        new_playlist: M3UPlaylist = M3UPlaylist()
         index: int
         channel: IPTVChannel
-        for index, channel in playlist.list:
-            playlist.list[index] = IPTVChannelDoctor.sanitize_attributes(channel)
+        for index, channel in enumerate(playlist.list):
+            new_playlist.add_channel(IPTVChannelDoctor.sanitize_attributes(channel))
+        return new_playlist
