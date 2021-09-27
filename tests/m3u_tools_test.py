@@ -79,13 +79,13 @@ class TestSanitizeAllAttributes(unittest.TestCase):
 
         expected = M3UPlaylist()
         expected.add_channel(
-            IPTVChannel("", "", "", {"tvg-id": "a"})
+            IPTVChannel("", "", "", {IPTVAttr.TVG_ID.value: "a"})
         )
         expected.add_channel(
-            IPTVChannel("", "", "", {"tvg-logo": "b"})
+            IPTVChannel("", "", "", {IPTVAttr.TVG_LOGO.value: "b"})
         )
         expected.add_channel(
-            IPTVChannel("", "", "", {"group-title": "c"})
+            IPTVChannel("", "", "", {IPTVAttr.GROUP_TITLE.value: "c"})
         )
         self.assertFalse(playlist.__eq__(expected))
         fixed_playlist = M3UPlaylistDoctor.sanitize_all_attributes(playlist)
