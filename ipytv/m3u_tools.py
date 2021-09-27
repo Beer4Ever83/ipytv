@@ -24,7 +24,8 @@ class M3UDoctor:
         for index in range(lines):
             current_row: str = m3u_rows[index]
             previous_row: str = m3u_rows[index-1]
-            if index > 0 and re.match(r"^\s*\"", current_row) and previous_row.startswith("#EXTINF:"):
+            if index > 0 and re.match(r"^\s*\"", current_row) and \
+                    previous_row.startswith("#EXTINF:"):
                 fixed_m3u_rows.pop()
                 fixed_m3u_rows.append(previous_row.rstrip() + current_row.lstrip())
             else:
@@ -77,9 +78,8 @@ class M3UPlaylistDoctor:
         This makes sure that all logo URLs in the playlist are encoded correctly.
         """
         new_playlist: M3UPlaylist = M3UPlaylist()
-        index: int
         channel: IPTVChannel
-        for index, channel in enumerate(playlist.list):
+        for channel in playlist.list:
             new_playlist.add_channel(IPTVChannelDoctor.urlencode_logo(channel))
         return new_playlist
 
@@ -89,8 +89,7 @@ class M3UPlaylistDoctor:
         This makes sure that all well-known attributes in the playlist are spelled correctly.
         """
         new_playlist: M3UPlaylist = M3UPlaylist()
-        index: int
         channel: IPTVChannel
-        for index, channel in enumerate(playlist.list):
+        for channel in playlist.list:
             new_playlist.add_channel(IPTVChannelDoctor.sanitize_attributes(channel))
         return new_playlist
