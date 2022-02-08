@@ -17,7 +17,7 @@ function cleanup() {
     done
 }
 
-function test_package() {
+function installation_test() {
     # shellcheck disable=SC2155
     local TEMP_DIR=$(mktemp -dt)
     [[ -z "$TEMP_DIR" ]] && abort "Failure while creating a temporary directory (${TEMP_DIR})"
@@ -53,8 +53,8 @@ pushd "${REPO_DIR}" >/dev/null || abort
 cleanup
 build_pkgdata
 python3 -m build --no-isolation --sdist || abort "Failure while building the package"
-twine check dist/* || abort "twine reported an error"
-test_package
+twine check "${DIST_DIR}/*" || abort "twine reported an error"
+installation_test
 popd >/dev/null || abort
 
 exit "$TRUE"
