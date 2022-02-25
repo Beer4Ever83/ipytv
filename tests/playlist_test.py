@@ -62,7 +62,7 @@ class TestChunkArray3(unittest.TestCase):
 
 class TestLoadaM3UPlusHuge(unittest.TestCase):
     def runTest(self):
-        with open("tests/resources/iptv-org.m3u") as file:
+        with open("tests/resources/iptv-org.m3u", encoding="utf-8") as file:
             buffer = file.readlines()
             # Let's copy the same content over and over again
             for _ in range(5):
@@ -105,7 +105,7 @@ class TestLoaduM3UPlus(unittest.TestCase):
 class TestLoaduM3U8(unittest.TestCase):
     def runTest(self):
         url = "http://myown.link:80/luke/playlist.m3u"
-        with open("tests/resources/m3u8.m3u") as content:
+        with open("tests/resources/m3u8.m3u", encoding="utf-8") as content:
             body = "".join(content.readlines())
         with httpretty.enabled():
             httpretty.register_uri(
