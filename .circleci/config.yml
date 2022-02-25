@@ -4,7 +4,7 @@ orbs:
   python: circleci/python@1.2
 
 workflows:
-  untagged-build:
+  build:
     jobs:
       - test-lint:
           filters:
@@ -21,7 +21,7 @@ workflows:
           filters:
             tags:
               ignore: /.*/
-  tagged-build:
+  release:
     jobs:
       - deploy:
           filters:
@@ -34,6 +34,7 @@ jobs:
   test-lint:
     docker:
       - image: cimg/python:3.8
+    resource_class: medium+
     steps:
       - checkout
       - python/install-packages:
@@ -50,7 +51,8 @@ jobs:
           command: scripts/lint.sh
   test-lint-docker:
     machine:
-      image: ubuntu-2004:202104-01
+      image: ubuntu-2004:202111-02
+    resource_class: medium
     steps:
       - checkout
       - run:
@@ -65,6 +67,7 @@ jobs:
   deploy-test:
     docker:
       - image: cimg/python:3.8
+    resource_class: small
     steps:
       - checkout
       - python/install-packages:
@@ -76,6 +79,7 @@ jobs:
   deploy:
     docker:
       - image: cimg/python:3.8
+    resource_class: small
     steps:
       - checkout
       - python/install-packages:
