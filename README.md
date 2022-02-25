@@ -29,7 +29,7 @@ pip install m3u-ipytv
 ```
 To install it within a virtual environment, run:
 ```shell
-python3 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 pip install m3u-ipytv
 ```
