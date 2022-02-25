@@ -21,7 +21,7 @@ function installation_test() {
     # shellcheck disable=SC2155
     local TEMP_DIR=$(mktemp -dt)
     [[ -z "$TEMP_DIR" ]] && abort "Failure while creating a temporary directory (${TEMP_DIR})"
-    python3 -m venv "${TEMP_DIR}/.testvenv" || abort "Failure while creating virtual environment (.testvenv)"
+    python -m venv "${TEMP_DIR}/.testvenv" || abort "Failure while creating virtual environment (.testvenv)"
     source "${TEMP_DIR}/.testvenv/bin/activate" || abort "Failure while activating the test virtual environment"
     pip3 install --upgrade pip || abort "Failure while upgrading pip"
     pip3 install -r requirements-deploy.txt || abort "Failure while installing deploy requirements"
@@ -52,7 +52,7 @@ fi
 pushd "${REPO_DIR}" >/dev/null || abort
 cleanup
 build_pkgdata
-python3 -m build --no-isolation --sdist || abort "Failure while building the package"
+python -m build --no-isolation --sdist || abort "Failure while building the package"
 twine check "${DIST_DIR}/*" || abort "twine reported an error"
 installation_test
 popd >/dev/null || abort

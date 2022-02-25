@@ -18,7 +18,7 @@ function create_venv() {
         source "${PWD}/${VIRTUALENV_DIR}/bin/activate" || abort "Failure while activating the virtual environment"
         echo "done"
     else
-        python3 -m venv "${VIRTUALENV_DIR}" || abort "Failure while creating the virtual environment"
+        python -m venv "${VIRTUALENV_DIR}" || abort "Failure while creating the virtual environment"
         echo "virtual env successfully created."
     fi
     echo "Please activate this virtual env by running the following command in your shell:"

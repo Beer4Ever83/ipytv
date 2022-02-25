@@ -2,9 +2,10 @@ version: 2.1
 
 orbs:
   python: circleci/python@1.2
+  win: circleci/windows@2.2.0
 
 workflows:
-  untagged-build:
+  build:
     jobs:
       - test-lint:
           filters:
@@ -14,14 +15,19 @@ workflows:
           filters:
             tags:
               ignore: /.*/
+      - test-windows:
+          filters:
+            tags:
+              ignore: /.*/
       - deploy-test:
           requires:
             - test-lint
             - test-lint-docker
+            - test-windows
           filters:
             tags:
               ignore: /.*/
-  tagged-build:
+  release:
     jobs:
       - deploy:
           filters:
@@ -34,6 +40,7 @@ jobs:
   test-lint:
     docker:
       - image: cimg/python:3.8
+    resource_class: medium+
     steps:
       - checkout
       - python/install-packages:
@@ -50,7 +57,8 @@ jobs:
           command: scripts/lint.sh
   test-lint-docker:
     machine:
-      image: ubuntu-2004:202104-01
+      image: ubuntu-2004:202111-02
+    resource_class: medium
     steps:
       - checkout
       - run:
@@ -62,9 +70,26 @@ jobs:
       - run:
           name: Lint
           command: scripts/lint_docker.sh
+  test-windows:
+    executor:
+      name: win/default
+      shell: bash.exe
+      size: medium
+    steps:
+      - checkout
+      - run:
+          name: Install requirements
+          command: "pip install --user -r requirements.txt"
+      - run:
+          name: Install requirements for test
+          command: "pip install --user -r requirements-test.txt"
+      - run:
+          name: Test
+          command: scripts/test.sh
   deploy-test:
     docker:
       - image: cimg/python:3.8
+    resource_class: small
     steps:
       - checkout
       - python/install-packages:
@@ -76,6 +101,7 @@ jobs:
   deploy:
     docker:
       - image: cimg/python:3.8
+    resource_class: small
     steps:
       - checkout
       - python/install-packages:
