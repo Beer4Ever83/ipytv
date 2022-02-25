@@ -15,7 +15,7 @@ workflows:
           filters:
             tags:
               ignore: /.*/
-      - test-lint-windows:
+      - test-windows:
           filters:
             tags:
               ignore: /.*/
@@ -23,7 +23,7 @@ workflows:
           requires:
             - test-lint
             - test-lint-docker
-            - test-lint-windows
+            - test-windows
           filters:
             tags:
               ignore: /.*/
