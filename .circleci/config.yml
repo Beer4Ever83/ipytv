@@ -70,7 +70,7 @@ jobs:
       - run:
           name: Lint
           command: scripts/lint_docker.sh
-  test-lint-windows:
+  test-windows:
     executor:
       name: win/default
       shell: bash.exe
@@ -86,9 +86,6 @@ jobs:
       - run:
           name: Test
           command: scripts/test.sh
-      - run:
-          name: Lint
-          command: scripts/lint.sh
   deploy-test:
     docker:
       - image: cimg/python:3.8
