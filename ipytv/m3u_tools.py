@@ -1,9 +1,8 @@
-#!/usr/bin/env python
 import re
 import urllib.parse
 from typing import List
 
-from ipytv import M3UPlaylist
+from ipytv.playlist import M3UPlaylist
 from ipytv.channel import IPTVChannel, IPTVAttr
 
 

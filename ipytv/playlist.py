@@ -52,7 +52,7 @@ class M3UPlaylist:
             "end": length
         }
         chunk_list.append(entry)
-        log.debug(f"chunk_list: {chunk_list}")
+        log.debug("chunk_list: %s", chunk_list)
         return chunk_list
 
     @staticmethod
@@ -60,32 +60,32 @@ class M3UPlaylist:
         p_list = M3UPlaylist()
         if end == -1:
             end = len(array)
-        log.debug(f"populating playlist with rows from {begin} to {end}")
+        log.debug("populating playlist with rows from %s to %s", begin, end)
         entry = []
         previous_row = array[begin]
         if IPTVChannel.is_extinf_string(previous_row):
             entry.append(array[begin])
-            log.debug(f"it seems that the previous chunk ended with an EXTINF row")
+            log.debug("it seems that the previous chunk ended with an EXTINF row")
         for index in range(begin+1, end):
             row = array[index].strip()
-            log.debug(f"parsing row: {row}")
+            log.debug("parsing row: %s", row)
             if IPTVChannel.is_extinf_string(row):
                 if IPTVChannel.is_extinf_string(previous_row):
                     # we are in the case of two adjacent #EXTINF rows; so we add a url-less entry.
                     # This shouldn't be theoretically allowed, but I've seen it happening in some
                     # IPTV playlists where isolated #EXTINF rows are used as group separators.
-                    log.warning(f"adjacent #EXTINF rows detected")
+                    log.warning("adjacent #EXTINF rows detected")
                     p_list.add_entry(entry)
-                    log.debug(f"adding entry to the playlist: {entry}")
+                    log.debug("adding entry to the playlist: %s", entry)
                     entry = []
                 entry.append(row)
             elif IPTVChannel.is_comment_or_tag(row):
                 # case of a row with a non-supported tag or a comment; so we do nothing
-                log.warning(f"commented row or unsupported tag found: {row}")
+                log.warning("commented row or unsupported tag found: %s", row)
             else:
                 # case of a plain url row (regardless if preceded by an #EXTINF row or not)
                 entry.append(row)
-                log.debug(f"adding entry to the playlist: {entry}")
+                log.debug("adding entry to the playlist: %s", entry)
                 p_list.add_entry(entry)
                 entry = []
             previous_row = row
@@ -94,14 +94,14 @@ class M3UPlaylist:
     @staticmethod
     def loada(array: List) -> 'M3UPlaylist':
         if not isinstance(array, list):
-            log.error(f"expected {type([])}, got {type(array)}")
+            log.error("expected %s, got %s", type([]), type(array))
             raise WrongTypeException("Wrong type: array (List) expected")
         first_row = array[0].strip()
         if not IPTVChannel.is_m3u_header(first_row):
-            log.error(f"the playlist's first row should be \"#EXTM3U\", but it's \"{first_row}\"")
+            log.error("the playlist's first row should be \"#EXTM3U\", but it's \"%s\"", first_row)
             raise MalformedPlaylistException("Missing or misplaced #EXTM3U row")
         cores = mp.cpu_count()
-        log.info(f"{cores} cores detected")
+        log.info("%s cores detected", cores)
         chunks = M3UPlaylist.chunk_array(array, cores)
         results = []
         out_pl = M3UPlaylist()
@@ -110,7 +110,7 @@ class M3UPlaylist:
             for chunk in chunks:
                 begin = chunk["begin"]
                 end = chunk["end"]
-                log.info(f"assigning a \"populate\" task (begin: {begin}, end: {end}) to a process in the pool")
+                log.info("assigning a \"populate\" task (begin: %s, end: %s) to a process in the pool", begin, end)
                 result = pool.apply_async(M3UPlaylist.populate, (array, begin, end))
                 results.append(result)
             pool.close()
@@ -124,13 +124,13 @@ class M3UPlaylist:
     def loads(string: str) -> 'M3UPlaylist':
         if isinstance(string, str):
             return M3UPlaylist.loada(string.split("\n"))
-        log.error(f"expected {type('')}, got {type(string)}")
+        log.error("expected %s, got %s", type(''), type(string))
         raise WrongTypeException("Wrong type: string expected")
 
     @staticmethod
     def loadf(filename: str) -> 'M3UPlaylist':
         if not isinstance(filename, str):
-            log.error(f"expected {type('')}, got {type(filename)}")
+            log.error("expected %s, got %s", type(''), type(filename))
             raise WrongTypeException("Wrong type: string expected")
         with open(filename, encoding='utf-8') as file:
             buffer = file.readlines()
@@ -139,7 +139,7 @@ class M3UPlaylist:
     @staticmethod
     def loadu(url: str) -> 'M3UPlaylist':
         if not isinstance(url, str):
-            log.error(f"expected {type('')}, got {type(url)}")
+            log.error("expected %s, got %s", type(''), type(url))
             raise WrongTypeException("Wrong type: string expected")
         try:
             response = requests.get(url, timeout=10)
@@ -163,7 +163,7 @@ class M3UPlaylist:
 
     def add_channel(self, channel: IPTVChannel) -> None:
         self.list.append(channel)
-        log.debug(f"channel added: {channel}")
+        log.debug("channel added: %s", channel)
 
     def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value,
                            include_no_group: bool = True) -> Dict:

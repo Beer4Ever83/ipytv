@@ -87,24 +87,24 @@ class IPTVChannel(M3UEntry):
 
     @staticmethod
     def is_comment_or_tag(string: str) -> bool:
-        string.startswith('#')
+        return string.startswith('#')
 
     def parse_extinf_string(self, extinf_string: str) -> None:
         match = re.match(IPTVChannel.__M3U_PLUS_EXTINF_PARSE_REGEX, extinf_string)
         if match is None:
-            log.error(f"malformed #EXTINF row: {extinf_string}")
+            log.error("malformed #EXTINF row: %s", extinf_string)
             raise MalformedExtinfException(f"Malformed EXTINF string:\n{extinf_string}")
         self.duration = match.group("duration_g")
-        log.info(f"duration: {self.duration}")
+        log.info("duration: %s", self.duration)
         attributes = match.group("attributes_g")
         for entry in shlex.split(attributes):
             pair = entry.split("=")
             key = pair[0]
             value = pair[1]
             self.attributes[key] = value
-        log.info(f"attributes: {self.attributes}")
+        log.info("attributes: %s", self.attributes)
         self.name = match.group("name_g")
-        log.info(f"name: {self.name}")
+        log.info("name: %s", self.name)
 
     @staticmethod
     def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
@@ -115,7 +115,7 @@ class IPTVChannel(M3UEntry):
                 log.info("#EXTINFO row found")
             elif IPTVChannel.is_comment_or_tag(row):
                 # a comment or a non-supported tag
-                log.warning(f"commented row or unsupported tag found: {row}")
+                log.warning("commented row or unsupported tag found in \"%s\"", row)
             else:
                 channel.url = row
                 log.info("URL row found")
