@@ -13,10 +13,10 @@ while **IPTV Playlist** refers to playlists in M3U Plus format.
 M3U Plus stems from the [`extended M3U8`](https://en.wikipedia.org/wiki/M3U#Extended_M3U)
 format, of which it supports only 2 tags (`#EXTM3U` and `#EXTINF`).
  
-The syntax of the `#EXTM3U` and `#EXTINF` tag has been modified to include extra
-attributes (e.g., logo, group, language). Unfortunately this has broken the
-backward compatibility with the original M3U8 standard (as explained in detail
-[here](#format-considerations)).
+The syntax of the `#EXTM3U` and `#EXTINF` tags has been modified to include
+extra attributes (e.g., logo, group, language). Unfortunately this has broken
+the backward compatibility with the original M3U8 standard (as explained in
+detail [here](#format-considerations)).
 
 This library has been created from scratch to parse and handle the M3U Plus
 format only. It does not fully support regular M3U8 playlists.
@@ -145,10 +145,10 @@ pl = ipytv.M3UPlaylist.loadu("https://iptv-org.github.io/iptv/categories/classic
 ```
 
 ## Format considerations
-The extensions to the `#EXTINF` tag introduced by the M3U Plus format have
-broken the compatibility with the M3U8 format.
+The extensions to the `#EXTM3U` and `#EXTINF` tags introduced by the M3U Plus
+format have broken the compatibility with the M3U8 format.
 
-This is what a standard `#EXTINF` row looks like:
+This is what a standard `#EXTINF` row should look like:
 ```text
 #EXTINF:-1,Rai 1
 ```
