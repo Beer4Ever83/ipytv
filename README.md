@@ -59,10 +59,26 @@ print(len(pl.list))
 
 ### Other loading methods
 M3U Playlists can be loaded as a string as well as an array with the following
-methods respectively:
+methods
+
+String:
+```python
+import ipytv
+string = """#EXTM3U
+#EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1
+http://myown.link:80/luke/210274/78482"""
+pl = ipytv.playlist.M3UPlaylist.loads(string)
 ```
-pl1 = ipytv.playlist.M3UPlaylist.loads(string)
-pl2 = ipytv.playlist.M3UPlaylist.loada(array)
+
+Array (i.e. a List):
+```python
+import ipytv
+array = [
+    '#EXTM3U',
+     '#EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1',
+     'http://myown.link:80/luke/210274/78482'
+]
+pl = ipytv.playlist.M3UPlaylist.loada(array)
 ```
 
 ### Access the channels in the playlist
