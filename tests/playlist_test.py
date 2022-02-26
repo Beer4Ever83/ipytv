@@ -1,3 +1,4 @@
+import logging
 import unittest
 
 import httpretty
@@ -6,6 +7,8 @@ from deepdiff import DeepDiff
 
 from ipytv import IPTVAttr, IPTVChannel, M3UPlaylist
 from tests import test_data
+
+logging.basicConfig()
 
 
 class TestChunkArray0(unittest.TestCase):
@@ -62,13 +65,19 @@ class TestChunkArray3(unittest.TestCase):
 
 class TestLoadaM3UPlusHuge(unittest.TestCase):
     def runTest(self):
-        with open("tests/resources/iptv-org.m3u", encoding="utf-8") as file:
+        filename = "tests/resources/m3u_plus.m3u"
+        # factor is the amount of copies of the content of the file we want to parse
+        factor = 100000
+        # there are 4 channels in the file
+        expected_length = 4 * factor
+        with open(filename, encoding="utf-8") as file:
             buffer = file.readlines()
+            new_buffer = [buffer[0]]
             # Let's copy the same content over and over again
-            for _ in range(5):
-                buffer += buffer[1:]
-        pl = M3UPlaylist.loada(buffer)
-        self.assertEqual(147264, len(pl.list), "The size of the playlist is not the expected one")
+            for _ in range(factor):
+                new_buffer += buffer[1:]
+        pl2 = M3UPlaylist.loada(new_buffer)
+        self.assertEqual(expected_length, len(pl2.list), "The size of the playlist is not the expected one")
 
 
 class TestLoadfM3UPlus(unittest.TestCase):

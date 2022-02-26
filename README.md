@@ -130,6 +130,17 @@ print(channel.attributes[IPTVAttr.GROUP_TITLE.value])
 The `IPTVAttr` enum class contains tags that are commonly found in IPTV
 Playlists.
 
+## Logging
+IPyTV supports python's standard [logging system](https://docs.python.org/3/library/logging.html).
+
+To enable IPyTV's logging, add a logging configuration to your application:
+```python
+import logging
+import ipytv
+logging.basicConfig(level=logging.DEBUG)
+pl = ipytv.M3UPlaylist.loadu("https://iptv-org.github.io/iptv/categories/classic.m3u")
+```
+
 ## Format considerations
 The extensions to the `#EXTINF` tag introduced by the M3U Plus format have
 broken the compatibility with the M3U8 format.
