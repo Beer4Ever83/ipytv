@@ -23,11 +23,11 @@ function installation_test() {
     [[ -z "$TEMP_DIR" ]] && abort "Failure while creating a temporary directory (${TEMP_DIR})"
     python -m venv "${TEMP_DIR}/.testvenv" || abort "Failure while creating virtual environment (.testvenv)"
     source "${TEMP_DIR}/.testvenv/bin/activate" || abort "Failure while activating the test virtual environment"
-    pip3 install --upgrade pip || abort "Failure while upgrading pip"
-    pip3 install -r requirements-deploy.txt || abort "Failure while installing deploy requirements"
-    pip3 install "${DIST_DIR}/${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz" || abort "Failure while installing the package"
+    pip install --upgrade pip || abort "Failure while upgrading pip"
+    pip install -r requirements-deploy.txt || abort "Failure while installing deploy requirements"
+    pip install "${DIST_DIR}/${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz" || abort "Failure while installing the package"
     # shellcheck disable=SC2155
-    local SHOW_OUTPUT=$(pip3 show "${PACKAGE_NAME}")
+    local SHOW_OUTPUT=$(pip show "${PACKAGE_NAME}")
     echo "$SHOW_OUTPUT" | grep -q "Version: ${PACKAGE_VERSION}" || abort "Package is not installed"
     deactivate
     rm -rf "${TEMP_DIR}"
