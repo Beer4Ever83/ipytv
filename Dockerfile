@@ -3,9 +3,9 @@ FROM python:3.9-slim
 RUN mkdir -p /app
 
 COPY requirements*.txt /app/
-RUN pip3 install --upgrade pip && \
-    pip3 install -r /app/requirements.txt && \
-    pip3 install -r /app/requirements-test.txt
+RUN pip install --upgrade pip && \
+    pip install -r /app/requirements.txt && \
+    pip install -r /app/requirements-test.txt
 COPY ./ipytv /app/ipytv
 COPY ./tests /app/tests
 COPY ./scripts /app/scripts

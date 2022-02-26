@@ -22,7 +22,12 @@ This library has been created from scratch to parse and handle the M3U Plus
 format only. It does not fully support regular M3U8 playlists.
 
 ## Installation
-This library requires python3 (and the related pip3 installer).
+This library requires Python 3 (and the related `pip` installer).
+
+**PLEASE NOTE**: the library makes use of the multiprocessing.Pool class which 
+requires some care when working with the
+[IDLE](https://docs.python.org/3/library/idle.html) environment.
+
 To install the library system-wide, run:
 ```shell
 pip install m3u-ipytv
@@ -54,10 +59,26 @@ print(len(pl.list))
 
 ### Other loading methods
 M3U Playlists can be loaded as a string as well as an array with the following
-methods respectively:
+methods
+
+String:
+```python
+import ipytv
+string = """#EXTM3U
+#EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1
+http://myown.link:80/luke/210274/78482"""
+pl = ipytv.playlist.M3UPlaylist.loads(string)
 ```
-ipytv.playlist.M3UPlaylist.loads(string)
-ipytv.playlist.M3UPlaylist.loada(array)
+
+Array (i.e. a List):
+```python
+import ipytv
+array = [
+    '#EXTM3U',
+     '#EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1',
+     'http://myown.link:80/luke/210274/78482'
+]
+pl = ipytv.playlist.M3UPlaylist.loada(array)
 ```
 
 ### Access the channels in the playlist

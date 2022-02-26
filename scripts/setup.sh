@@ -30,7 +30,7 @@ function create_venv() {
 
 function upgrade_pip() {
     echo "upgrading pip..."
-    pip3 install --upgrade pip >/dev/null || abort "Failure while upgrading pip"
+    pip install --upgrade pip >/dev/null || abort "Failure while upgrading pip"
     echo "done"
 }
 
@@ -41,7 +41,7 @@ function install_requirements() {
     requirement_files=$(find . -name 'requirements*.txt' -maxdepth 1)
     for reqs in $requirement_files; do
         echo "installing python dependencies from ${reqs}..."
-        pip3 install -r "${reqs}" >/dev/null || abort "Failure while installing dependencies from ${reqs}"
+        pip install -r "${reqs}" >/dev/null || abort "Failure while installing dependencies from ${reqs}"
         echo "done"
     done
 }
