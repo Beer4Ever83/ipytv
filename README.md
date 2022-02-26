@@ -13,9 +13,9 @@ while **IPTV Playlist** refers to playlists in M3U Plus format.
 M3U Plus stems from the [`extended M3U8`](https://en.wikipedia.org/wiki/M3U#Extended_M3U)
 format, of which it supports only 2 tags (`#EXTM3U` and `#EXTINF`).
  
-The syntax of the `#EXTINF` tag has been extended for adding extra attributes
-(e.g., logo, group, language). Unfortunately this has broken the backward
-compatibility with the original M3U8 standard (as explained in detail
+The syntax of the `#EXTM3U` and `#EXTINF` tag has been modified to include extra
+attributes (e.g., logo, group, language). Unfortunately this has broken the
+backward compatibility with the original M3U8 standard (as explained in detail
 [here](#format-considerations)).
 
 This library has been created from scratch to parse and handle the M3U Plus
@@ -24,8 +24,8 @@ format only. It does not fully support regular M3U8 playlists.
 ## Installation
 This library requires Python 3 (and the related `pip` installer).
 
-**PLEASE NOTE**: the library makes use of the multiprocessing.Pool class which 
-requires some care when working with the
+**PLEASE NOTE**: the library makes use of the `multiprocessing.Pool` class 
+that requires some care when working with the
 [IDLE](https://docs.python.org/3/library/idle.html) environment.
 
 To install the library system-wide, run:
@@ -81,6 +81,18 @@ array = [
 pl = ipytv.playlist.M3UPlaylist.loada(array)
 ```
 
+### Access the global properties of a playlist
+Attributes that are specified in the `#EXTM3U` row are considered to be valid
+playlist-wide.
+These can be accessed via the `attributes` dictionary of a playlist:
+```python
+import ipytv
+url = "https://iptv-org.github.io/iptv/categories/kids.m3u"
+pl = ipytv.playlist.M3UPlaylist.loadu(url)
+for a in pl.attributes:
+    print(f'"{a}": "{pl.attributes[a]}"')
+```
+
 ### Access the channels in the playlist
 Once loaded, the channels in a playlist can be accessed by using the
 `list` property:
@@ -89,7 +101,7 @@ import ipytv
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = ipytv.playlist.M3UPlaylist.loadu(url)
 for channel in pl.list:
-    print("channel \"{}\": {}".format(channel.name, channel.url))
+    print(f'channel \"{channel.name}\": {channel.url}')
 ```
 
 ### Access the properties of a channel
@@ -97,17 +109,8 @@ The `list` property of an M3UPlaylist object contains a list of `IPTVChannel`
 objects.
 
 An `IPTVChannel` object has 3 basic properties (`url`, `name` and
-`duration`) and an optional `attributes` field.
+`duration`) and an optional `attributes` dictionary.
 
-The `attributes` property is a dictionary in the format:
-```
-{
-    "attribute_1_name": "attribute_1_value",
-    "attribute_2_name": "attribute_2_value",
-    ...
-    "attribute_N_name": "attribute_N_value"
-}
-```
 For example:
 
 ```python

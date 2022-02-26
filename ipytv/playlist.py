@@ -21,6 +21,7 @@ class M3UPlaylist:
 
     def __init__(self):
         self.list = None
+        self.attributes = None
         self.reset()
 
     @staticmethod
@@ -98,19 +99,27 @@ class M3UPlaylist:
             raise WrongTypeException("Wrong type: array (List) expected")
         first_row = array[0].strip()
         if not IPTVChannel.is_m3u_header(first_row):
-            log.error("the playlist's first row should be \"#EXTM3U\", but it's \"%s\"", first_row)
+            log.error(
+                "the playlist's first row should start with \"#EXTM3U\", but it's \"%s\"",
+                first_row
+            )
             raise MalformedPlaylistException("Missing or misplaced #EXTM3U row")
+        out_pl = M3UPlaylist()
+        out_pl.parse_header(first_row)
         cores = mp.cpu_count()
         log.info("%s cores detected", cores)
         chunks = M3UPlaylist.chunk_array(array, cores)
         results = []
-        out_pl = M3UPlaylist()
         log.info("spawning a pool of processes (one per core) to parse the playlist")
         with mp.Pool(processes=cores) as pool:
             for chunk in chunks:
                 begin = chunk["begin"]
                 end = chunk["end"]
-                log.info("assigning a \"populate\" task (begin: %s, end: %s) to a process in the pool", begin, end)
+                log.info(
+                    "assigning a \"populate\" task (begin: %s, end: %s) to a process in the pool",
+                    begin,
+                    end
+                )
                 result = pool.apply_async(M3UPlaylist.populate, (array, begin, end))
                 results.append(result)
             pool.close()
@@ -153,8 +162,24 @@ class M3UPlaylist:
                 f"Failure while opening {url}.\nError: {exception}"
             ) from exception
 
+    def parse_header(self, header: str) -> None:
+        attrs = header.replace('#EXTM3U ', '')
+        for attr in attrs.split():
+            entry = attr.split("=")
+            if len(entry) == 2:
+                name = entry[0].replace('"', '')
+                value = entry[1].replace('"', '')
+                self.attributes[name] = value
+
+    def build_header(self)-> str:
+        out = "#EXTM3U"
+        for attr in self.attributes:
+            out += f' {attr}="{self.attributes[attr]}"'
+        return out
+
     def reset(self) -> None:
         self.list = []
+        self.attributes = {}
         log.debug("playlist reset")
 
     def add_entry(self, entry: List):

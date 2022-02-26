@@ -39,6 +39,8 @@ class IPTVAttr(Enum):
     TVG_SHIFT = "tvg-shift"
     TVG_REC = "tvg-rec"
     ASPECT_RATIO = "aspect-ratio"
+    TVG_CHNO = "tvg-chno"
+    RADIO = "radio"
 
 
 class IPTVChannel(M3UEntry):
@@ -71,7 +73,7 @@ class IPTVChannel(M3UEntry):
 
     @staticmethod
     def is_m3u_header(row: str) -> bool:
-        return row == "#EXTM3U"
+        return row.startswith("#EXTM3U")
 
     @staticmethod
     def is_m3u_extinf_string(extinf_string: str) -> bool:
