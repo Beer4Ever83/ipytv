@@ -1,9 +1,13 @@
+import logging
 import re
 import shlex
 from enum import Enum
 from typing import Dict, List
 
 from ipytv.exceptions import MalformedExtinfException
+
+log = logging.getLogger(__name__)
+log.addHandler(logging.NullHandler())
 
 
 class M3UEntry:
@@ -66,6 +70,10 @@ class IPTVChannel(M3UEntry):
         )
 
     @staticmethod
+    def is_m3u_header(row: str) -> bool:
+        return row == "#EXTM3U"
+
+    @staticmethod
     def is_m3u_extinf_string(extinf_string: str) -> bool:
         return re.search(IPTVChannel.__M3U_EXTINF_REGEX, extinf_string) is not None
 
@@ -73,30 +81,44 @@ class IPTVChannel(M3UEntry):
     def is_m3u_plus_extinf_string(extinf_string: str) -> bool:
         return re.search(IPTVChannel.__M3U_PLUS_EXTINF_REGEX, extinf_string) is not None
 
+    @staticmethod
+    def is_extinf_string(extinf_string: str) -> bool:
+        return extinf_string.startswith("#EXTINF")
+
+    @staticmethod
+    def is_comment_or_tag(string: str) -> bool:
+        string.startswith('#')
+
     def parse_extinf_string(self, extinf_string: str) -> None:
         match = re.match(IPTVChannel.__M3U_PLUS_EXTINF_PARSE_REGEX, extinf_string)
         if match is None:
+            log.error(f"malformed #EXTINF row: {extinf_string}")
             raise MalformedExtinfException(f"Malformed EXTINF string:\n{extinf_string}")
         self.duration = match.group("duration_g")
+        log.info(f"duration: {self.duration}")
         attributes = match.group("attributes_g")
         for entry in shlex.split(attributes):
             pair = entry.split("=")
             key = pair[0]
             value = pair[1]
             self.attributes[key] = value
+        log.info(f"attributes: {self.attributes}")
         self.name = match.group("name_g")
+        log.info(f"name: {self.name}")
 
     @staticmethod
-    def from_playlist_entry(entry: List) -> 'IPTVChannel':
+    def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
         channel = IPTVChannel()
         for row in entry:
-            if str(row).startswith('#EXTINF:'):
+            if IPTVChannel.is_extinf_string(row):
                 channel.parse_extinf_string(row)
-            elif str(row).startswith('#'):
+                log.info("#EXTINFO row found")
+            elif IPTVChannel.is_comment_or_tag(row):
                 # a comment or a non-supported tag
-                pass
+                log.warning(f"commented row or unsupported tag found: {row}")
             else:
                 channel.url = row
+                log.info("URL row found")
         return channel
 
     def __str__(self) -> str:
