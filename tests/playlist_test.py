@@ -266,5 +266,22 @@ class TestGroupByUrlWithNoGroupEnabled(unittest.TestCase):
         self.assertTrue(len(diff) == 0)
 
 
+class TestParseHeader(unittest.TestCase):
+    def runTest(self):
+        header = '#EXTM3U x-tvg-url="https://elcinema.com.epg.xml" tvg-shift="1"'
+        pl = M3UPlaylist()
+        pl.parse_header(header)
+        self.assertEqual(pl.attributes['x-tvg-url'], 'https://elcinema.com.epg.xml')
+        self.assertEqual(pl.attributes['tvg-shift'], '1')
+
+
+class TestBuildHeader(unittest.TestCase):
+    def runTest(self):
+        expected_header = '#EXTM3U x-tvg-url="https://elcinema.com.epg.xml" tvg-shift="1"'
+        pl = M3UPlaylist()
+        pl.parse_header(expected_header)
+        self.assertEqual(expected_header, pl.build_header())
+
+
 if __name__ == '__main__':
     unittest.main()
