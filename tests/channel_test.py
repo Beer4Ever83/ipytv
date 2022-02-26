@@ -1,6 +1,9 @@
+import logging
 import unittest
 
 from ipytv import IPTVAttr, IPTVChannel, MalformedExtinfException
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 class TestIsM3UPlusExtinfString(unittest.TestCase):
