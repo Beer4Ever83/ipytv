@@ -8,7 +8,7 @@ from deepdiff import DeepDiff
 from ipytv import IPTVAttr, IPTVChannel, M3UPlaylist
 from tests import test_data
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig()
 
 
 class TestChunkArray0(unittest.TestCase):
