@@ -1,33 +1,32 @@
-import logging
 import unittest
 
-from ipytv import IPTVAttr, IPTVChannel, MalformedExtinfException
-
-logging.basicConfig()
+from ipytv.channel import IPTVAttr, IPTVChannel
+from ipytv.exceptions import MalformedExtinfException
+from ipytv import m3u_tools
 
 
 class TestIsM3UPlusExtinfString(unittest.TestCase):
     def runTest(self):
         extinf_string = '''#EXTINF:-1 tvg-id="" tvg-name="Io, Leonardo (2019)" tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/6DfpPu4iGrBswsyLdJlCwiLCudw.jpg" group-title="Recenti e Oggi al Cinema",Io, Leonardo (2019)'''
-        self.assertTrue(IPTVChannel.is_m3u_plus_extinf_string(extinf_string))
+        self.assertTrue(m3u_tools.is_m3u_plus_extinf_row(extinf_string))
 
 
 class TestIsNotM3UPlusExtinfString(unittest.TestCase):
     def runTest(self):
         extinf_string = '''#EXTINF:-1,SANTUÁRIO DE FÁTIMA'''
-        self.assertFalse(IPTVChannel.is_m3u_plus_extinf_string(extinf_string))
+        self.assertFalse(m3u_tools.is_m3u_plus_extinf_row(extinf_string))
 
 
 class TestIsM3UExtinfString(unittest.TestCase):
     def runTest(self):
         extinf_string = '''#EXTINF:-1,SANTUÁRIO DE FÁTIMA'''
-        self.assertTrue(IPTVChannel.is_m3u_extinf_string(extinf_string))
+        self.assertTrue(m3u_tools.is_m3u_extinf_row(extinf_string))
 
 
 class TestIsNotM3UExtinfString(unittest.TestCase):
     def runTest(self):
         extinf_string = '''#EXTINF:-1 tvg-id="" tvg-name="Io, Leonardo (2019)" tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/6DfpPu4iGrBswsyLdJlCwiLCudw.jpg" group-title="Recenti e Oggi al Cinema",Io, Leonardo (2019)'''
-        self.assertFalse(IPTVChannel.is_m3u_extinf_string(extinf_string))
+        self.assertFalse(m3u_tools.is_m3u_extinf_row(extinf_string))
 
 
 class TestParseM3UPlusExtinfString(unittest.TestCase):

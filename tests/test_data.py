@@ -1,4 +1,5 @@
-from ipytv import IPTVChannel, IPTVAttr, M3UPlaylist
+from ipytv.channel import IPTVChannel, IPTVAttr
+from ipytv.playlist import M3UPlaylist
 
 m3u_plus_channel_0 = IPTVChannel(
     url="http://myown.link:80/luke/210274/78482",

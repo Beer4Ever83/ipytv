@@ -12,7 +12,6 @@ from ipytv.exceptions import \
     URLException, \
     WrongTypeException
 
-from ipytv.m3u_tools import \
-    M3UDoctor, \
-    IPTVChannelDoctor, \
-    M3UPlaylistDoctor
+from ipytv.doctor import M3UDoctor, IPTVChannelDoctor, M3UPlaylistDoctor
+
+from ipytv import m3u_tools
