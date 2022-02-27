@@ -6,6 +6,7 @@ from typing import List, Dict
 import requests
 from requests import RequestException
 
+from ipytv import m3u_tools
 from ipytv.channel import IPTVChannel, IPTVAttr
 from ipytv.exceptions import MalformedPlaylistException, URLException, WrongTypeException
 
@@ -64,14 +65,14 @@ class M3UPlaylist:
         log.debug("populating playlist with rows from %s to %s", begin, end)
         entry = []
         previous_row = array[begin]
-        if IPTVChannel.is_extinf_string(previous_row):
+        if m3u_tools.is_extinf_row(previous_row):
             entry.append(array[begin])
             log.debug("it seems that the previous chunk ended with an EXTINF row")
         for index in range(begin+1, end):
             row = array[index].strip()
             log.debug("parsing row: %s", row)
-            if IPTVChannel.is_extinf_string(row):
-                if IPTVChannel.is_extinf_string(previous_row):
+            if m3u_tools.is_extinf_row(row):
+                if m3u_tools.is_extinf_row(previous_row):
                     # we are in the case of two adjacent #EXTINF rows; so we add a url-less entry.
                     # This shouldn't be theoretically allowed, but I've seen it happening in some
                     # IPTV playlists where isolated #EXTINF rows are used as group separators.
@@ -80,7 +81,7 @@ class M3UPlaylist:
                     log.debug("adding entry to the playlist: %s", entry)
                     entry = []
                 entry.append(row)
-            elif IPTVChannel.is_comment_or_tag(row):
+            elif m3u_tools.is_comment_or_tag_row(row):
                 # case of a row with a non-supported tag or a comment; so we do nothing
                 log.warning("commented row or unsupported tag found: %s", row)
             else:
@@ -98,7 +99,7 @@ class M3UPlaylist:
             log.error("expected %s, got %s", type([]), type(array))
             raise WrongTypeException("Wrong type: array (List) expected")
         first_row = array[0].strip()
-        if not IPTVChannel.is_m3u_header(first_row):
+        if not m3u_tools.is_m3u_header_row(first_row):
             log.error(
                 "the playlist's first row should start with \"#EXTM3U\", but it's \"%s\"",
                 first_row

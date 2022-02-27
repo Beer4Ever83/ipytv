@@ -1,9 +1,9 @@
 import logging
-import re
 import shlex
 from enum import Enum
 from typing import Dict, List
 
+from ipytv import m3u_tools
 from ipytv.exceptions import MalformedExtinfException
 
 log = logging.getLogger(__name__)
@@ -44,11 +44,6 @@ class IPTVAttr(Enum):
 
 
 class IPTVChannel(M3UEntry):
-    __M3U_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+,.*$'
-    __M3U_PLUS_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
-    __M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)'\
-                                    r'(?P<attributes_g>(\s+[\w-]+="[^"]*")*),'\
-                                    r'(?P<name_g>.*)'
 
     def __init__(self, url: str = "", name: str = "",
                  duration: str = "-1", attributes: Dict = None):
@@ -71,28 +66,8 @@ class IPTVChannel(M3UEntry):
             attributes=self.attributes.copy()
         )
 
-    @staticmethod
-    def is_m3u_header(row: str) -> bool:
-        return row.startswith("#EXTM3U")
-
-    @staticmethod
-    def is_m3u_extinf_string(extinf_string: str) -> bool:
-        return re.search(IPTVChannel.__M3U_EXTINF_REGEX, extinf_string) is not None
-
-    @staticmethod
-    def is_m3u_plus_extinf_string(extinf_string: str) -> bool:
-        return re.search(IPTVChannel.__M3U_PLUS_EXTINF_REGEX, extinf_string) is not None
-
-    @staticmethod
-    def is_extinf_string(extinf_string: str) -> bool:
-        return extinf_string.startswith("#EXTINF")
-
-    @staticmethod
-    def is_comment_or_tag(string: str) -> bool:
-        return string.startswith('#')
-
     def parse_extinf_string(self, extinf_string: str) -> None:
-        match = re.match(IPTVChannel.__M3U_PLUS_EXTINF_PARSE_REGEX, extinf_string)
+        match = m3u_tools.match_m3u_plus_extinf_row(extinf_string)
         if match is None:
             log.error("malformed #EXTINF row: %s", extinf_string)
             raise MalformedExtinfException(f"Malformed EXTINF string:\n{extinf_string}")
@@ -112,10 +87,10 @@ class IPTVChannel(M3UEntry):
     def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
         channel = IPTVChannel()
         for row in entry:
-            if IPTVChannel.is_extinf_string(row):
+            if m3u_tools.is_extinf_row(row):
                 channel.parse_extinf_string(row)
                 log.info("#EXTINFO row found")
-            elif IPTVChannel.is_comment_or_tag(row):
+            elif m3u_tools.is_comment_or_tag_row(row):
                 # a comment or a non-supported tag
                 log.warning("commented row or unsupported tag found in \"%s\"", row)
             else:

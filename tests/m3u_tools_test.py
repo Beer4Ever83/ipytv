@@ -1,9 +1,8 @@
 import unittest
 
 import tests.test_data
-from ipytv import M3UPlaylist
+from ipytv import M3UPlaylist, M3UDoctor, IPTVChannelDoctor, M3UPlaylistDoctor
 from ipytv.channel import IPTVChannel, IPTVAttr
-from ipytv.m3u_tools import IPTVChannelDoctor, M3UPlaylistDoctor, M3UDoctor
 
 
 class TestFixSplitQuotedString(unittest.TestCase):
