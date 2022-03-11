@@ -304,5 +304,57 @@ class TestIterator(unittest.TestCase):
         self.assertEqual(i+1, test_data.expected_m3u_plus.length())
 
 
+class TestChannelMethods(unittest.TestCase):
+    def runTest(self):
+        pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+
+        # Test for update_channel()
+        self.assertEqual(pl1, pl2)
+        updated_index = 3
+        new_channel = IPTVChannel(
+            url="http://127.0.0.1",
+            name="new channel",
+            duration="-1"
+        )
+        pl2.update_channel(updated_index, new_channel)
+        self.assertNotEqual(pl1, pl2)
+        for i, ch in enumerate(pl1):
+            if i == updated_index:
+                self.assertNotEqual(ch, pl2.get_channel(i))
+            else:
+                self.assertEqual(ch, pl2.get_channel(i))
+
+        # Test for remove_channel()
+        expected_length = test_data.expected_m3u_plus.length()
+        removed_index = 0
+        self.assertEqual(expected_length, pl1.length())
+        channel = pl1.remove_channel(removed_index)
+        self.assertEqual(test_data.expected_m3u_plus.get_channel(removed_index), channel)
+        self.assertEqual(expected_length-1, pl1.length())
+
+
+class TestAttributeMethods(unittest.TestCase):
+    def runTest(self):
+        pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+
+        # Test for update_attribute()
+        self.assertEqual(pl1, pl2)
+        updated_attribute = "x-tvg-url"
+        new_value = "new-value"
+        pl2.update_attribute(updated_attribute, new_value)
+        self.assertNotEqual(pl1, pl2)
+        self.assertNotEqual(pl1.get_attribute(updated_attribute), pl2.get_attribute(updated_attribute))
+
+        # Test for remove_attribute()
+        expected_length = len(test_data.expected_m3u_plus.get_attributes())
+        self.assertEqual(expected_length, len(pl1.get_attributes()))
+        removed_attribute = "x-tvg-url"
+        attribute = pl1.remove_attribute(removed_attribute)
+        self.assertEqual(test_data.expected_m3u_plus.get_attribute(removed_attribute), attribute)
+        self.assertEqual(expected_length - 1, len(pl1.get_attributes()))
+
+
 if __name__ == '__main__':
     unittest.main()
