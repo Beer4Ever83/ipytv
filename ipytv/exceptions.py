@@ -24,3 +24,7 @@ class IndexOutOfBoundsException(M3YouException):
 
 class AttributeAlreadyPresentException(M3YouException):
     pass
+
+
+class AttributeNotFoundException(M3YouException):
+    pass

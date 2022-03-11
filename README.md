@@ -85,8 +85,8 @@ pl = ipytv.playlist.M3UPlaylist.loada(array)
 Attributes that are specified in the `#EXTM3U` row are considered to apply to
 the entire playlist.
 
-These attributed can be accessed via the `get_attributes()` method that returns
-a dictionary:
+These attributes, in the form of a dictionary, can be accessed via the
+`get_attributes()` method:
 ```python
 import ipytv
 url = "https://iptv-org.github.io/iptv/categories/kids.m3u"
@@ -124,13 +124,14 @@ for channel in pl:
 
 #### Low level
 In all cases where the previous two access methods are not sufficient, the inner
-channel list can be accessed via the `get_list()` method:
+channel list can be accessed via the `get_channels()` method:
 
 ```python
 from ipytv.playlist import M3UPlaylist
+
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = M3UPlaylist.loadu(url)
-chan_list = pl.get_list()
+chan_list = pl.get_channels()
 ten_channels = chan_list[:10] 
 ```
 

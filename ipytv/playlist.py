@@ -8,8 +8,9 @@ from requests import RequestException
 
 from ipytv import m3u_tools
 from ipytv.channel import IPTVChannel, IPTVAttr
-from ipytv.exceptions import MalformedPlaylistException, URLException, WrongTypeException, IndexOutOfBoundsException, \
-    AttributeAlreadyPresentException
+from ipytv.exceptions import MalformedPlaylistException, URLException, \
+    WrongTypeException, IndexOutOfBoundsException, \
+    AttributeAlreadyPresentException, AttributeNotFoundException
 from ipytv.m3u_tools import M3U_HEADER_TAG
 
 log = logging.getLogger(__name__)
@@ -33,8 +34,14 @@ class M3UPlaylist:
     def get_attributes(self) -> Dict:
         return self._attributes
 
-    def get_list(self) -> Dict:
+    def get_channels(self) -> List[IPTVChannel]:
         return self._list
+
+    def get_attribute(self, name: str) -> str:
+        if name not in self._attributes:
+            log.error("the attribute %s is not present", name)
+            raise AttributeNotFoundException(f"the attribute {name} is not present")
+        return self._attributes[name]
 
     def get_channel(self, index: int) -> IPTVChannel:
         length = self.length()
@@ -46,6 +53,79 @@ class M3UPlaylist:
             )
             raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
         return self._list[index]
+
+    def add_attribute(self, name: str, value: str) -> None:
+        if name not in self._attributes:
+            self._attributes[str(name)] = str(value)
+            log.info("attribute added: %s: %s", name, value)
+        else:
+            log.error(
+                "the attribute %s is already present with value %s",
+                name,
+                self._attributes[name]
+            )
+            raise AttributeAlreadyPresentException(
+                f"the attribute {name} is already present with value {self._attributes[name]}"
+            )
+
+    def add_channel(self, channel: IPTVChannel) -> None:
+        self._list.append(channel)
+        log.info("channel added: %s", channel)
+
+    def add_channels(self, chan_list: List[IPTVChannel]) -> None:
+        self._list += chan_list
+
+    def update_attribute(self, name: str, value: str) -> None:
+        if name not in self._attributes:
+            log.error(
+                "the attribute %s is not present",
+                name
+            )
+            raise AttributeAlreadyPresentException(
+                f"the attribute {name} is not present"
+            )
+        self._attributes[name] = value
+        log.info("attribute %s updated to value %s", name, value)
+
+    def update_channel(self, index: int, channel: IPTVChannel) -> None:
+        length = self.length()
+        if index < 0 or index >= length:
+            log.error(
+                "the index %s is out of the (0, %s) range)",
+                str(index),
+                str(length)
+            )
+            raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
+        self._list[index] = channel
+        log.info("index %s has been updated with channel %s", str(index), channel)
+
+    def remove_attribute(self, name: str) -> str:
+        if name not in self._attributes:
+            log.error(
+                "the attribute %s is not present",
+                name
+            )
+            raise AttributeAlreadyPresentException(
+                f"the attribute {name} is not present"
+            )
+        attribute = self._attributes[name]
+        del self._attributes[name]
+        log.info("attribute %s deleted", name)
+        return attribute
+
+    def remove_channel(self, index: int) -> IPTVChannel:
+        length = self.length()
+        if index < 0 or index >= length:
+            log.error(
+                "the index %s is out of the (0, %s) range)",
+                str(index),
+                str(length)
+            )
+            raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
+        channel = self._list[index]
+        del self._list[index]
+        log.info("the channel with index %s has been deleted", str(index))
+        return channel
 
     @staticmethod
     def chunk_array(array: List, chunk_count: int) -> List:
@@ -150,7 +230,7 @@ class M3UPlaylist:
             log.debug("pool destroyed")
             for result in results:
                 p_list = result.get()
-                out_pl.concatenate(p_list)
+                out_pl.add_channels(p_list.get_channels())
         return out_pl
 
     @staticmethod
@@ -197,8 +277,8 @@ class M3UPlaylist:
 
     def build_header(self) -> str:
         out = M3U_HEADER_TAG
-        for attr in self._attributes:
-            out += f' {attr}="{self._attributes[attr]}"'
+        for k, v in self._attributes.items():
+            out += f' {k}="{v}"'
         return out
 
     def reset(self) -> None:
@@ -210,25 +290,6 @@ class M3UPlaylist:
     def add_entry(self, entry: List):
         channel = IPTVChannel.from_playlist_entry(entry)
         self.add_channel(channel)
-
-    def add_channel(self, channel: IPTVChannel) -> None:
-        self._list.append(channel)
-        log.info("channel added: %s", channel)
-
-    def add_attribute(self, name: str, value: str) -> None:
-        # TODO: add check for both name and value being strings
-        if name not in self._attributes:
-            self._attributes[name] = value
-            log.info("attribute added: %s: %s", name, value)
-        else:
-            log.error(
-                "the attribute %s is already present with value %s",
-                name,
-                self._attributes[name]
-            )
-            raise AttributeAlreadyPresentException(
-                f"the attribute {name} is already present with value {self._attributes[name]}"
-            )
 
     def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value,
                            include_no_group: bool = True) -> Dict:
@@ -281,9 +342,6 @@ class M3UPlaylist:
             )
         return out
 
-    def concatenate(self, p_list: 'M3UPlaylist') -> None:
-        self._list += p_list._list
-
     def copy(self) -> 'M3UPlaylist':
         new_pl = M3UPlaylist()
         for channel in self._list:
@@ -323,6 +381,7 @@ class M3UPlaylist:
         try:
             next_chan = self.get_channel(self._iter_index)
         except IndexOutOfBoundsException:
+            # pylint: disable=W0707
             raise StopIteration
         self._iter_index += 1
         return next_chan
