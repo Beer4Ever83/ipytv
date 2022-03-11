@@ -24,18 +24,18 @@ class M3UPlaylist:
     __MIN_CHUNK_SIZE = 20
 
     def __init__(self):
-        self._list: List[IPTVChannel] = []
+        self._channels: List[IPTVChannel] = []
         self._attributes: Dict = {}
         self._iter_index: int = -1
 
     def length(self):
-        return len(self._list) if self._list is not None else 0
+        return len(self._channels) if self._channels is not None else 0
 
     def get_attributes(self) -> Dict:
         return self._attributes
 
     def get_channels(self) -> List[IPTVChannel]:
-        return self._list
+        return self._channels
 
     def get_attribute(self, name: str) -> str:
         if name not in self._attributes:
@@ -52,7 +52,7 @@ class M3UPlaylist:
                 str(length)
             )
             raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
-        return self._list[index]
+        return self._channels[index]
 
     def add_attribute(self, name: str, value: str) -> None:
         if name not in self._attributes:
@@ -69,11 +69,11 @@ class M3UPlaylist:
             )
 
     def add_channel(self, channel: IPTVChannel) -> None:
-        self._list.append(channel)
+        self._channels.append(channel)
         log.info("channel added: %s", channel)
 
     def add_channels(self, chan_list: List[IPTVChannel]) -> None:
-        self._list += chan_list
+        self._channels += chan_list
 
     def update_attribute(self, name: str, value: str) -> None:
         if name not in self._attributes:
@@ -96,7 +96,7 @@ class M3UPlaylist:
                 str(length)
             )
             raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
-        self._list[index] = channel
+        self._channels[index] = channel
         log.info("index %s has been updated with channel %s", str(index), channel)
 
     def remove_attribute(self, name: str) -> str:
@@ -122,8 +122,8 @@ class M3UPlaylist:
                 str(length)
             )
             raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
-        channel = self._list[index]
-        del self._list[index]
+        channel = self._channels[index]
+        del self._channels[index]
         log.info("the channel with index %s has been deleted", str(index))
         return channel
 
@@ -282,7 +282,7 @@ class M3UPlaylist:
         return out
 
     def reset(self) -> None:
-        self._list = []
+        self._channels = []
         self._attributes = {}
         self._iter_index = 0
         log.info("playlist reset")
@@ -294,7 +294,7 @@ class M3UPlaylist:
     def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value,
                            include_no_group: bool = True) -> Dict:
         groups: Dict[str, List] = {}
-        for i, chan in enumerate(self._list):
+        for i, chan in enumerate(self._channels):
             group = self.NO_GROUP_KEY
             if attribute in chan.attributes and len(chan.attributes[attribute]) > 0:
                 group = chan.attributes[attribute]
@@ -306,7 +306,7 @@ class M3UPlaylist:
 
     def group_by_url(self, include_no_group: bool = True) -> Dict:
         groups: Dict[str, List] = {}
-        for i, chan in enumerate(self._list):
+        for i, chan in enumerate(self._channels):
             group = self.NO_URL_KEY
             if len(chan.url) > 0:
                 group = chan.url
@@ -319,7 +319,7 @@ class M3UPlaylist:
     def to_m3u_plus_playlist(self) -> str:
         out = self.build_header()
         entry_pattern = '\n#EXTINF:{}{},{}\n{}'
-        for channel in self._list:
+        for channel in self._channels:
             attrs = ''
             for attr in channel.attributes:
                 attrs += f' {attr}="{channel.attributes[attr]}"'
@@ -334,7 +334,7 @@ class M3UPlaylist:
     def to_m3u8_playlist(self) -> str:
         out = f"{M3U_HEADER_TAG}"
         entry_pattern = "\n#EXTINF:{},{}\n{}"
-        for channel in self._list:
+        for channel in self._channels:
             out += entry_pattern.format(
                 channel.duration,
                 channel.name,
@@ -344,7 +344,7 @@ class M3UPlaylist:
 
     def copy(self) -> 'M3UPlaylist':
         new_pl = M3UPlaylist()
-        for channel in self._list:
+        for channel in self._channels:
             new_pl.add_channel(channel.copy())
         for k, v in self._attributes.items():
             new_pl.add_attribute(k, v)
@@ -368,7 +368,7 @@ class M3UPlaylist:
     def __str__(self) -> str:
         out = f"attributes: {self._attributes}\n" if len(self._attributes) > 0 else ''
         index = 0
-        for chan in self._list:
+        for chan in self._channels:
             out += f"{index}: {chan}\n"
             index += 1
         return out
