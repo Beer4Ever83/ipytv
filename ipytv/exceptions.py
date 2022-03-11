@@ -16,3 +16,11 @@ class URLException(M3YouException):
 
 class WrongTypeException(M3YouException):
     pass
+
+
+class IndexOutOfBoundsException(M3YouException):
+    pass
+
+
+class AttributeAlreadyPresentException(M3YouException):
+    pass

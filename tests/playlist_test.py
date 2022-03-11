@@ -1,3 +1,4 @@
+import os
 import unittest
 
 import httpretty
@@ -5,6 +6,7 @@ import m3u8
 from deepdiff import DeepDiff
 
 from ipytv import IPTVAttr, IPTVChannel, M3UPlaylist
+from ipytv.exceptions import IndexOutOfBoundsException
 from tests import test_data
 
 
@@ -74,7 +76,7 @@ class TestLoadaM3UPlusHuge(unittest.TestCase):
             for _ in range(factor):
                 new_buffer += buffer[1:]
         pl2 = M3UPlaylist.loada(new_buffer)
-        self.assertEqual(expected_length, len(pl2.list), "The size of the playlist is not the expected one")
+        self.assertEqual(expected_length, pl2.length(), "The size of the playlist is not the expected one")
 
 
 class TestLoadfM3UPlus(unittest.TestCase):
@@ -86,7 +88,7 @@ class TestLoadfM3UPlus(unittest.TestCase):
 class TestLoadfM3U8(unittest.TestCase):
     def runTest(self):
         pl = M3UPlaylist.loadf("tests/resources/m3u8.m3u")
-        self.assertTrue(pl == test_data.expected_m3u8, "The two playlists are not equal")
+        self.assertEqual(test_data.expected_m3u8, pl, "The two playlists are not equal")
 
 
 class TestLoaduM3UPlus(unittest.TestCase):
@@ -162,19 +164,23 @@ class TestToM3U8Playlist(unittest.TestCase):
         pl_string = pl.to_m3u8_playlist()
         pl_m3u8 = m3u8.loads(pl_string)
         pl_m3u8_string = pl_m3u8.dumps()
-        self.assertTrue(pl_string == pl_m3u8_string)
+        # The rstrip() method invocation is needed because the dumps() method of
+        # the m3u8 library adds a (redundant?) final newline character that this
+        # library doesn't add.
+        self.assertEqual(pl_string, pl_m3u8_string.rstrip())
 
 
 class TestClone(unittest.TestCase):
     def runTest(self):
         pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
-        newpl = pl.copy()
-        newpl.add_channel(
+        new_pl = pl.copy()
+        new_pl.add_channel(
             IPTVChannel(name="mynewchannel", url="mynewurl")
         )
-        self.assertTrue(len(pl.list)+1 == len(newpl.list))
-        newpl.list[0].name = "my " + newpl.list[0].name
-        self.assertTrue(pl.list[0].name != newpl.list[0].name)
+        self.assertEqual(pl.length()+1, new_pl.length())
+        current_name: str = new_pl.get_channel(0).name
+        new_pl.get_channel(0).name = "my " + current_name
+        self.assertTrue(pl.get_channel(0).name != new_pl.get_channel(0).name)
 
 
 class TestGroupByAttribute(unittest.TestCase):
@@ -268,8 +274,8 @@ class TestParseHeader(unittest.TestCase):
         header = '#EXTM3U x-tvg-url="https://elcinema.com.epg.xml" tvg-shift="1"'
         pl = M3UPlaylist()
         pl.parse_header(header)
-        self.assertEqual(pl.attributes['x-tvg-url'], 'https://elcinema.com.epg.xml')
-        self.assertEqual(pl.attributes['tvg-shift'], '1')
+        self.assertEqual(pl.get_attributes()['x-tvg-url'], 'https://elcinema.com.epg.xml')
+        self.assertEqual(pl.get_attributes()['tvg-shift'], '1')
 
 
 class TestBuildHeader(unittest.TestCase):
@@ -278,6 +284,24 @@ class TestBuildHeader(unittest.TestCase):
         pl = M3UPlaylist()
         pl.parse_header(expected_header)
         self.assertEqual(expected_header, pl.build_header())
+
+
+class TestGetChannel(unittest.TestCase):
+    def runTest(self):
+        pl = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        ch = pl.get_channel(2)
+        # Success case
+        self.assertEqual(ch, test_data.m3u_plus_channel_2)
+        # Failure case
+        self.assertRaises(IndexOutOfBoundsException, pl.get_channel, 4)
+
+
+class TestIterator(unittest.TestCase):
+    def runTest(self):
+        pl = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        for i, ch in enumerate(pl):
+            self.assertEqual(test_data.expected_m3u_plus.get_channel(i), ch)
+        self.assertEqual(i+1, test_data.expected_m3u_plus.length())
 
 
 if __name__ == '__main__':

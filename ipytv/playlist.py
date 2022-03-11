@@ -8,7 +8,9 @@ from requests import RequestException
 
 from ipytv import m3u_tools
 from ipytv.channel import IPTVChannel, IPTVAttr
-from ipytv.exceptions import MalformedPlaylistException, URLException, WrongTypeException
+from ipytv.exceptions import MalformedPlaylistException, URLException, WrongTypeException, IndexOutOfBoundsException, \
+    AttributeAlreadyPresentException
+from ipytv.m3u_tools import M3U_HEADER_TAG
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
@@ -21,9 +23,29 @@ class M3UPlaylist:
     __MIN_CHUNK_SIZE = 20
 
     def __init__(self):
-        self.list = None
-        self.attributes = None
-        self.reset()
+        self._list: List[IPTVChannel] = []
+        self._attributes: Dict = {}
+        self._iter_index: int = -1
+
+    def length(self):
+        return len(self._list) if self._list is not None else 0
+
+    def get_attributes(self) -> Dict:
+        return self._attributes
+
+    def get_list(self) -> Dict:
+        return self._list
+
+    def get_channel(self, index: int) -> IPTVChannel:
+        length = self.length()
+        if index < 0 or index >= length:
+            log.error(
+                "the index %s is out of the (0, %s) range)",
+                str(index),
+                str(length)
+            )
+            raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
+        return self._list[index]
 
     @staticmethod
     def chunk_array(array: List, chunk_count: int) -> List:
@@ -101,10 +123,11 @@ class M3UPlaylist:
         first_row = array[0].strip()
         if not m3u_tools.is_m3u_header_row(first_row):
             log.error(
-                "the playlist's first row should start with \"#EXTM3U\", but it's \"%s\"",
+                "the playlist's first row should start with \"%s\", but it's \"%s\"",
+                M3U_HEADER_TAG,
                 first_row
             )
-            raise MalformedPlaylistException("Missing or misplaced #EXTM3U row")
+            raise MalformedPlaylistException(f"Missing or misplaced {M3U_HEADER_TAG} row")
         out_pl = M3UPlaylist()
         out_pl.parse_header(first_row)
         cores = mp.cpu_count()
@@ -164,37 +187,53 @@ class M3UPlaylist:
             ) from exception
 
     def parse_header(self, header: str) -> None:
-        attrs = header.replace('#EXTM3U ', '')
+        attrs = header.replace(f'{M3U_HEADER_TAG} ', '')
         for attr in attrs.split():
             entry = attr.split("=")
             if len(entry) == 2:
                 name = entry[0].replace('"', '')
                 value = entry[1].replace('"', '')
-                self.attributes[name] = value
+                self._attributes[name] = value
 
-    def build_header(self)-> str:
-        out = "#EXTM3U"
-        for attr in self.attributes:
-            out += f' {attr}="{self.attributes[attr]}"'
+    def build_header(self) -> str:
+        out = M3U_HEADER_TAG
+        for attr in self._attributes:
+            out += f' {attr}="{self._attributes[attr]}"'
         return out
 
     def reset(self) -> None:
-        self.list = []
-        self.attributes = {}
-        log.debug("playlist reset")
+        self._list = []
+        self._attributes = {}
+        self._iter_index = 0
+        log.info("playlist reset")
 
     def add_entry(self, entry: List):
         channel = IPTVChannel.from_playlist_entry(entry)
         self.add_channel(channel)
 
     def add_channel(self, channel: IPTVChannel) -> None:
-        self.list.append(channel)
-        log.debug("channel added: %s", channel)
+        self._list.append(channel)
+        log.info("channel added: %s", channel)
+
+    def add_attribute(self, name: str, value: str) -> None:
+        # TODO: add check for both name and value being strings
+        if name not in self._attributes:
+            self._attributes[name] = value
+            log.info("attribute added: %s: %s", name, value)
+        else:
+            log.error(
+                "the attribute %s is already present with value %s",
+                name,
+                self._attributes[name]
+            )
+            raise AttributeAlreadyPresentException(
+                f"the attribute {name} is already present with value {self._attributes[name]}"
+            )
 
     def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value,
                            include_no_group: bool = True) -> Dict:
         groups: Dict[str, List] = {}
-        for i, chan in enumerate(self.list):
+        for i, chan in enumerate(self._list):
             group = self.NO_GROUP_KEY
             if attribute in chan.attributes and len(chan.attributes[attribute]) > 0:
                 group = chan.attributes[attribute]
@@ -206,7 +245,7 @@ class M3UPlaylist:
 
     def group_by_url(self, include_no_group: bool = True) -> Dict:
         groups: Dict[str, List] = {}
-        for i, chan in enumerate(self.list):
+        for i, chan in enumerate(self._list):
             group = self.NO_URL_KEY
             if len(chan.url) > 0:
                 group = chan.url
@@ -217,10 +256,9 @@ class M3UPlaylist:
         return groups
 
     def to_m3u_plus_playlist(self) -> str:
-        header = "#EXTM3U"
-        out = header
+        out = self.build_header()
         entry_pattern = '\n#EXTINF:{}{},{}\n{}'
-        for channel in self.list:
+        for channel in self._list:
             attrs = ''
             for attr in channel.attributes:
                 attrs += f' {attr}="{channel.attributes[attr]}"'
@@ -233,10 +271,9 @@ class M3UPlaylist:
         return out
 
     def to_m3u8_playlist(self) -> str:
-        header = "#EXTM3U\n"
-        out = header
-        entry_pattern = "#EXTINF:{},{}\n{}\n"
-        for channel in self.list:
+        out = f"{M3U_HEADER_TAG}"
+        entry_pattern = "\n#EXTINF:{},{}\n{}"
+        for channel in self._list:
             out += entry_pattern.format(
                 channel.duration,
                 channel.name,
@@ -245,31 +282,47 @@ class M3UPlaylist:
         return out
 
     def concatenate(self, p_list: 'M3UPlaylist') -> None:
-        self.list += p_list.list
+        self._list += p_list._list
 
     def copy(self) -> 'M3UPlaylist':
-        newpl = M3UPlaylist()
-        for channel in self.list:
-            newpl.add_channel(channel.copy())
-        return newpl
+        new_pl = M3UPlaylist()
+        for channel in self._list:
+            new_pl.add_channel(channel.copy())
+        for k, v in self._attributes.items():
+            new_pl.add_attribute(k, v)
+        return new_pl
 
     def __eq__(self, other: object) -> bool:
-        length = len(self.list)
+        length = self.length()
         if not isinstance(other, M3UPlaylist) or \
-                len(other.list) != length:
+                other.length() != length:
             return False
-        for i in range(length):
-            if not other.list[i].__eq__(self.list[i]):
+        if not other.get_attributes() == self.get_attributes():
+            return False
+        for i, ch in enumerate(self):
+            if not other.get_channel(i) == ch:
                 return False
         return True
 
     def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+        return not self == other
 
     def __str__(self) -> str:
-        out = ''
+        out = f"attributes: {self._attributes}\n" if len(self._attributes) > 0 else ''
         index = 0
-        for chan in self.list:
+        for chan in self._list:
             out += f"{index}: {chan}\n"
             index += 1
         return out
+
+    def __iter__(self) -> 'M3UPlaylist':
+        self._iter_index = 0
+        return self
+
+    def __next__(self) -> IPTVChannel:
+        try:
+            next_chan = self.get_channel(self._iter_index)
+        except IndexOutOfBoundsException:
+            raise StopIteration
+        self._iter_index += 1
+        return next_chan

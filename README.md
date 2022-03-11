@@ -46,7 +46,7 @@ pip install m3u-ipytv
 import ipytv
 file = "~/Documents/my_playlist.m3u"
 pl = ipytv.playlist.M3UPlaylist.loadf(file)
-print(len(pl.list))
+print(pl.length())
 ```
 
 ### Load an IPTV Playlist from a URL
@@ -54,7 +54,7 @@ print(len(pl.list))
 import ipytv
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = ipytv.playlist.M3UPlaylist.loadu(url)
-print(len(pl.list))
+print(pl.length())
 ```
 
 ### Other loading methods
@@ -82,27 +82,58 @@ pl = ipytv.playlist.M3UPlaylist.loada(array)
 ```
 
 ### Access the global properties of a playlist
-Attributes that are specified in the `#EXTM3U` row are considered to be valid
-playlist-wide.
-These can be accessed via the `attributes` dictionary of a playlist:
+Attributes that are specified in the `#EXTM3U` row are considered to apply to
+the entire playlist.
+
+These attributed can be accessed via the `get_attributes()` method that returns
+a dictionary:
 ```python
 import ipytv
 url = "https://iptv-org.github.io/iptv/categories/kids.m3u"
 pl = ipytv.playlist.M3UPlaylist.loadu(url)
-for a in pl.attributes:
-    print(f'"{a}": "{pl.attributes[a]}"')
+attributes = pl.get_attributes()
+for k, v in attributes.items():
+    print(f'"{k}": "{v}"')
 ```
 
 ### Access the channels in the playlist
-Once loaded, the channels in a playlist can be accessed by using the
-`list` property:
+
+#### Individually
+The channels in a playlist can be accessed individually by using the
+`get_channel(index)` method:
 ```python
 import ipytv
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = ipytv.playlist.M3UPlaylist.loadu(url)
-for channel in pl.list:
+# Let's retrieve the first channel in the list
+channel = pl.get_channel(0)
+print(f'channel \"{channel.name}\": {channel.url}')
+# The next line will throw IndexOutOfBoundsException
+channel = pl.get_channel(-1)
+```
+
+#### Iteratively
+You can also iterate over the channels in an `M3UPlaylist` object:
+```python
+import ipytv
+url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
+pl = ipytv.playlist.M3UPlaylist.loadu(url)
+for channel in pl:
     print(f'channel \"{channel.name}\": {channel.url}')
 ```
+
+#### Low level
+In all cases where the previous two access methods are not sufficient, the inner
+channel list can be accessed via the `get_list()` method:
+
+```python
+from ipytv.playlist import M3UPlaylist
+url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
+pl = M3UPlaylist.loadu(url)
+chan_list = pl.get_list()
+ten_channels = chan_list[:10] 
+```
+
 
 ### Access the properties of a channel
 The `list` property of an M3UPlaylist object contains a list of `IPTVChannel`
@@ -115,7 +146,6 @@ For example:
 
 ```python
 from ipytv.channel import IPTVAttr, IPTVChannel
-
 channel = IPTVChannel(
     url="http://myown.link:80/luke/210274/78482",
     name="Rai 1",

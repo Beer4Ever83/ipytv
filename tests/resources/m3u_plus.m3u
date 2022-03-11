@@ -1,4 +1,4 @@
-#EXTM3U
+#EXTM3U x-tvg-url="http://myown.link:80/luke/220311/22311"
 #EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" tvg-logo="https://static.epg.best/it/RaiUno.it.png" group-title="RAI",Rai 1
 http://myown.link:80/luke/210274/78482
 #EXTINF:-1 tvg-id="" tvg-name="Cielo" tvg-logo="" group-title="Italia",Cielo
