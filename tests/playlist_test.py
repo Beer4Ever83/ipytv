@@ -1,12 +1,12 @@
-import os
 import unittest
 
 import httpretty
 import m3u8
 from deepdiff import DeepDiff
 
-from ipytv import IPTVAttr, IPTVChannel, M3UPlaylist
+from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.exceptions import IndexOutOfBoundsException, AttributeAlreadyPresentException, AttributeNotFoundException
+from ipytv.playlist import M3UPlaylist
 from tests import test_data
 
 
