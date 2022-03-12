@@ -68,12 +68,22 @@ class M3UPlaylist:
                 f"the attribute {name} is already present with value {self._attributes[name]}"
             )
 
-    def add_channel(self, channel: IPTVChannel) -> None:
+    def insert_channel(self, index: int, channel: IPTVChannel) -> None:
+        self._channels.insert(index, channel)
+        log.info("channel %s inserted in position %s", channel, index)
+
+    def insert_channels(self, index: int, chan_list: List[IPTVChannel]) -> None:
+        for i in range(len(chan_list), 0, -1):
+            self.insert_channel(index, chan_list[i])
+        log.info("%s channels inserted to the playlist in position %s", len(chan_list), index)
+
+    def append_channel(self, channel: IPTVChannel) -> None:
         self._channels.append(channel)
         log.info("channel added: %s", channel)
 
-    def add_channels(self, chan_list: List[IPTVChannel]) -> None:
+    def append_channels(self, chan_list: List[IPTVChannel]) -> None:
         self._channels += chan_list
+        log.info("%s channels appended to the playlist", len(chan_list))
 
     def update_attribute(self, name: str, value: str) -> None:
         if name not in self._attributes:
@@ -179,7 +189,7 @@ class M3UPlaylist:
                     # This shouldn't be theoretically allowed, but I've seen it happening in some
                     # IPTV playlists where isolated #EXTINF rows are used as group separators.
                     log.warning("adjacent #EXTINF rows detected")
-                    p_list.add_entry(entry)
+                    p_list.append_entry(entry)
                     log.debug("adding entry to the playlist: %s", entry)
                     entry = []
                 entry.append(row)
@@ -190,7 +200,7 @@ class M3UPlaylist:
                 # case of a plain url row (regardless if preceded by an #EXTINF row or not)
                 entry.append(row)
                 log.debug("adding entry to the playlist: %s", entry)
-                p_list.add_entry(entry)
+                p_list.append_entry(entry)
                 entry = []
             previous_row = row
         return p_list
@@ -230,7 +240,7 @@ class M3UPlaylist:
             log.debug("pool destroyed")
             for result in results:
                 p_list = result.get()
-                out_pl.add_channels(p_list.get_channels())
+                out_pl.append_channels(p_list.get_channels())
         return out_pl
 
     @staticmethod
@@ -287,9 +297,9 @@ class M3UPlaylist:
         self._iter_index = 0
         log.info("playlist reset")
 
-    def add_entry(self, entry: List):
+    def append_entry(self, entry: List):
         channel = IPTVChannel.from_playlist_entry(entry)
-        self.add_channel(channel)
+        self.append_channel(channel)
 
     def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value,
                            include_no_group: bool = True) -> Dict:
@@ -345,7 +355,7 @@ class M3UPlaylist:
     def copy(self) -> 'M3UPlaylist':
         new_pl = M3UPlaylist()
         for channel in self._channels:
-            new_pl.add_channel(channel.copy())
+            new_pl.append_channel(channel.copy())
         for k, v in self._attributes.items():
             new_pl.add_attribute(k, v)
         return new_pl

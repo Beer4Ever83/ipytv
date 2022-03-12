@@ -47,10 +47,10 @@ m3u_plus_channel_3 = IPTVChannel(
 )
 expected_m3u_plus = M3UPlaylist()
 expected_m3u_plus.add_attribute("x-tvg-url", "http://myown.link:80/luke/220311/22311")
-expected_m3u_plus.add_channel(m3u_plus_channel_0)
-expected_m3u_plus.add_channel(m3u_plus_channel_1)
-expected_m3u_plus.add_channel(m3u_plus_channel_2)
-expected_m3u_plus.add_channel(m3u_plus_channel_3)
+expected_m3u_plus.append_channel(m3u_plus_channel_0)
+expected_m3u_plus.append_channel(m3u_plus_channel_1)
+expected_m3u_plus.append_channel(m3u_plus_channel_2)
+expected_m3u_plus.append_channel(m3u_plus_channel_3)
 
 expected_m3u_plus_group_by_group_title = {
     "RAI": [0],
@@ -88,7 +88,7 @@ expected_m3u8_list = [
 ]
 expected_m3u8 = M3UPlaylist()
 for channel in expected_m3u8_list:
-    expected_m3u8.add_channel(channel)
+    expected_m3u8.append_channel(channel)
 
 split_quoted_string = """#EXTM3U x-tvg-url="http://myown.link:80/luke/220311/22311"
 #EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1
@@ -131,4 +131,4 @@ expected_urlencoded_list = [
 ]
 expected_urlencoded = M3UPlaylist()
 for channel in expected_urlencoded_list:
-    expected_urlencoded.add_channel(channel)
+    expected_urlencoded.append_channel(channel)

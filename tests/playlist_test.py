@@ -174,7 +174,7 @@ class TestClone(unittest.TestCase):
     def runTest(self):
         pl = M3UPlaylist.loadf("tests/resources/m3u_plus.m3u")
         new_pl = pl.copy()
-        new_pl.add_channel(
+        new_pl.append_channel(
             IPTVChannel(name="mynewchannel", url="mynewurl")
         )
         self.assertEqual(pl.length()+1, new_pl.length())
@@ -206,8 +206,8 @@ class TestGroupByAttributeWithNoGroupEnabled(unittest.TestCase):
                 IPTVAttr.TVG_ID.value: "someid"
             }
         )
-        pl.add_channel(empty_group_channel)
-        pl.add_channel(no_group_channel)
+        pl.append_channel(empty_group_channel)
+        pl.append_channel(no_group_channel)
         groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value)
         expected_groups = test_data.expected_m3u_plus_group_by_group_title.copy()
         expected_groups[M3UPlaylist.NO_GROUP_KEY] = [4, 5]
@@ -230,8 +230,8 @@ class TestGroupByAttributeWithNoGroupDisabled(unittest.TestCase):
                 IPTVAttr.TVG_ID.value: "someid"
             }
         )
-        pl.add_channel(empty_group_channel)
-        pl.add_channel(no_group_channel)
+        pl.append_channel(empty_group_channel)
+        pl.append_channel(no_group_channel)
         groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value, include_no_group=False)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_group_title, ignore_order=True)
         self.assertTrue(len(diff) == 0)
@@ -260,8 +260,8 @@ class TestGroupByUrlWithNoGroupEnabled(unittest.TestCase):
                 IPTVAttr.GROUP_TITLE.value: "second"
             }
         )
-        pl.add_channel(first_empty_url_channel)
-        pl.add_channel(second_empty_url_channel)
+        pl.append_channel(first_empty_url_channel)
+        pl.append_channel(second_empty_url_channel)
         groups = pl.group_by_url(include_no_group=True)
         expected_groups = test_data.expected_m3u_plus_group_by_url.copy()
         expected_groups[M3UPlaylist.NO_URL_KEY] = [4, 5]
@@ -304,12 +304,39 @@ class TestIterator(unittest.TestCase):
         self.assertEqual(i+1, test_data.expected_m3u_plus.length())
 
 
-class TestChannelMethods(unittest.TestCase):
+class TestAppendChannel(unittest.TestCase):
     def runTest(self):
         pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
+        self.assertEqual(pl1, pl2)
+        new_channel = IPTVChannel(
+            url="http://127.0.0.1",
+            name="new channel",
+            duration="-1"
+        )
+        pl2.append_channel(new_channel)
+        self.assertEqual(new_channel, pl2.get_channel(pl2.length()-1))
+        self.assertNotEqual(pl1, pl2)
+        self.assertEqual(pl1.length()+1, pl2.length())
 
-        # Test for update_channel()
+
+class TestAppendChannels(unittest.TestCase):
+    def runTest(self):
+        pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        self.assertEqual(pl1, pl2)
+        # Let's append the same channels twice
+        pl2.append_channels(pl1.get_channels())
+        self.assertNotEqual(pl1, pl2)
+        self.assertEqual(pl1.length()*2, pl2.length())
+        self.assertEqual(pl1.get_channels(), pl2.get_channels()[:pl1.length()])
+        self.assertEqual(pl1.get_channels(), pl2.get_channels()[pl1.length():])
+
+
+class TestUpdateChannel(unittest.TestCase):
+    def runTest(self):
+        pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
         self.assertEqual(pl1, pl2)
         updated_index = 3
         new_channel = IPTVChannel(
@@ -325,21 +352,22 @@ class TestChannelMethods(unittest.TestCase):
             else:
                 self.assertEqual(ch, pl2.get_channel(i))
 
-        # Test for remove_channel()
+
+class TestRemoveChannel(unittest.TestCase):
+    def runTest(self):
+        pl = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
         expected_length = test_data.expected_m3u_plus.length()
         removed_index = 0
-        self.assertEqual(expected_length, pl1.length())
-        channel = pl1.remove_channel(removed_index)
+        self.assertEqual(expected_length, pl.length())
+        channel = pl.remove_channel(removed_index)
         self.assertEqual(test_data.expected_m3u_plus.get_channel(removed_index), channel)
-        self.assertEqual(expected_length-1, pl1.length())
+        self.assertEqual(expected_length-1, pl.length())
 
 
-class TestAttributeMethods(unittest.TestCase):
+class TestUpdateAttribute(unittest.TestCase):
     def runTest(self):
         pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
-
-        # Test for update_attribute()
         self.assertEqual(pl1, pl2)
         updated_attribute = "x-tvg-url"
         new_value = "new-value"
@@ -347,13 +375,16 @@ class TestAttributeMethods(unittest.TestCase):
         self.assertNotEqual(pl1, pl2)
         self.assertNotEqual(pl1.get_attribute(updated_attribute), pl2.get_attribute(updated_attribute))
 
-        # Test for remove_attribute()
+
+class TestRemoveAttribute(unittest.TestCase):
+    def runTest(self):
+        pl = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
         expected_length = len(test_data.expected_m3u_plus.get_attributes())
-        self.assertEqual(expected_length, len(pl1.get_attributes()))
+        self.assertEqual(expected_length, len(pl.get_attributes()))
         removed_attribute = "x-tvg-url"
-        attribute = pl1.remove_attribute(removed_attribute)
+        attribute = pl.remove_attribute(removed_attribute)
         self.assertEqual(test_data.expected_m3u_plus.get_attribute(removed_attribute), attribute)
-        self.assertEqual(expected_length - 1, len(pl1.get_attributes()))
+        self.assertEqual(expected_length - 1, len(pl.get_attributes()))
 
 
 if __name__ == '__main__':

@@ -68,24 +68,24 @@ class TestURLEncodeAllLogos(unittest.TestCase):
 class TestSanitizeAllAttributes(unittest.TestCase):
     def runTest(self):
         playlist = M3UPlaylist()
-        playlist.add_channel(
+        playlist.append_channel(
             IPTVChannel(attributes={"tvg-ID": "a"})
         )
-        playlist.add_channel(
+        playlist.append_channel(
             IPTVChannel(attributes={"TVG-LOGO": "b"})
         )
-        playlist.add_channel(
+        playlist.append_channel(
             IPTVChannel(attributes={"GrOuP-TiTlE": "c,d,,e"})
         )
 
         expected = M3UPlaylist()
-        expected.add_channel(
+        expected.append_channel(
             IPTVChannel(attributes={IPTVAttr.TVG_ID.value: "a"})
         )
-        expected.add_channel(
+        expected.append_channel(
             IPTVChannel(attributes={IPTVAttr.TVG_LOGO.value: "b"})
         )
-        expected.add_channel(
+        expected.append_channel(
             IPTVChannel(attributes={IPTVAttr.GROUP_TITLE.value: "c_d__e"})
         )
         self.assertFalse(playlist.__eq__(expected))
