@@ -6,7 +6,7 @@ import m3u8
 from deepdiff import DeepDiff
 
 from ipytv import IPTVAttr, IPTVChannel, M3UPlaylist
-from ipytv.exceptions import IndexOutOfBoundsException
+from ipytv.exceptions import IndexOutOfBoundsException, AttributeAlreadyPresentException, AttributeNotFoundException
 from tests import test_data
 
 
@@ -286,6 +286,14 @@ class TestBuildHeader(unittest.TestCase):
         self.assertEqual(expected_header, pl.build_header())
 
 
+class TestIterator(unittest.TestCase):
+    def runTest(self):
+        pl = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        for i, ch in enumerate(pl):
+            self.assertEqual(test_data.expected_m3u_plus.get_channel(i), ch)
+        self.assertEqual(i+1, test_data.expected_m3u_plus.length())
+
+
 class TestGetChannel(unittest.TestCase):
     def runTest(self):
         pl = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
@@ -293,15 +301,7 @@ class TestGetChannel(unittest.TestCase):
         # Success case
         self.assertEqual(ch, test_data.m3u_plus_channel_2)
         # Failure case
-        self.assertRaises(IndexOutOfBoundsException, pl.get_channel, 4)
-
-
-class TestIterator(unittest.TestCase):
-    def runTest(self):
-        pl = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
-        for i, ch in enumerate(pl):
-            self.assertEqual(test_data.expected_m3u_plus.get_channel(i), ch)
-        self.assertEqual(i+1, test_data.expected_m3u_plus.length())
+        self.assertRaises(IndexOutOfBoundsException, pl.get_channel, pl.length())
 
 
 class TestAppendChannel(unittest.TestCase):
@@ -333,6 +333,42 @@ class TestAppendChannels(unittest.TestCase):
         self.assertEqual(pl1.get_channels(), pl2.get_channels()[pl1.length():])
 
 
+class TestInsertChannel(unittest.TestCase):
+    def runTest(self):
+        pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        self.assertEqual(pl1, pl2)
+        new_channel = IPTVChannel(
+            url="http://127.0.0.1",
+            name="new channel",
+            duration="-1"
+        )
+        inserted_index = 2
+        pl2.insert_channel(inserted_index, new_channel)
+        self.assertEqual(new_channel, pl2.get_channel(inserted_index))
+        self.assertNotEqual(pl1, pl2)
+        self.assertEqual(pl1.length()+1, pl2.length())
+        self.assertEqual(pl1.get_channels()[:inserted_index], pl2.get_channels()[:inserted_index])
+        self.assertEqual(pl1.get_channels()[inserted_index:], pl2.get_channels()[inserted_index+1:])
+        # Failure case
+        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, pl2.length(), new_channel)
+
+
+class TestInsertChannels(unittest.TestCase):
+    def runTest(self):
+        pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        self.assertEqual(pl1, pl2)
+        # Let's append the same channels twice
+        pl2.append_channels(pl1.get_channels())
+        self.assertNotEqual(pl1, pl2)
+        self.assertEqual(pl1.length()*2, pl2.length())
+        self.assertEqual(pl1.get_channels(), pl2.get_channels()[:pl1.length()])
+        self.assertEqual(pl1.get_channels(), pl2.get_channels()[pl1.length():])
+        # Failure case
+        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channels, pl2.length(), pl1.get_channels())
+
+
 class TestUpdateChannel(unittest.TestCase):
     def runTest(self):
         pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
@@ -351,6 +387,13 @@ class TestUpdateChannel(unittest.TestCase):
                 self.assertNotEqual(ch, pl2.get_channel(i))
             else:
                 self.assertEqual(ch, pl2.get_channel(i))
+        # Failure case
+        self.assertRaises(
+            IndexOutOfBoundsException,
+            pl2.update_channel,
+            pl2.length(),
+            new_channel
+        )
 
 
 class TestRemoveChannel(unittest.TestCase):
@@ -362,6 +405,62 @@ class TestRemoveChannel(unittest.TestCase):
         channel = pl.remove_channel(removed_index)
         self.assertEqual(test_data.expected_m3u_plus.get_channel(removed_index), channel)
         self.assertEqual(expected_length-1, pl.length())
+        # Failure case
+        self.assertRaises(IndexOutOfBoundsException, pl.remove_channel, pl.length())
+
+
+class TestGetAttribute(unittest.TestCase):
+    def runTest(self):
+        pl = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        name = "x-tvg-url"
+        value = pl.get_attribute(name)
+        self.assertEqual(test_data.expected_m3u_plus.get_attributes()[name], value)
+
+
+class TestAddAttribute(unittest.TestCase):
+    def runTest(self):
+        pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        name = 'test-attribute'
+        value = 'test-value'
+        pl2.add_attribute(name, value)
+        self.assertNotEqual(pl1, pl2)
+        self.assertEqual(pl2.get_attributes()[name], value)
+        self.assertEqual(
+            len(test_data.expected_m3u_plus.get_attributes()) + 1,
+            len(pl2.get_attributes())
+        )
+        # Failure case
+        self.assertRaises(
+            AttributeAlreadyPresentException,
+            pl2.add_attribute,
+            name,
+            value
+        )
+
+
+class TestAddAttributes(unittest.TestCase):
+    def runTest(self):
+        pl1 = M3UPlaylist().loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        new_attributes = {
+            "attribute_1": "value_1",
+            "attribute_2": "value_2"
+        }
+        pl2.add_attributes(new_attributes)
+        self.assertNotEqual(pl1, pl2)
+        self.assertEqual(pl2.get_attributes()["attribute_2"], "value_2")
+        self.assertEqual(
+            len(test_data.expected_m3u_plus.get_attributes()) + len(new_attributes),
+            len(pl2.get_attributes())
+        )
+        # Failure case
+        self.assertRaises(
+            AttributeAlreadyPresentException,
+            pl2.add_attribute,
+            "attribute_2",
+            "value_2"
+        )
 
 
 class TestUpdateAttribute(unittest.TestCase):
@@ -374,6 +473,13 @@ class TestUpdateAttribute(unittest.TestCase):
         pl2.update_attribute(updated_attribute, new_value)
         self.assertNotEqual(pl1, pl2)
         self.assertNotEqual(pl1.get_attribute(updated_attribute), pl2.get_attribute(updated_attribute))
+        # Failure case
+        self.assertRaises(
+            AttributeNotFoundException,
+            pl2.update_attribute,
+            "non-existing-attribute",
+            "value"
+        )
 
 
 class TestRemoveAttribute(unittest.TestCase):
@@ -385,6 +491,12 @@ class TestRemoveAttribute(unittest.TestCase):
         attribute = pl.remove_attribute(removed_attribute)
         self.assertEqual(test_data.expected_m3u_plus.get_attribute(removed_attribute), attribute)
         self.assertEqual(expected_length - 1, len(pl.get_attributes()))
+        # Failure case
+        self.assertRaises(
+            AttributeNotFoundException,
+            pl.remove_attribute,
+            "non-existing-attribute"
+        )
 
 
 if __name__ == '__main__':

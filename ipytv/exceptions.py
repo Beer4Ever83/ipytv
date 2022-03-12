@@ -1,30 +1,30 @@
-class M3YouException(Exception):
+class IPyTVException(Exception):
     pass
 
 
-class MalformedExtinfException(M3YouException):
+class MalformedExtinfException(IPyTVException):
     pass
 
 
-class MalformedPlaylistException(M3YouException):
+class MalformedPlaylistException(IPyTVException):
     pass
 
 
-class URLException(M3YouException):
+class URLException(IPyTVException):
     pass
 
 
-class WrongTypeException(M3YouException):
+class WrongTypeException(IPyTVException):
     pass
 
 
-class IndexOutOfBoundsException(M3YouException):
+class IndexOutOfBoundsException(IPyTVException):
     pass
 
 
-class AttributeAlreadyPresentException(M3YouException):
+class AttributeAlreadyPresentException(IPyTVException):
     pass
 
 
-class AttributeNotFoundException(M3YouException):
+class AttributeNotFoundException(IPyTVException):
     pass

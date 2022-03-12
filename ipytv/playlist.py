@@ -31,28 +31,17 @@ class M3UPlaylist:
     def length(self):
         return len(self._channels) if self._channels is not None else 0
 
-    def get_attributes(self) -> Dict:
-        return self._attributes
-
-    def get_channels(self) -> List[IPTVChannel]:
-        return self._channels
+    def _check_attribute(self, name: str) -> None:
+        if name not in self._attributes:
+            log.error("the attribute %s does not exist", name)
+            raise AttributeNotFoundException(f"the attribute {name} does not exist")
 
     def get_attribute(self, name: str) -> str:
-        if name not in self._attributes:
-            log.error("the attribute %s is not present", name)
-            raise AttributeNotFoundException(f"the attribute {name} is not present")
+        self._check_attribute(name)
         return self._attributes[name]
 
-    def get_channel(self, index: int) -> IPTVChannel:
-        length = self.length()
-        if index < 0 or index >= length:
-            log.error(
-                "the index %s is out of the (0, %s) range)",
-                str(index),
-                str(length)
-            )
-            raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
-        return self._channels[index]
+    def get_attributes(self) -> Dict:
+        return self._attributes
 
     def add_attribute(self, name: str, value: str) -> None:
         if name not in self._attributes:
@@ -68,11 +57,46 @@ class M3UPlaylist:
                 f"the attribute {name} is already present with value {self._attributes[name]}"
             )
 
+    def add_attributes(self, attributes: Dict[str, str]) -> None:
+        for k, v in attributes.items():
+            self.add_attribute(k, v)
+
+    def update_attribute(self, name: str, value: str) -> None:
+        self._check_attribute(name)
+        self._attributes[name] = value
+        log.info("attribute %s updated to value %s", name, value)
+
+    def remove_attribute(self, name: str) -> str:
+        self._check_attribute(name)
+        attribute = self._attributes[name]
+        del self._attributes[name]
+        log.info("attribute %s deleted", name)
+        return attribute
+
+    def _check_index(self, index: int) -> None:
+        length = self.length()
+        if index < 0 or index >= length:
+            log.error(
+                "the index %s is out of the (0, %s) range)",
+                str(index),
+                str(length)
+            )
+            raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
+
+    def get_channel(self, index: int) -> IPTVChannel:
+        self._check_index(index)
+        return self._channels[index]
+
+    def get_channels(self) -> List[IPTVChannel]:
+        return self._channels
+
     def insert_channel(self, index: int, channel: IPTVChannel) -> None:
+        self._check_index(index)
         self._channels.insert(index, channel)
         log.info("channel %s inserted in position %s", channel, index)
 
     def insert_channels(self, index: int, chan_list: List[IPTVChannel]) -> None:
+        self._check_index(index)
         for i in range(len(chan_list), 0, -1):
             self.insert_channel(index, chan_list[i])
         log.info("%s channels inserted to the playlist in position %s", len(chan_list), index)
@@ -85,53 +109,13 @@ class M3UPlaylist:
         self._channels += chan_list
         log.info("%s channels appended to the playlist", len(chan_list))
 
-    def update_attribute(self, name: str, value: str) -> None:
-        if name not in self._attributes:
-            log.error(
-                "the attribute %s is not present",
-                name
-            )
-            raise AttributeAlreadyPresentException(
-                f"the attribute {name} is not present"
-            )
-        self._attributes[name] = value
-        log.info("attribute %s updated to value %s", name, value)
-
     def update_channel(self, index: int, channel: IPTVChannel) -> None:
-        length = self.length()
-        if index < 0 or index >= length:
-            log.error(
-                "the index %s is out of the (0, %s) range)",
-                str(index),
-                str(length)
-            )
-            raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
+        self._check_index(index)
         self._channels[index] = channel
         log.info("index %s has been updated with channel %s", str(index), channel)
 
-    def remove_attribute(self, name: str) -> str:
-        if name not in self._attributes:
-            log.error(
-                "the attribute %s is not present",
-                name
-            )
-            raise AttributeAlreadyPresentException(
-                f"the attribute {name} is not present"
-            )
-        attribute = self._attributes[name]
-        del self._attributes[name]
-        log.info("attribute %s deleted", name)
-        return attribute
-
     def remove_channel(self, index: int) -> IPTVChannel:
-        length = self.length()
-        if index < 0 or index >= length:
-            log.error(
-                "the index %s is out of the (0, %s) range)",
-                str(index),
-                str(length)
-            )
-            raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
+        self._check_index(index)
         channel = self._channels[index]
         del self._channels[index]
         log.info("the channel with index %s has been deleted", str(index))

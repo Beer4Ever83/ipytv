@@ -6,7 +6,7 @@ from ipytv.playlist import \
     M3UPlaylist
 
 from ipytv.exceptions import \
-    M3YouException, \
+    IPyTVException, \
     MalformedExtinfException, \
     MalformedPlaylistException, \
     URLException, \

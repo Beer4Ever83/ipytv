@@ -1,6 +1,9 @@
 from ipytv.channel import IPTVChannel, IPTVAttr
 from ipytv.playlist import M3UPlaylist
 
+m3u_plus_attributes = {
+    "x-tvg-url": "http://myown.link:80/luke/220311/22311"
+}
 m3u_plus_channel_0 = IPTVChannel(
     url="http://myown.link:80/luke/210274/78482",
     name="Rai 1",
@@ -46,11 +49,13 @@ m3u_plus_channel_3 = IPTVChannel(
     }
 )
 expected_m3u_plus = M3UPlaylist()
-expected_m3u_plus.add_attribute("x-tvg-url", "http://myown.link:80/luke/220311/22311")
-expected_m3u_plus.append_channel(m3u_plus_channel_0)
-expected_m3u_plus.append_channel(m3u_plus_channel_1)
-expected_m3u_plus.append_channel(m3u_plus_channel_2)
-expected_m3u_plus.append_channel(m3u_plus_channel_3)
+expected_m3u_plus._attributes = m3u_plus_attributes
+expected_m3u_plus._channels = [
+    m3u_plus_channel_0,
+    m3u_plus_channel_1,
+    m3u_plus_channel_2,
+    m3u_plus_channel_3
+]
 
 expected_m3u_plus_group_by_group_title = {
     "RAI": [0],
@@ -87,8 +92,7 @@ expected_m3u8_list = [
     )
 ]
 expected_m3u8 = M3UPlaylist()
-for channel in expected_m3u8_list:
-    expected_m3u8.append_channel(channel)
+expected_m3u8._channels = expected_m3u8_list
 
 split_quoted_string = """#EXTM3U x-tvg-url="http://myown.link:80/luke/220311/22311"
 #EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1
@@ -130,5 +134,4 @@ expected_urlencoded_list = [
     )
 ]
 expected_urlencoded = M3UPlaylist()
-for channel in expected_urlencoded_list:
-    expected_urlencoded.append_channel(channel)
+expected_urlencoded._channels = expected_urlencoded_list
