@@ -54,7 +54,6 @@ The library comprises several modules, each with a specific area of competence:
 - **playlist**
   - Everything related to the loading and handling of M3U playlists.
 
-
 ### Loading an IPTV Playlist
 
 #### From a file
@@ -93,7 +92,21 @@ array = [
 pl = playlist.loada(array)
 ```
 
-### Accessing the global properties of a playlist
+### M3UPlaylist class
+Every load function above returns an object of the `M3UPlaylist` class.
+
+This class models the concept of a playlist (which is, basically, a list of
+channels) and offers methods to interact with the playlist itself and with its
+channels.
+
+There are two main properties in a playlist, and they are:
+1. Attributes
+2. Channels
+
+What these properties are and how they can be accessed is described in the next
+paragraphs.
+
+### Accessing the attributes of a playlist
 Key-value pairs that are specified in the `#EXTM3U` row are treated as
 playlist-wide attributes (i.e. they apply to the playlist itself or to every
 channel in the playlist).
@@ -114,11 +127,45 @@ for k, v in attributes.items():
     print(f'"{k}": "{v}"')
 ```
 
-### Accessing the channels in the playlist
+In alternative, when the name of the property is known beforehand, its value can
+be retrieved with:
+```python
+from ipytv import playlist
+url = "https://iptv-org.github.io/iptv/categories/kids.m3u"
+pl = playlist.loadu(url)
+attributes = pl.get_attributes()
+tvg_url = pl.get_attribute("x-tvg-url")
+print(f"x-tvg-url: {tvg_url}")
+```
+
+The attributes can also be added, modified and removed by using the following
+methods:
+```python
+from ipytv.playlist import M3UPlaylist
+pl = M3UPlaylist()
+attribute_name = 'tvg-shift'
+# Add the 'tvg-shift' attribute and set it to 1
+pl.add_attribute(attribute_name, "1")
+# Update the 'tvg-shift' attribute to -2
+pl.update_attribute(attribute_name, "-2")
+# Completely remove the 'tvg-shift' attribute
+value_before_deletion = pl.remove_attribute(attribute_name)
+```
+
+There is also a methods that allows to add multiple attributes at once (instead
+of single attributes) in the form of a dictionary:
+```python
+pl.add_attributes({})
+```
+
+### Accessing the channels of a playlist
+
+The `M3UPlaylist` class is basically a list of channels with some commodity
+functions. The channels in a playlist can be accessed by using one of the
+following methods.
 
 #### Individually
-The channels in a playlist can be accessed individually by using the
-`get_channel(index)` method:
+By using the `get_channel(index)` method:
 ```python
 from ipytv import playlist
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
@@ -131,7 +178,7 @@ channel = pl.get_channel(-1)
 ```
 
 #### Iteratively
-You can also iterate over the channels in an `M3UPlaylist` object:
+By looping over the channels in an `M3UPlaylist` object:
 ```python
 from ipytv import playlist
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
@@ -151,6 +198,33 @@ url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = playlist.loadu(url)
 chan_list = pl.get_channels()
 ten_channels = chan_list[:10] 
+```
+
+The channels can also be added, modified and removed by using the following
+methods:
+```python
+from ipytv.playlist import M3UPlaylist
+from ipytv.channel import IPTVChannel
+pl = M3UPlaylist()
+channel = IPTVChannel()
+# Add a channel to the end of the list (last index)
+pl.append_channel(channel)
+# Insert a channel in the specified position (all succeeding channels are
+# shifted right by 1 position)
+pl.insert_channel(0, channel)
+new_channel = IPTVChannel()
+# Replace the second channel of the playlist with a new channel
+pl.update_channel(1, new_channel)
+# Remove the channel at the specified position (all succeeding channels are
+# shifted left by 1 position)
+old_channel = pl.remove_channel(0)
+```
+
+There are also two methods that allow to add list of channels (instead of single
+channels):
+```python
+pl.append_channels([])
+pl.insert_channels([])
 ```
 
 ### Accessing the properties of a channel
