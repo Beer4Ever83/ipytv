@@ -4,12 +4,13 @@ import tests.test_data
 from ipytv.channel import IPTVChannel, IPTVAttr
 from ipytv.doctor import M3UDoctor, IPTVChannelDoctor, M3UPlaylistDoctor
 from ipytv.playlist import M3UPlaylist
+import ipytv.playlist as playlist
 
 
 class TestFixSplitQuotedString(unittest.TestCase):
     def runTest(self):
         fixed = M3UDoctor.fix_split_quoted_string(tests.test_data.split_quoted_string.split("\n"))
-        self.assertEqual(tests.test_data.expected_m3u_plus, M3UPlaylist.loada(fixed))
+        self.assertEqual(tests.test_data.expected_m3u_plus, playlist.loada(fixed))
 
 
 class TestURLEncodeLogo(unittest.TestCase):
@@ -59,22 +60,22 @@ class TestSanitizeAttributes(unittest.TestCase):
 
 class TestURLEncodeAllLogos(unittest.TestCase):
     def runTest(self):
-        playlist = M3UPlaylist.loadf("tests/resources/m3u_plus_unencoded_logo.m3u")
-        self.assertFalse(playlist.__eq__(tests.test_data.expected_urlencoded))
-        fixed_playlist = M3UPlaylistDoctor.urlencode_all_logos(playlist)
-        self.assertTrue(fixed_playlist.__eq__(tests.test_data.expected_urlencoded))
+        pl = playlist.loadf("tests/resources/m3u_plus_unencoded_logo.m3u")
+        self.assertFalse(pl.__eq__(tests.test_data.expected_urlencoded))
+        fixed_pl = M3UPlaylistDoctor.urlencode_all_logos(pl)
+        self.assertTrue(fixed_pl.__eq__(tests.test_data.expected_urlencoded))
 
 
 class TestSanitizeAllAttributes(unittest.TestCase):
     def runTest(self):
-        playlist = M3UPlaylist()
-        playlist.append_channel(
+        pl = M3UPlaylist()
+        pl.append_channel(
             IPTVChannel(attributes={"tvg-ID": "a"})
         )
-        playlist.append_channel(
+        pl.append_channel(
             IPTVChannel(attributes={"TVG-LOGO": "b"})
         )
-        playlist.append_channel(
+        pl.append_channel(
             IPTVChannel(attributes={"GrOuP-TiTlE": "c,d,,e"})
         )
 
@@ -88,9 +89,9 @@ class TestSanitizeAllAttributes(unittest.TestCase):
         expected.append_channel(
             IPTVChannel(attributes={IPTVAttr.GROUP_TITLE.value: "c_d__e"})
         )
-        self.assertFalse(playlist.__eq__(expected))
-        fixed_playlist = M3UPlaylistDoctor.sanitize_all_attributes(playlist)
-        self.assertTrue(fixed_playlist.__eq__(expected))
+        self.assertFalse(pl.__eq__(expected))
+        fixed_pl = M3UPlaylistDoctor.sanitize_all_attributes(pl)
+        self.assertTrue(fixed_pl.__eq__(expected))
 
 
 if __name__ == '__main__':

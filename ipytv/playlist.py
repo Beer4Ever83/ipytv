@@ -6,22 +6,23 @@ from typing import List, Dict
 import requests
 from requests import RequestException
 
-from ipytv import m3u_tools
+from ipytv import m3u
 from ipytv.channel import IPTVChannel, IPTVAttr
 from ipytv.exceptions import MalformedPlaylistException, URLException, \
     WrongTypeException, IndexOutOfBoundsException, \
     AttributeAlreadyPresentException, AttributeNotFoundException
-from ipytv.m3u_tools import M3U_HEADER_TAG
+from ipytv.m3u import M3U_HEADER_TAG
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
+
+# The value of __MIN_CHUNK_SIZE cannot be smaller than 2
+__MIN_CHUNK_SIZE = 20
 
 
 class M3UPlaylist:
     NO_GROUP_KEY = '_NO_GROUP_'
     NO_URL_KEY = '_NO_URL_'
-    # The value of __MIN_CHUNK_SIZE cannot be smaller than 2
-    __MIN_CHUNK_SIZE = 20
 
     def __init__(self):
         self._channels: List[IPTVChannel] = []
@@ -120,154 +121,6 @@ class M3UPlaylist:
         del self._channels[index]
         log.info("the channel with index %s has been deleted", str(index))
         return channel
-
-    @staticmethod
-    def chunk_array(array: List, chunk_count: int) -> List:
-        length = len(array)
-        chunk_size = math.floor(length / chunk_count) + 1
-        if chunk_size < M3UPlaylist.__MIN_CHUNK_SIZE:
-            return [
-                {
-                    "begin": 0,
-                    "end": length
-                }
-            ]
-        chunk_list = []
-        overlap = 0
-        end = 1
-        for i in range(0, length-chunk_size, chunk_size):
-            begin = i-overlap
-            end = begin + chunk_size
-            entry = {
-                "begin": begin,
-                "end": end
-            }
-            chunk_list.append(entry)
-            overlap += 1
-        # The last chunk can be bigger
-        entry = {
-            "begin": end-1,
-            "end": length
-        }
-        chunk_list.append(entry)
-        log.debug("chunk_list: %s", chunk_list)
-        return chunk_list
-
-    @staticmethod
-    def populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
-        p_list = M3UPlaylist()
-        if end == -1:
-            end = len(array)
-        log.debug("populating playlist with rows from %s to %s", begin, end)
-        entry = []
-        previous_row = array[begin]
-        if m3u_tools.is_extinf_row(previous_row):
-            entry.append(array[begin])
-            log.debug("it seems that the previous chunk ended with an EXTINF row")
-        for index in range(begin+1, end):
-            row = array[index].strip()
-            log.debug("parsing row: %s", row)
-            if m3u_tools.is_extinf_row(row):
-                if m3u_tools.is_extinf_row(previous_row):
-                    # we are in the case of two adjacent #EXTINF rows; so we add a url-less entry.
-                    # This shouldn't be theoretically allowed, but I've seen it happening in some
-                    # IPTV playlists where isolated #EXTINF rows are used as group separators.
-                    log.warning("adjacent #EXTINF rows detected")
-                    p_list.append_entry(entry)
-                    log.debug("adding entry to the playlist: %s", entry)
-                    entry = []
-                entry.append(row)
-            elif m3u_tools.is_comment_or_tag_row(row):
-                # case of a row with a non-supported tag or a comment; so we do nothing
-                log.warning("commented row or unsupported tag found: %s", row)
-            else:
-                # case of a plain url row (regardless if preceded by an #EXTINF row or not)
-                entry.append(row)
-                log.debug("adding entry to the playlist: %s", entry)
-                p_list.append_entry(entry)
-                entry = []
-            previous_row = row
-        return p_list
-
-    @staticmethod
-    def loada(array: List) -> 'M3UPlaylist':
-        if not isinstance(array, list):
-            log.error("expected %s, got %s", type([]), type(array))
-            raise WrongTypeException("Wrong type: array (List) expected")
-        first_row = array[0].strip()
-        if not m3u_tools.is_m3u_header_row(first_row):
-            log.error(
-                "the playlist's first row should start with \"%s\", but it's \"%s\"",
-                M3U_HEADER_TAG,
-                first_row
-            )
-            raise MalformedPlaylistException(f"Missing or misplaced {M3U_HEADER_TAG} row")
-        out_pl = M3UPlaylist()
-        out_pl.parse_header(first_row)
-        cores = mp.cpu_count()
-        log.info("%s cores detected", cores)
-        chunks = M3UPlaylist.chunk_array(array, cores)
-        results = []
-        log.info("spawning a pool of processes (one per core) to parse the playlist")
-        with mp.Pool(processes=cores) as pool:
-            for chunk in chunks:
-                begin = chunk["begin"]
-                end = chunk["end"]
-                log.info(
-                    "assigning a \"populate\" task (begin: %s, end: %s) to a process in the pool",
-                    begin,
-                    end
-                )
-                result = pool.apply_async(M3UPlaylist.populate, (array, begin, end))
-                results.append(result)
-            pool.close()
-            log.debug("pool destroyed")
-            for result in results:
-                p_list = result.get()
-                out_pl.append_channels(p_list.get_channels())
-        return out_pl
-
-    @staticmethod
-    def loads(string: str) -> 'M3UPlaylist':
-        if isinstance(string, str):
-            return M3UPlaylist.loada(string.split("\n"))
-        log.error("expected %s, got %s", type(''), type(string))
-        raise WrongTypeException("Wrong type: string expected")
-
-    @staticmethod
-    def loadf(filename: str) -> 'M3UPlaylist':
-        if not isinstance(filename, str):
-            log.error("expected %s, got %s", type(''), type(filename))
-            raise WrongTypeException("Wrong type: string expected")
-        with open(filename, encoding='utf-8') as file:
-            buffer = file.readlines()
-            return M3UPlaylist.loada(buffer)
-
-    @staticmethod
-    def loadu(url: str) -> 'M3UPlaylist':
-        if not isinstance(url, str):
-            log.error("expected %s, got %s", type(''), type(url))
-            raise WrongTypeException("Wrong type: string expected")
-        try:
-            response = requests.get(url, timeout=10)
-            if response.ok:
-                return M3UPlaylist.loads(response.text)
-            raise URLException(
-                f"Failure while opening {url}.\nResponse status code: {response.status_code}"
-            )
-        except RequestException as exception:
-            raise URLException(
-                f"Failure while opening {url}.\nError: {exception}"
-            ) from exception
-
-    def parse_header(self, header: str) -> None:
-        attrs = header.replace(f'{M3U_HEADER_TAG} ', '')
-        for attr in attrs.split():
-            entry = attr.split("=")
-            if len(entry) == 2:
-                name = entry[0].replace('"', '')
-                value = entry[1].replace('"', '')
-                self._attributes[name] = value
 
     def build_header(self) -> str:
         out = M3U_HEADER_TAG
@@ -379,3 +232,159 @@ class M3UPlaylist:
             raise StopIteration
         self._iter_index += 1
         return next_chan
+
+
+def loada(array: List) -> 'M3UPlaylist':
+    if not isinstance(array, list):
+        log.error("expected %s, got %s", type([]), type(array))
+        raise WrongTypeException("Wrong type: array (List) expected")
+    first_row = array[0].strip()
+    if not m3u.is_m3u_header_row(first_row):
+        log.error(
+            "the playlist's first row should start with \"%s\", but it's \"%s\"",
+            M3U_HEADER_TAG,
+            first_row
+        )
+        raise MalformedPlaylistException(f"Missing or misplaced {M3U_HEADER_TAG} row")
+    out_pl = M3UPlaylist()
+    out_pl.add_attributes(_parse_header(first_row))
+    cores = mp.cpu_count()
+    log.info("%s cores detected", cores)
+    chunks = _chunk_array(array, cores)
+    results = []
+    log.info("spawning a pool of processes (one per core) to parse the playlist")
+    with mp.Pool(processes=cores) as pool:
+        for chunk in chunks:
+            begin = chunk["begin"]
+            end = chunk["end"]
+            log.info(
+                "assigning a \"populate\" task (begin: %s, end: %s) to a process in the pool",
+                begin,
+                end
+            )
+            result = pool.apply_async(_populate, (array, begin, end))
+            results.append(result)
+        pool.close()
+        log.debug("pool destroyed")
+        for result in results:
+            p_list = result.get()
+            out_pl.append_channels(p_list.get_channels())
+    return out_pl
+
+
+def loads(string: str) -> 'M3UPlaylist':
+    if isinstance(string, str):
+        return loada(string.split("\n"))
+    log.error("expected %s, got %s", type(''), type(string))
+    raise WrongTypeException("Wrong type: string expected")
+
+
+def loadf(filename: str) -> 'M3UPlaylist':
+    if not isinstance(filename, str):
+        log.error("expected %s, got %s", type(''), type(filename))
+        raise WrongTypeException("Wrong type: string expected")
+    with open(filename, encoding='utf-8') as file:
+        buffer = file.readlines()
+        return loada(buffer)
+
+
+def loadu(url: str) -> 'M3UPlaylist':
+    if not isinstance(url, str):
+        log.error("expected %s, got %s", type(''), type(url))
+        raise WrongTypeException("Wrong type: string expected")
+    try:
+        response = requests.get(url, timeout=10)
+        if response.ok:
+            return loads(response.text)
+        raise URLException(
+            f"Failure while opening {url}.\nResponse status code: {response.status_code}"
+        )
+    except RequestException as exception:
+        log.error(
+            "failure while opening %s: %s",
+            url,
+            exception
+      )
+        raise URLException(
+            f"Failure while opening {url}.\nError: {exception}"
+        ) from exception
+
+
+def _parse_header(header: str) -> Dict[str, str]:
+    attrs = header.replace(f'{M3U_HEADER_TAG} ', '')
+    attributes = {}
+    for attr in attrs.split():
+        entry = attr.split("=")
+        if len(entry) == 2:
+            name = entry[0].replace('"', '')
+            value = entry[1].replace('"', '')
+            attributes[name] = value
+    return attributes
+
+
+def _chunk_array(array: List, chunk_count: int) -> List:
+    length = len(array)
+    chunk_size = math.floor(length / chunk_count) + 1
+    if chunk_size < __MIN_CHUNK_SIZE:
+        return [
+            {
+                "begin": 0,
+                "end": length
+            }
+        ]
+    chunk_list = []
+    overlap = 0
+    end = 1
+    for i in range(0, length-chunk_size, chunk_size):
+        begin = i-overlap
+        end = begin + chunk_size
+        entry = {
+            "begin": begin,
+            "end": end
+        }
+        chunk_list.append(entry)
+        overlap += 1
+    # The last chunk can be bigger
+    entry = {
+        "begin": end-1,
+        "end": length
+    }
+    chunk_list.append(entry)
+    log.debug("chunk_list: %s", chunk_list)
+    return chunk_list
+
+
+def _populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
+    p_list = M3UPlaylist()
+    if end == -1:
+        end = len(array)
+    log.debug("populating playlist with rows from %s to %s", begin, end)
+    entry = []
+    previous_row = array[begin]
+    if m3u.is_extinf_row(previous_row):
+        entry.append(array[begin])
+        log.debug("it seems that the previous chunk ended with an EXTINF row")
+    for index in range(begin+1, end):
+        row = array[index].strip()
+        log.debug("parsing row: %s", row)
+        if m3u.is_extinf_row(row):
+            if m3u.is_extinf_row(previous_row):
+                # we are in the case of two adjacent #EXTINF rows; so we add a url-less entry.
+                # This shouldn't be theoretically allowed, but I've seen it happening in some
+                # IPTV playlists where isolated #EXTINF rows are used as group separators.
+                log.warning("adjacent #EXTINF rows detected")
+                p_list.append_entry(entry)
+                log.debug("adding entry to the playlist: %s", entry)
+                entry = []
+            entry.append(row)
+        elif m3u.is_comment_or_tag_row(row):
+            # case of a row with a non-supported tag or a comment; so we do nothing
+            log.warning("commented row or unsupported tag found: %s", row)
+        else:
+            # case of a plain url row (regardless if preceded by an #EXTINF row or not)
+            entry.append(row)
+            log.debug("adding entry to the playlist: %s", entry)
+            p_list.append_entry(entry)
+            entry = []
+        previous_row = row
+    return p_list

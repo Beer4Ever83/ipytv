@@ -3,7 +3,7 @@ import shlex
 from enum import Enum
 from typing import Dict, List
 
-from ipytv import m3u_tools
+from ipytv import m3u
 from ipytv.exceptions import MalformedExtinfException
 
 log = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ class IPTVChannel(M3UEntry):
         )
 
     def parse_extinf_string(self, extinf_string: str) -> None:
-        match = m3u_tools.match_m3u_plus_extinf_row(extinf_string)
+        match = m3u.match_m3u_plus_extinf_row(extinf_string)
         if match is None:
             log.error("malformed #EXTINF row: %s", extinf_string)
             raise MalformedExtinfException(f"Malformed EXTINF string:\n{extinf_string}")
@@ -87,10 +87,10 @@ class IPTVChannel(M3UEntry):
     def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
         channel = IPTVChannel()
         for row in entry:
-            if m3u_tools.is_extinf_row(row):
+            if m3u.is_extinf_row(row):
                 channel.parse_extinf_string(row)
                 log.info("#EXTINFO row found")
-            elif m3u_tools.is_comment_or_tag_row(row):
+            elif m3u.is_comment_or_tag_row(row):
                 # a comment or a non-supported tag
                 log.warning("commented row or unsupported tag found in \"%s\"", row)
             else:
