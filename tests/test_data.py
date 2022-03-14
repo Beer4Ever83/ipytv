@@ -1,6 +1,9 @@
 from ipytv.channel import IPTVChannel, IPTVAttr
 from ipytv.playlist import M3UPlaylist
 
+m3u_plus_attributes = {
+    "x-tvg-url": "http://myown.link:80/luke/220311/22311"
+}
 m3u_plus_channel_0 = IPTVChannel(
     url="http://myown.link:80/luke/210274/78482",
     name="Rai 1",
@@ -46,12 +49,14 @@ m3u_plus_channel_3 = IPTVChannel(
     }
 )
 expected_m3u_plus = M3UPlaylist()
-expected_m3u_plus.list = [
+expected_m3u_plus._attributes = m3u_plus_attributes
+expected_m3u_plus._channels = [
     m3u_plus_channel_0,
     m3u_plus_channel_1,
     m3u_plus_channel_2,
     m3u_plus_channel_3
 ]
+
 expected_m3u_plus_group_by_group_title = {
     "RAI": [0],
     "Italia": [1, 2],
@@ -64,8 +69,7 @@ expected_m3u_plus_group_by_url = {
     "http://myown.link:80/luke/109163/78282": [3]
 }
 
-expected_m3u8 = M3UPlaylist()
-expected_m3u8.list = [
+expected_m3u8_list = [
     IPTVChannel(
         url="http://myown.link.com:8000/localchannels/jack53ls83j/564",
         name="CA: HBO",
@@ -87,8 +91,10 @@ expected_m3u8.list = [
         duration="-1",
     )
 ]
+expected_m3u8 = M3UPlaylist()
+expected_m3u8._channels = expected_m3u8_list
 
-split_quoted_string = """#EXTM3U
+split_quoted_string = """#EXTM3U x-tvg-url="http://myown.link:80/luke/220311/22311"
 #EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1
 " tvg-logo="https://static.epg.best/it/RaiUno.it.png" group-title="RAI",Rai 1
 http://myown.link:80/luke/210274/78482
@@ -101,8 +107,7 @@ http://myown.link:80/luke/109163/89800
 " tvg-name="----I N T R A T T E N I M E N T O----" tvg-logo="" group-title="Intrattenimento",----I N T R A T T E N I M E N T O----
 http://myown.link:80/luke/109163/78282"""
 
-expected_urlencoded = M3UPlaylist()
-expected_urlencoded.list = [
+expected_urlencoded_list = [
     IPTVChannel(
         url="http://myown.link:80/luke/109163/78281",
         name="Vacanze 83",
@@ -128,3 +133,5 @@ expected_urlencoded.list = [
         attributes={"tvg-logo": "https://some.image.service.com/images/M/MV5BOTVkOWExNmYtZDdjMy00ODlhLTlhMTYtMjRmYzRhMmMwZWRlXkEyXkFqcGdeQXVyMzU0NzkwMDg%40._V1_UY268_CR2%2C0%2C182%2C268_AL_.jpg"}
     )
 ]
+expected_urlencoded = M3UPlaylist()
+expected_urlencoded._channels = expected_urlencoded_list

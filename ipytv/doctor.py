@@ -94,8 +94,8 @@ class M3UPlaylistDoctor:
         """
         new_playlist: M3UPlaylist = M3UPlaylist()
         channel: IPTVChannel
-        for channel in playlist.list:
-            new_playlist.add_channel(IPTVChannelDoctor.urlencode_logo(channel))
+        for channel in playlist:
+            new_playlist.append_channel(IPTVChannelDoctor.urlencode_logo(channel))
         return new_playlist
 
     @staticmethod
@@ -106,6 +106,6 @@ class M3UPlaylistDoctor:
         """
         new_playlist: M3UPlaylist = M3UPlaylist()
         channel: IPTVChannel
-        for channel in playlist.list:
-            new_playlist.add_channel(IPTVChannelDoctor.sanitize_attributes(channel))
+        for channel in playlist:
+            new_playlist.append_channel(IPTVChannelDoctor.sanitize_attributes(channel))
         return new_playlist

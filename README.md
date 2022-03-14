@@ -41,72 +41,201 @@ pip install m3u-ipytv
 
 ## Usage
 
-### Load an IPTV Playlist from a file
+### Modules
+The library comprises several modules, each with a specific area of competence:
+- **channel**
+  - Everything related to the handling of channels in a playlist.
+- **doctor**
+  - A collection of functions to fix common errors found in M3U files.
+- **exceptions**
+  - All the exceptions thrown by the library.
+- **m3u**
+  - Constants and functions related to M3U files.
+- **playlist**
+  - Everything related to the loading and handling of M3U playlists.
+
+### Loading an IPTV Playlist
+
+#### From a file
+Use the `playlist.loadf(file)` function:
 ```python
-import ipytv
+from ipytv import playlist
 file = "~/Documents/my_playlist.m3u"
-pl = ipytv.playlist.M3UPlaylist.loadf(file)
-print(len(pl.list))
+pl = playlist.loadf(file)
+print(pl.length())
 ```
 
-### Load an IPTV Playlist from a URL
+#### from a URL
+Use the `playlist.loadu(url)` function:
 ```python
-import ipytv
+from ipytv import playlist
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
-pl = ipytv.playlist.M3UPlaylist.loadu(url)
-print(len(pl.list))
+pl = playlist.loadu(url)
+print(pl.length())
 ```
 
-### Other loading methods
-M3U Playlists can be loaded as a string as well as an array with the following
-methods
-
-String:
+#### From a string
+Use the `playlist.loads(string)` function:
 ```python
-import ipytv
+from ipytv import playlist
 string = """#EXTM3U
 #EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1
 http://myown.link:80/luke/210274/78482"""
-pl = ipytv.playlist.M3UPlaylist.loads(string)
+pl = playlist.loads(string)
+print(pl.length())
 ```
 
-Array (i.e. a List):
+#### From an array (i.e. a list)
+Use the `playlist.loada(array)` function:
 ```python
-import ipytv
+from ipytv import playlist
 array = [
     '#EXTM3U',
      '#EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1',
      'http://myown.link:80/luke/210274/78482'
 ]
-pl = ipytv.playlist.M3UPlaylist.loada(array)
+pl = playlist.loada(array)
+print(pl.length())
 ```
 
-### Access the global properties of a playlist
-Attributes that are specified in the `#EXTM3U` row are considered to be valid
-playlist-wide.
-These can be accessed via the `attributes` dictionary of a playlist:
+### M3UPlaylist class
+Every load function above returns an object of the `M3UPlaylist` class.
+
+This class models the concept of a playlist (which is, basically, a list of
+channels) and offers methods to interact with the playlist itself and with its
+channels.
+
+There are two main properties in a playlist, and they are:
+1. Attributes
+2. Channels
+
+What these properties are and how they can be accessed is described in the next
+paragraphs.
+
+### Accessing the attributes of a playlist
+Key-value pairs that are specified in the `#EXTM3U` row are treated as
+playlist-wide attributes (i.e. they apply to the playlist itself or to every
+channel in the playlist).
+
+For example the `x-tvg-url` part below:
+```text
+#EXTM3U x-tvg-url="http://myown.link:80/luke/220311/22311"
+```
+
+These attributes, in the form of a dictionary, can be accessed via the
+`get_attributes()` method:
 ```python
-import ipytv
+from ipytv import playlist
 url = "https://iptv-org.github.io/iptv/categories/kids.m3u"
-pl = ipytv.playlist.M3UPlaylist.loadu(url)
-for a in pl.attributes:
-    print(f'"{a}": "{pl.attributes[a]}"')
+pl = playlist.loadu(url)
+attributes = pl.get_attributes()
+for k, v in attributes.items():
+    print(f'"{k}": "{v}"')
 ```
 
-### Access the channels in the playlist
-Once loaded, the channels in a playlist can be accessed by using the
-`list` property:
+In alternative, when the name of the property is known beforehand, its value can
+be retrieved with:
 ```python
-import ipytv
+from ipytv import playlist
+url = "https://iptv-org.github.io/iptv/categories/kids.m3u"
+pl = playlist.loadu(url)
+attributes = pl.get_attributes()
+tvg_url = pl.get_attribute("x-tvg-url")
+print(f"x-tvg-url: {tvg_url}")
+```
+
+The attributes can also be added, modified and removed by using the following
+methods:
+```python
+from ipytv.playlist import M3UPlaylist
+pl = M3UPlaylist()
+attribute_name = 'tvg-shift'
+# Add the 'tvg-shift' attribute and set it to 1
+pl.add_attribute(attribute_name, "1")
+# Update the 'tvg-shift' attribute to -2
+pl.update_attribute(attribute_name, "-2")
+# Completely remove the 'tvg-shift' attribute
+value_before_deletion = pl.remove_attribute(attribute_name)
+```
+
+There is also a methods that allows to add multiple attributes at once (instead
+of single attributes) in the form of a dictionary:
+```python
+pl.add_attributes({})
+```
+
+### Accessing the channels of a playlist
+
+The `M3UPlaylist` class is basically a list of channels with some commodity
+functions. The channels in a playlist can be accessed by using one of the
+following methods.
+
+#### Individually
+By using the `get_channel(index)` method:
+```python
+from ipytv import playlist
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
-pl = ipytv.playlist.M3UPlaylist.loadu(url)
-for channel in pl.list:
+pl = playlist.loadu(url)
+# Let's retrieve the first channel in the list
+channel = pl.get_channel(0)
+print(f'channel \"{channel.name}\": {channel.url}')
+# The next line will throw IndexOutOfBoundsException
+channel = pl.get_channel(-1)
+```
+
+#### Iteratively
+By looping over the channels in an `M3UPlaylist` object:
+```python
+from ipytv import playlist
+url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
+pl = playlist.loadu(url)
+for channel in pl:
     print(f'channel \"{channel.name}\": {channel.url}')
 ```
 
-### Access the properties of a channel
-The `list` property of an M3UPlaylist object contains a list of `IPTVChannel`
-objects.
+#### Low level
+In all cases where the previous two access methods are not sufficient, the inner
+channel list can be accessed via the `get_channels()` method:
+
+```python
+from ipytv import playlist
+
+url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
+pl = playlist.loadu(url)
+chan_list = pl.get_channels()
+ten_channels = chan_list[:10] 
+```
+
+The channels can also be added, modified and removed by using the following
+methods:
+```python
+from ipytv.playlist import M3UPlaylist
+from ipytv.channel import IPTVChannel
+pl = M3UPlaylist()
+channel = IPTVChannel()
+# Add a channel to the end of the list (last index)
+pl.append_channel(channel)
+# Insert a channel in the specified position (all succeeding channels are
+# shifted right by 1 position)
+pl.insert_channel(0, channel)
+new_channel = IPTVChannel()
+# Replace the second channel of the playlist with a new channel
+pl.update_channel(1, new_channel)
+# Remove the channel at the specified position (all succeeding channels are
+# shifted left by 1 position)
+old_channel = pl.remove_channel(0)
+```
+
+There are also two methods that allow to add list of channels (instead of single
+channels):
+```python
+pl.append_channels([])
+pl.insert_channels([])
+```
+
+### Accessing the properties of a channel
+The `get_channels()` method of an M3UPlaylist object returns a list of
+`IPTVChannel` objects.
 
 An `IPTVChannel` object has 3 basic properties (`url`, `name` and
 `duration`) and an optional `attributes` dictionary.
@@ -115,7 +244,6 @@ For example:
 
 ```python
 from ipytv.channel import IPTVAttr, IPTVChannel
-
 channel = IPTVChannel(
     url="http://myown.link:80/luke/210274/78482",
     name="Rai 1",
@@ -139,9 +267,9 @@ IPyTV supports python's standard [logging system](https://docs.python.org/3/libr
 To enable IPyTV's logging, add a logging configuration to your application:
 ```python
 import logging
-import ipytv
+from ipytv import playlist
 logging.basicConfig(level=logging.DEBUG)
-pl = ipytv.playlist.M3UPlaylist.loadu("https://iptv-org.github.io/iptv/categories/classic.m3u")
+pl = playlist.loadu("https://iptv-org.github.io/iptv/categories/classic.m3u")
 ```
 
 ## Format considerations
