@@ -57,6 +57,7 @@ The library comprises several modules, each with a specific area of competence:
 ### Loading an IPTV Playlist
 
 #### From a file
+Use the `playlist.loadf(file)` function:
 ```python
 from ipytv import playlist
 file = "~/Documents/my_playlist.m3u"
@@ -65,6 +66,7 @@ print(pl.length())
 ```
 
 #### from a URL
+Use the `playlist.loadu(url)` function:
 ```python
 from ipytv import playlist
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
@@ -73,15 +75,18 @@ print(pl.length())
 ```
 
 #### From a string
+Use the `playlist.loads(string)` function:
 ```python
 from ipytv import playlist
 string = """#EXTM3U
 #EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1
 http://myown.link:80/luke/210274/78482"""
 pl = playlist.loads(string)
+print(pl.length())
 ```
 
 #### From an array (i.e. a list)
+Use the `playlist.loada(array)` function:
 ```python
 from ipytv import playlist
 array = [
@@ -90,6 +95,7 @@ array = [
      'http://myown.link:80/luke/210274/78482'
 ]
 pl = playlist.loada(array)
+print(pl.length())
 ```
 
 ### M3UPlaylist class

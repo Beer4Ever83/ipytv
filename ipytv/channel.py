@@ -46,9 +46,9 @@ class IPTVAttr(Enum):
 class IPTVChannel(M3UEntry):
 
     def __init__(self, url: str = "", name: str = "",
-                 duration: str = "-1", attributes: Dict = None):
+                 duration: str = "-1", attributes: Dict[str, str] = None):
         super().__init__(url, name, duration)
-        self.attributes = attributes if attributes is not None else {}
+        self.attributes: Dict[str, str] = attributes if attributes is not None else {}
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, IPTVChannel) \
@@ -70,7 +70,7 @@ class IPTVChannel(M3UEntry):
         match = m3u.match_m3u_plus_extinf_row(extinf_string)
         if match is None:
             log.error("malformed #EXTINF row: %s", extinf_string)
-            raise MalformedExtinfException(f"Malformed EXTINF string:\n{extinf_string}")
+            raise MalformedExtinfException(f"Malformed #EXTINF string:\n{extinf_string}")
         self.duration = match.group("duration_g")
         log.info("duration: %s", self.duration)
         attributes = match.group("attributes_g")
@@ -83,21 +83,6 @@ class IPTVChannel(M3UEntry):
         self.name = match.group("name_g")
         log.info("name: %s", self.name)
 
-    @staticmethod
-    def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
-        channel = IPTVChannel()
-        for row in entry:
-            if m3u.is_extinf_row(row):
-                channel.parse_extinf_string(row)
-                log.info("#EXTINFO row found")
-            elif m3u.is_comment_or_tag_row(row):
-                # a comment or a non-supported tag
-                log.warning("commented row or unsupported tag found in \"%s\"", row)
-            else:
-                channel.url = row
-                log.info("URL row found")
-        return channel
-
     def __str__(self) -> str:
         attr_str = ''
         if len(self.attributes) > 0:
@@ -108,3 +93,18 @@ class IPTVChannel(M3UEntry):
         out = f'{{name: "{self.name}", duration: "{self.duration}", '\
               f'url: "{self.url}", attributes: {{{attr_str}}}}}'
         return out
+
+
+def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
+    channel = IPTVChannel()
+    for row in entry:
+        if m3u.is_extinf_row(row):
+            channel.parse_extinf_string(row)
+            log.info("#EXTINF row found")
+        elif m3u.is_comment_or_tag_row(row):
+            # a comment or a non-supported tag
+            log.warning("commented row or unsupported tag found in \"%s\"", row)
+        else:
+            channel.url = row
+            log.info("URL row found")
+    return channel

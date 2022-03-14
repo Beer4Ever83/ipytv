@@ -6,6 +6,7 @@ from typing import List, Dict
 import requests
 from requests import RequestException
 
+import ipytv.channel
 from ipytv import m3u
 from ipytv.channel import IPTVChannel, IPTVAttr
 from ipytv.exceptions import MalformedPlaylistException, URLException, \
@@ -135,7 +136,7 @@ class M3UPlaylist:
         log.info("playlist reset")
 
     def append_entry(self, entry: List):
-        channel = IPTVChannel.from_playlist_entry(entry)
+        channel = ipytv.channel.from_playlist_entry(entry)
         self.append_channel(channel)
 
     def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value,
