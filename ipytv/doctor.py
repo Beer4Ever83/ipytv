@@ -3,7 +3,7 @@ import re
 import urllib.parse
 from typing import List
 
-from ipytv import m3u, channel
+from ipytv import m3u
 from ipytv.channel import IPTVChannel, IPTVAttr
 from ipytv.playlist import M3UPlaylist
 

@@ -42,7 +42,10 @@ def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
     4. Split the right part in two, by using next attribute as separator: the
     wanted value will be found in the left part of the split.
     """
-    attributes = match_m3u_plus_broken_extinf_row(row).group("attributes_g").rstrip(',')
+    match = match_m3u_plus_broken_extinf_row(row)
+    if match is None:
+        return {}
+    attributes = match.group("attributes_g").rstrip(',')
     tokens = re.findall(M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_REGEX, attributes)
     attrs = {}
     for i, token in enumerate(tokens):
