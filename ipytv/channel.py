@@ -68,20 +68,37 @@ class IPTVChannel(M3UEntry):
 
     def parse_extinf_string(self, extinf_string: str) -> None:
         match = m3u.match_m3u_plus_extinf_row(extinf_string)
-        if match is None:
-            log.error("malformed #EXTINF row: %s", extinf_string)
-            raise MalformedExtinfException(f"Malformed #EXTINF string:\n{extinf_string}")
-        self.duration = match.group("duration_g")
-        log.info("duration: %s", self.duration)
-        attributes = match.group("attributes_g")
-        for entry in shlex.split(attributes):
-            pair = entry.split("=")
-            key = pair[0]
-            value = pair[1]
-            self.attributes[key] = value
-        log.info("attributes: %s", self.attributes)
-        self.name = match.group("name_g")
-        log.info("name: %s", self.name)
+        if match is not None:
+            # Case of a well-formed EXTINF row
+            log.info("parsing a well-formed EXTINF row:\n%s", extinf_string)
+            self.duration = match.group("duration_g")
+            log.info("duration: %s", self.duration)
+            attributes = match.group("attributes_g")
+            for entry in shlex.split(attributes):
+                pair = entry.split("=")
+                key = pair[0]
+                value = pair[1]
+                self.attributes[key] = value
+            log.info("attributes: %s", self.attributes)
+            self.name = match.group("name_g")
+            log.info("name: %s", self.name)
+            return
+
+        match = m3u.match_m3u_plus_broken_extinf_row(extinf_string)
+        if match is not None:
+            # Case of a broken #EXTINF row (with quoting issues)
+            log.info("parsing an EXTINF row with quoting issues:\n%s", extinf_string)
+            self.duration = match.group("duration_g")
+            log.info("duration: %s", self.duration)
+            self.attributes = m3u.get_m3u_plus_broken_attributes(extinf_string)
+            log.info("attributes: %s", self.attributes)
+            self.name = match.group("name_g")
+            log.info("name: %s", self.name)
+            return
+
+        # This EXTINF row can't be parsed
+        log.error("malformed #EXTINF row: %s", extinf_string)
+        raise MalformedExtinfException(f"Malformed #EXTINF string:\n{extinf_string}")
 
     def __str__(self) -> str:
         attr_str = ''
@@ -99,7 +116,10 @@ def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
     channel = IPTVChannel()
     for row in entry:
         if m3u.is_extinf_row(row):
-            channel.parse_extinf_string(row)
+            try:
+                channel.parse_extinf_string(row)
+            except MalformedExtinfException:
+                log.warning("Skipping the following entry as it contains a malformed #EXTINF row:", entry)
             log.info("#EXTINF row found")
         elif m3u.is_comment_or_tag_row(row):
             # a comment or a non-supported tag
