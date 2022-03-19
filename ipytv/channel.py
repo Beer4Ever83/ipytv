@@ -119,11 +119,11 @@ def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
             try:
                 channel.parse_extinf_string(row)
             except MalformedExtinfException:
-                log.warning("Skipping the following entry as it contains a malformed #EXTINF row:", entry)
+                log.warning("Skipping the following entry as it contains a malformed #EXTINF row:\n%s", entry)
             log.info("#EXTINF row found")
         elif m3u.is_comment_or_tag_row(row):
             # a comment or a non-supported tag
-            log.warning("commented row or unsupported tag found in \"%s\"", row)
+            log.warning("commented row or unsupported tag found:\n%s", row)
         else:
             channel.url = row
             log.info("URL row found")
