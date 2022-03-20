@@ -87,7 +87,7 @@ class IPTVChannel(M3UEntry):
         match = m3u.match_m3u_plus_broken_extinf_row(extinf_string)
         if match is not None:
             # Case of a broken #EXTINF row (with quoting issues)
-            log.info("parsing an EXTINF row with quoting issues:\n%s", extinf_string)
+            log.warning("parsing an EXTINF row with quoting issues:\n%s", extinf_string)
             self.duration = match.group("duration_g")
             log.info("duration: %s", self.duration)
             self.attributes = m3u.get_m3u_plus_broken_attributes(extinf_string)
