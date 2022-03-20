@@ -41,6 +41,7 @@ def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
     using the attribute name as separator, and take the right part of the split.
     4. Split the right part in two, by using next attribute as separator: the
     wanted value will be found in the left part of the split.
+    5. Replace all double quotes with underscores.
     """
     match = match_m3u_plus_broken_extinf_row(row)
     if match is None:
@@ -53,7 +54,8 @@ def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
         right = row.split(token)[1]
         separator = tokens[i+1] if i < len(tokens)-1 else '",'
         left = right.split(separator)[0].rstrip('"')
-        attrs[name] = left
+        # Let's replace double quotes with underscore
+        attrs[name] = left.replace('"', '_')
     return attrs
 
 
