@@ -135,3 +135,11 @@ expected_urlencoded_list = [
 ]
 expected_urlencoded = M3UPlaylist()
 expected_urlencoded._channels = expected_urlencoded_list
+
+broken_extinf_row = """#EXTINF:-1 tvg-id="" tvg-name=""AR || Wonderful! || "RR" tvg-logo="https://img.mysite.net/5425.jpg" group-title="free, stream","AR || Wonderful! || "RR"""
+expected_attributes_broken_extinf_row = {
+    'tvg-id': '',
+    'tvg-name': '_AR || Wonderful! || _RR',
+    'tvg-logo': 'https://img.mysite.net/5425.jpg',
+    'group-title': 'free, stream'
+}

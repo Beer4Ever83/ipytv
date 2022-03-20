@@ -1,9 +1,14 @@
+import logging
 import re
 import urllib.parse
 from typing import List
 
+from ipytv import m3u
 from ipytv.channel import IPTVChannel, IPTVAttr
 from ipytv.playlist import M3UPlaylist
+
+log = logging.getLogger(__name__)
+log.addHandler(logging.NullHandler())
 
 
 class M3UDoctor:
@@ -22,7 +27,7 @@ class M3UDoctor:
             current_row: str = m3u_rows[index]
             previous_row: str = m3u_rows[index-1]
             if index > 0 and re.match(r"^\s*\"", current_row) and \
-                    previous_row.startswith("#EXTINF:"):
+                    m3u.is_extinf_row(previous_row):
                 fixed_m3u_rows.pop()
                 fixed_m3u_rows.append(previous_row.rstrip() + current_row.lstrip())
             else:
@@ -32,28 +37,29 @@ class M3UDoctor:
 
 class IPTVChannelDoctor:
     @staticmethod
-    def urlencode_logo(channel: IPTVChannel) -> IPTVChannel:
+    def urlencode_logo(chan: IPTVChannel) -> IPTVChannel:
         """
         This covers the case of tvg-logo attributes not being correctly url-encoded.
         Example (commas in the url):
             tvg-logo="https://some.image.com/images/V1_UX182_CR0,0,182,268_AL_.jpg"
         """
-        new_channel = channel.copy()
-        logo = new_channel.attributes[IPTVAttr.TVG_LOGO.value]
-        new_channel.attributes[IPTVAttr.TVG_LOGO.value] = urllib.parse.quote(logo, safe=':/%')
-        return new_channel
+        new_chan = chan.copy()
+        if IPTVAttr.TVG_LOGO.value in new_chan.attributes:
+            logo = new_chan.attributes[IPTVAttr.TVG_LOGO.value]
+            new_chan.attributes[IPTVAttr.TVG_LOGO.value] = urllib.parse.quote(logo, safe=':/%')
+        return new_chan
 
     @staticmethod
-    def sanitize_attributes(channel: IPTVChannel) -> IPTVChannel:
+    def sanitize_attributes(chan: IPTVChannel) -> IPTVChannel:
         attr: str
-        new_channel = channel.copy()
-        for attr in channel.attributes.keys():
-            IPTVChannelDoctor.__sanitize_commas(new_channel, attr)
-            IPTVChannelDoctor.__attributes_to_lowercase(new_channel, attr)
-        return new_channel
+        new_chan = chan.copy()
+        for attr in chan.attributes.keys():
+            IPTVChannelDoctor.__sanitize_commas(new_chan, attr)
+            IPTVChannelDoctor.__attributes_to_lowercase(new_chan, attr)
+        return new_chan
 
     @staticmethod
-    def __attributes_to_lowercase(channel: IPTVChannel, attribute_name: str):
+    def __attributes_to_lowercase(chan: IPTVChannel, attribute_name: str):
         """
         This covers the case of well-known attributes (i.e. the ones in IPTVAttr)
         spelled wrongly.
@@ -65,25 +71,25 @@ class IPTVChannelDoctor:
         except ValueError:
             try:
                 key = IPTVAttr(attribute_name.lower()).value
-                value = channel.attributes[attribute_name]
-                del channel.attributes[attribute_name]
-                channel.attributes[key] = value
+                value = chan.attributes[attribute_name]
+                del chan.attributes[attribute_name]
+                chan.attributes[key] = value
             except ValueError:
                 # It seems not a well-known attribute, so we leave it untouched.
                 pass
 
     @staticmethod
-    def __sanitize_commas(channel: IPTVChannel, attribute_name: str):
+    def __sanitize_commas(chan: IPTVChannel, attribute_name: str):
         """"
         This covers the case of attributes values containing a comma, which can confuse some
         parsing libraries (not this one, though)
         """
         if attribute_name == IPTVAttr.TVG_LOGO.value:
             return
-        value: str = channel.attributes[attribute_name]
+        value: str = chan.attributes[attribute_name]
         if "," in value:
             value = value.replace(",", "_")
-            channel.attributes[attribute_name] = value
+            chan.attributes[attribute_name] = value
 
 
 class M3UPlaylistDoctor:
@@ -93,9 +99,9 @@ class M3UPlaylistDoctor:
         This makes sure that all logo URLs in the playlist are encoded correctly.
         """
         new_playlist: M3UPlaylist = M3UPlaylist()
-        channel: IPTVChannel
-        for channel in playlist:
-            new_playlist.append_channel(IPTVChannelDoctor.urlencode_logo(channel))
+        chan: IPTVChannel
+        for chan in playlist:
+            new_playlist.append_channel(IPTVChannelDoctor.urlencode_logo(chan))
         return new_playlist
 
     @staticmethod
@@ -105,7 +111,7 @@ class M3UPlaylistDoctor:
         and that no commas appear in the attributes value.
         """
         new_playlist: M3UPlaylist = M3UPlaylist()
-        channel: IPTVChannel
-        for channel in playlist:
-            new_playlist.append_channel(IPTVChannelDoctor.sanitize_attributes(channel))
+        chan: IPTVChannel
+        for chan in playlist:
+            new_playlist.append_channel(IPTVChannelDoctor.sanitize_attributes(chan))
         return new_playlist

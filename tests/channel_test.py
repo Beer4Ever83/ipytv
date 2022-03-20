@@ -74,16 +74,15 @@ class TestParseBadM3UPlusExtinfStrings(unittest.TestCase):
         extinf_strings = [
             ''' #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="",Off The Map''',
             '''#EXTINF :-1 tvg-id="" tvg-name="" tvg-logo="" group-title="",Off The Map''',
-            '''#EXTINF:-1 tvg-id=" tvg-name="" tvg-logo="" group-title="",Off The Map''',
             '''#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="" Off The Map''',
             '''#EXTINF:-1 tvg/id="" tvg-name="" tvg-logo="" group-title="",Off The Map''',
             '''#EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="''',
-            '''#EXTINF:-1tvg-id="" tvg-name="" tvg-logo="" group-title="",Off The Map''',
-            '''#EXTINF:-1 tvg-id=""tvg-name="" tvg-logo="" group-title="",Off The Map'''
+            '''#EXTINF:-1tvg-id="" tvg-name="" tvg-logo="" group-title="",Off The Map'''
         ]
         for extinf_string in extinf_strings:
             ch = IPTVChannel()
-            self.assertRaises(MalformedExtinfException, ch.parse_extinf_string, extinf_string)
+            with self.assertRaises(MalformedExtinfException, msg=extinf_string):
+                    ch.parse_extinf_string(extinf_string)
 
 
 class TestParseM3UExtinfString(unittest.TestCase):

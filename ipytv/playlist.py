@@ -79,7 +79,7 @@ class M3UPlaylist:
         length = self.length()
         if index < 0 or index >= length:
             log.error(
-                "the index %s is out of the (0, %s) range)",
+                "the index %s is out of the (0, %s) range",
                 str(index),
                 str(length)
             )
@@ -226,11 +226,10 @@ class M3UPlaylist:
         return self
 
     def __next__(self) -> IPTVChannel:
-        try:
-            next_chan = self.get_channel(self._iter_index)
-        except IndexOutOfBoundsException:
+        if self._iter_index >= self.length():
             # pylint: disable=W0707
             raise StopIteration
+        next_chan = self.get_channel(self._iter_index)
         self._iter_index += 1
         return next_chan
 
