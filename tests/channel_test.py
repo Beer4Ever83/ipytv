@@ -2,31 +2,6 @@ import unittest
 
 from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.exceptions import MalformedExtinfException
-from ipytv import m3u
-
-
-class TestIsM3UPlusExtinfString(unittest.TestCase):
-    def runTest(self):
-        extinf_string = '''#EXTINF:-1 tvg-id="" tvg-name="Io, Leonardo (2019)" tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/6DfpPu4iGrBswsyLdJlCwiLCudw.jpg" group-title="Recenti e Oggi al Cinema",Io, Leonardo (2019)'''
-        self.assertTrue(m3u.is_m3u_plus_extinf_row(extinf_string))
-
-
-class TestIsNotM3UPlusExtinfString(unittest.TestCase):
-    def runTest(self):
-        extinf_string = '''#EXTINF:-1,SANTUÁRIO DE FÁTIMA'''
-        self.assertFalse(m3u.is_m3u_plus_extinf_row(extinf_string))
-
-
-class TestIsM3UExtinfString(unittest.TestCase):
-    def runTest(self):
-        extinf_string = '''#EXTINF:-1,SANTUÁRIO DE FÁTIMA'''
-        self.assertTrue(m3u.is_m3u_extinf_row(extinf_string))
-
-
-class TestIsNotM3UExtinfString(unittest.TestCase):
-    def runTest(self):
-        extinf_string = '''#EXTINF:-1 tvg-id="" tvg-name="Io, Leonardo (2019)" tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/6DfpPu4iGrBswsyLdJlCwiLCudw.jpg" group-title="Recenti e Oggi al Cinema",Io, Leonardo (2019)'''
-        self.assertFalse(m3u.is_m3u_extinf_row(extinf_string))
 
 
 class TestParseM3UPlusExtinfString(unittest.TestCase):
@@ -46,7 +21,7 @@ class TestParseM3UPlusExtinfString(unittest.TestCase):
         )
         ch = IPTVChannel()
         ch.parse_extinf_string(extinf_string)
-        self.assertTrue(ch.__eq__(expected), "the two channels are not equal")
+        self.assertEqual(expected, ch, "the two channels are not equal")
 
 
 class TestParseM3UPlusExtinfStringWithCommas(unittest.TestCase):
@@ -66,7 +41,7 @@ class TestParseM3UPlusExtinfStringWithCommas(unittest.TestCase):
         )
         ch = IPTVChannel()
         ch.parse_extinf_string(extinf_string)
-        self.assertTrue(ch.__eq__(expected), "the two channels are not equal")
+        self.assertEqual(expected, ch, "the two channels are not equal")
 
 
 class TestParseBadM3UPlusExtinfStrings(unittest.TestCase):
@@ -82,7 +57,7 @@ class TestParseBadM3UPlusExtinfStrings(unittest.TestCase):
         for extinf_string in extinf_strings:
             ch = IPTVChannel()
             with self.assertRaises(MalformedExtinfException, msg=extinf_string):
-                    ch.parse_extinf_string(extinf_string)
+                ch.parse_extinf_string(extinf_string)
 
 
 class TestParseM3UExtinfString(unittest.TestCase):
@@ -97,7 +72,7 @@ class TestParseM3UExtinfString(unittest.TestCase):
         )
         ch = IPTVChannel()
         ch.parse_extinf_string(extinf_string)
-        self.assertTrue(ch.__eq__(expected), "the two channels are not equal")
+        self.assertEqual(expected, ch, "the two channels are not equal")
 
 
 class TestCopy(unittest.TestCase):
@@ -115,10 +90,10 @@ class TestCopy(unittest.TestCase):
             attributes=original_attributes
         )
         clone = original.copy()
-        self.assertTrue(original == clone)
+        self.assertEqual(original, clone)
         clone.name = "my " + clone.name
-        self.assertTrue(original != clone)
-        self.assertTrue("my " + original.name == clone.name)
+        self.assertNotEqual(original, clone)
+        self.assertEqual("my " + original.name, clone.name)
 
 
 class TestToString(unittest.TestCase):
