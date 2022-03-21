@@ -41,6 +41,7 @@ class IPTVAttr(Enum):
     ASPECT_RATIO = "aspect-ratio"
     TVG_CHNO = "tvg-chno"
     RADIO = "radio"
+    TVG_URL = "tvg-url"
 
 
 class IPTVChannel(M3UEntry):
@@ -75,7 +76,7 @@ class IPTVChannel(M3UEntry):
             log.info("duration: %s", self.duration)
             attributes = match.group("attributes_g")
             for entry in shlex.split(attributes):
-                pair = entry.split("=")
+                pair = entry.split("=", 1)
                 key = pair[0]
                 value = pair[1]
                 self.attributes[key] = value

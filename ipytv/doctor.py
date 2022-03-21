@@ -46,7 +46,7 @@ class IPTVChannelDoctor:
         """
         if attribute_name in chan.attributes:
             value = chan.attributes[attribute_name]
-            chan.attributes[attribute_name] = urllib.parse.quote(value, safe=':/%')
+            chan.attributes[attribute_name] = urllib.parse.quote(value, safe=':/%?&=')
 
     @staticmethod
     def _normalize_attributes_name(chan: IPTVChannel, attribute_name: str) -> None:

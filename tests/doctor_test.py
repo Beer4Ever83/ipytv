@@ -37,6 +37,30 @@ class TestURLEncodeLogo(unittest.TestCase):
         self.assertEqual(expected, ch, "the two channels are not equal")
 
 
+class TestURLEncodeLogoNoChange(unittest.TestCase):
+    def runTest(self):
+        extinf_string = """#EXTINF:-1 tvg-id="" tvg-name="" tvg-language="Hindi" tvg-logo="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTZNoM8_ZqOG-8Lksy07YD-ltPehSFnfWcmxTU1LxlwbC58_8jcfJ987g" tvg-country="IN" tvg-url="" group-title="News",ABP Asmita"""
+        expected_attributes = {
+            IPTVAttr.TVG_ID.value: "",
+            IPTVAttr.TVG_NAME.value: "",
+            IPTVAttr.TVG_LANGUAGE.value: "Hindi",
+            IPTVAttr.TVG_LOGO.value: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTZNoM8_ZqOG-8Lksy07YD-ltPehSFnfWcmxTU1LxlwbC58_8jcfJ987g",
+            IPTVAttr.TVG_COUNTRY.value: "IN",
+            IPTVAttr.TVG_URL.value: "",
+            IPTVAttr.GROUP_TITLE.value: "News"
+        }
+        expected = IPTVChannel(
+            url="",
+            name="ABP Asmita",
+            duration="-1",
+            attributes=expected_attributes
+        )
+        ch = IPTVChannel()
+        ch.parse_extinf_string(extinf_string)
+        IPTVChannelDoctor._urlencode_value(ch, IPTVAttr.TVG_LOGO.value)
+        self.assertEqual(expected, ch, "the two channels are not equal")
+
+
 class TestSanitizeAttributes(unittest.TestCase):
     def runTest(self):
         extinf_string = """#EXTINF:-1 tvg-ID="a" Tvg-name="contains, some,,commas" """ \

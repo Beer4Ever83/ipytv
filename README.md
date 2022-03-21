@@ -261,7 +261,37 @@ print(channel.attributes[IPTVAttr.GROUP_TITLE.value])
 The `IPTVAttr` enum class contains tags that are commonly found in IPTV
 Playlists.
 
-## Logging
+### The `doctor` module
+Internet-sourced IPTV playlists, often contain a number of format errors. This
+module wants to address some common errors.
+
+The module contains three classes, each with its own scope:
+1. `M3UDoctor`
+   - It contains methods to fix errors in m3u files (i.e. errors that would make
+   it impossible to load an m3u file as a playlist).
+2. `IPTVChannelDoctor`
+  - It contains methods to fix errors in channel (i.e. errors in the attributes
+    of an #EXTINF row).
+3. `M3UPlaylistDoctor`
+  - It applies the fixes in `IPTVChannelDoctor` to all channels in the
+    playlist.
+
+All the classes above, offer one public static method named `sanitize()` that is
+in charge of applying all different fixes. It can be used as follows:
+```python
+from ipytv.doctor import M3UDoctor, M3UPlaylistDoctor
+from ipytv import playlist
+with open('my-broken-playlist.m3u', encoding='utf-8') as in_file:
+    content = in_file.readlines()
+    fixed_content = M3UDoctor.sanitize(content)
+    pl = playlist.loada(fixed_content)
+    fixed_pl = M3UPlaylistDoctor.sanitize(pl)
+    with open('my-fixed-playlist.m3u', 'w', encoding='utf-8') as out_file:
+        content = fixed_pl.to_m3u_plus_playlist()
+        out_file.write(content)
+```
+
+### Logging
 IPyTV supports python's standard [logging system](https://docs.python.org/3/library/logging.html).
 
 To enable IPyTV's logging, add a logging configuration to your application:
