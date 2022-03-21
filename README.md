@@ -268,7 +268,7 @@ To enable IPyTV's logging, add a logging configuration to your application:
 ```python
 import logging
 from ipytv import playlist
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 pl = playlist.loadu("https://iptv-org.github.io/iptv/categories/classic.m3u")
 ```
 

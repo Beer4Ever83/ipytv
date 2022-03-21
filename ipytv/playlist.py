@@ -227,7 +227,6 @@ class M3UPlaylist:
 
     def __next__(self) -> IPTVChannel:
         if self._iter_index >= self.length():
-            # pylint: disable=W0707
             raise StopIteration
         next_chan = self.get_channel(self._iter_index)
         self._iter_index += 1
