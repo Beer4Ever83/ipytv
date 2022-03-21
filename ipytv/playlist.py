@@ -321,10 +321,30 @@ def _parse_header(header: str) -> Dict[str, str]:
     return attributes
 
 
-def _chunk_array(array: List, chunk_count: int) -> List:
+def _build_chunk(begin: int, end: int) -> Dict[str, int]:
+    return {
+        "begin": begin,
+        "end": end
+    }
+
+
+def _compute_chunk(array: List, start: int, chunk_size: int) -> Dict[str, int]:
     length = len(array)
-    chunk_size = math.floor(length / chunk_count) + 1
-    if chunk_size < __MIN_CHUNK_SIZE:
+    sub_array = array[start+chunk_size:]
+    if length-start > chunk_size:
+        for offset, row in enumerate(sub_array):
+            if m3u.is_extinf_row(row):
+                return _build_chunk(start, start+chunk_size+offset)
+            elif offset > 0 and m3u.is_url_row(row) and m3u.is_url_row(sub_array[offset-1]):
+                # Case of two adjacent url rows
+                return _build_chunk(start, start+chunk_size+offset)
+    return _build_chunk(start, length)
+
+
+def _chunk_array(array: List, chunk_count: int, enforce_min_size: bool = True) -> List:
+    length = len(array)
+    chunk_size = math.floor(length / chunk_count)
+    if enforce_min_size and chunk_size < __MIN_CHUNK_SIZE:
         return [
             {
                 "begin": 0,
@@ -332,23 +352,11 @@ def _chunk_array(array: List, chunk_count: int) -> List:
             }
         ]
     chunk_list = []
-    overlap = 0
-    end = 1
-    for i in range(0, length-chunk_size, chunk_size):
-        begin = i-overlap
-        end = begin + chunk_size
-        entry = {
-            "begin": begin,
-            "end": end
-        }
-        chunk_list.append(entry)
-        overlap += 1
-    # The last chunk can be bigger
-    entry = {
-        "begin": end-1,
-        "end": length
-    }
-    chunk_list.append(entry)
+    start = 0
+    while start < length:
+        chunk: Dict[str, int] = _compute_chunk(array, start, chunk_size)
+        chunk_list.append(chunk)
+        start = chunk["end"]
     log.debug("chunk_list: %s", chunk_list)
     return chunk_list
 
