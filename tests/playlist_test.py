@@ -83,7 +83,7 @@ class TestLoadaM3UPlusHuge(unittest.TestCase):
 class TestLoadfM3UPlus(unittest.TestCase):
     def runTest(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
-        self.assertTrue(pl == test_data.expected_m3u_plus, "The two playlists are not equal")
+        self.assertEqual(test_data.expected_m3u_plus, pl, "The two playlists are not equal")
 
 
 class TestLoadfM3U8(unittest.TestCase):
@@ -108,7 +108,7 @@ class TestLoaduM3UPlus(unittest.TestCase):
             pl = playlist.loadu(url)
         httpretty.disable()
         httpretty.reset()
-        self.assertTrue(pl == test_data.expected_m3u_plus, "The two playlists are not equal")
+        self.assertEqual(test_data.expected_m3u_plus, pl, "The two playlists are not equal")
 
 
 class TestLoaduM3U8(unittest.TestCase):
@@ -127,7 +127,7 @@ class TestLoaduM3U8(unittest.TestCase):
             pl = playlist.loadu(url)
         httpretty.disable()
         httpretty.reset()
-        self.assertTrue(pl == test_data.expected_m3u8, "The two playlists are not equal")
+        self.assertEqual(test_data.expected_m3u8, pl, "The two playlists are not equal")
 
 
 class TestLoaduErrors(unittest.TestCase):
@@ -156,7 +156,7 @@ class TestToM3UPlusPlaylist(unittest.TestCase):
         with open("tests/resources/m3u_plus.m3u") as file:
             expected_content = "".join(file.readlines())
             content = pl.to_m3u_plus_playlist()
-            self.assertTrue(content == expected_content, "The two playlists are not equal")
+            self.assertEqual(expected_content, content, "The two playlists are not equal")
 
 
 class TestToM3U8Playlist(unittest.TestCase):
@@ -181,7 +181,7 @@ class TestClone(unittest.TestCase):
         self.assertEqual(pl.length()+1, new_pl.length())
         current_name: str = new_pl.get_channel(0).name
         new_pl.get_channel(0).name = "my " + current_name
-        self.assertTrue(pl.get_channel(0).name != new_pl.get_channel(0).name)
+        self.assertNotEqual(pl.get_channel(0).name, new_pl.get_channel(0).name)
 
 
 class TestGroupByAttribute(unittest.TestCase):
@@ -189,7 +189,7 @@ class TestGroupByAttribute(unittest.TestCase):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_group_title, ignore_order=True)
-        self.assertTrue(len(diff) == 0)
+        self.assertEqual(0, len(diff))
 
 
 class TestGroupByAttributeWithNoGroupEnabled(unittest.TestCase):
@@ -213,7 +213,7 @@ class TestGroupByAttributeWithNoGroupEnabled(unittest.TestCase):
         expected_groups = test_data.expected_m3u_plus_group_by_group_title.copy()
         expected_groups[M3UPlaylist.NO_GROUP_KEY] = [4, 5]
         diff = DeepDiff(groups, expected_groups, ignore_order=True)
-        self.assertTrue(len(diff) == 0)
+        self.assertEqual(0, len(diff))
 
 
 class TestGroupByAttributeWithNoGroupDisabled(unittest.TestCase):
@@ -235,7 +235,7 @@ class TestGroupByAttributeWithNoGroupDisabled(unittest.TestCase):
         pl.append_channel(no_group_channel)
         groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value, include_no_group=False)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_group_title, ignore_order=True)
-        self.assertTrue(len(diff) == 0)
+        self.assertEqual(0, len(diff))
 
 
 class TestGroupByUrlWithNoGroupDisabled(unittest.TestCase):
@@ -243,7 +243,7 @@ class TestGroupByUrlWithNoGroupDisabled(unittest.TestCase):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         groups = pl.group_by_url(include_no_group=False)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_url, ignore_order=True)
-        self.assertTrue(len(diff) == 0)
+        self.assertEqual(0, len(diff))
 
 
 class TestGroupByUrlWithNoGroupEnabled(unittest.TestCase):
@@ -267,7 +267,7 @@ class TestGroupByUrlWithNoGroupEnabled(unittest.TestCase):
         expected_groups = test_data.expected_m3u_plus_group_by_url.copy()
         expected_groups[M3UPlaylist.NO_URL_KEY] = [4, 5]
         diff = DeepDiff(groups, expected_groups, ignore_order=True)
-        self.assertTrue(len(diff) == 0)
+        self.assertEqual(0, len(diff))
 
 
 class TestParseHeader(unittest.TestCase):

@@ -1,15 +1,16 @@
 import unittest
 
+import test_data
 import tests.test_data
+from ipytv import playlist
 from ipytv.channel import IPTVChannel, IPTVAttr
 from ipytv.doctor import M3UDoctor, IPTVChannelDoctor, M3UPlaylistDoctor
 from ipytv.playlist import M3UPlaylist
-import ipytv.playlist as playlist
 
 
 class TestFixSplitQuotedString(unittest.TestCase):
     def runTest(self):
-        fixed = M3UDoctor.fix_split_quoted_string(tests.test_data.split_quoted_string.split("\n"))
+        fixed = M3UDoctor.sanitize(tests.test_data.split_quoted_string.split("\n"))
         self.assertEqual(tests.test_data.expected_m3u_plus, playlist.loada(fixed))
 
 
@@ -32,8 +33,8 @@ class TestURLEncodeLogo(unittest.TestCase):
         )
         ch = IPTVChannel()
         ch.parse_extinf_string(extinf_string)
-        new_ch = IPTVChannelDoctor.urlencode_logo(ch)
-        self.assertTrue(new_ch.__eq__(expected), "the two channels are not equal")
+        IPTVChannelDoctor._urlencode_value(ch, IPTVAttr.TVG_LOGO.value)
+        self.assertEqual(expected, ch, "the two channels are not equal")
 
 
 class TestSanitizeAttributes(unittest.TestCase):
@@ -54,16 +55,16 @@ class TestSanitizeAttributes(unittest.TestCase):
         )
         ch = IPTVChannel()
         ch.parse_extinf_string(extinf_string)
-        new_ch = IPTVChannelDoctor.sanitize_attributes(ch)
-        self.assertTrue(new_ch.__eq__(expected), "the two channels are not equal")
+        new_ch = IPTVChannelDoctor.sanitize(ch)
+        self.assertEqual(expected, new_ch, "the two channels are not equal")
 
 
-class TestURLEncodeAllLogos(unittest.TestCase):
+class TestSanitizeURLEncodesAllLogos(unittest.TestCase):
     def runTest(self):
         pl = playlist.loadf("tests/resources/m3u_plus_unencoded_logo.m3u")
-        self.assertFalse(pl.__eq__(tests.test_data.expected_urlencoded))
-        fixed_pl = M3UPlaylistDoctor.urlencode_all_logos(pl)
-        self.assertTrue(fixed_pl.__eq__(tests.test_data.expected_urlencoded))
+        self.assertNotEqual(test_data.expected_urlencoded, pl)
+        fixed_pl = M3UPlaylistDoctor.sanitize(pl)
+        self.assertEqual(test_data.expected_urlencoded, fixed_pl)
 
 
 class TestSanitizeAllAttributes(unittest.TestCase):
@@ -89,9 +90,9 @@ class TestSanitizeAllAttributes(unittest.TestCase):
         expected.append_channel(
             IPTVChannel(attributes={IPTVAttr.GROUP_TITLE.value: "c_d__e"})
         )
-        self.assertFalse(pl.__eq__(expected))
-        fixed_pl = M3UPlaylistDoctor.sanitize_all_attributes(pl)
-        self.assertTrue(fixed_pl.__eq__(expected))
+        self.assertNotEqual(expected, pl)
+        fixed_pl = M3UPlaylistDoctor.sanitize(pl)
+        self.assertEqual(expected, fixed_pl)
 
 
 if __name__ == '__main__':
