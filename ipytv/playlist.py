@@ -357,7 +357,7 @@ def _populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
     previous_row = array[begin]
     if m3u.is_extinf_row(previous_row):
         entry.append(array[begin])
-        log.debug("it seems that the previous chunk ended with an EXTINF row")
+        log.warning("it seems that the previous chunk ended with an EXTINF row")
     for index in range(begin+1, end):
         row = array[index].strip()
         log.debug("parsing row: %s", row)
