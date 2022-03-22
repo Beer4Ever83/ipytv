@@ -110,7 +110,7 @@ class TestToString(unittest.TestCase):
             duration="-1",
             attributes=original_attributes
         )
-        expected_output = '{name: "Rai 1 SuperHD", duration: "-1", url: "", attributes: {tvg-id: "Rai1.it", tvg-name: "Rai 1 SuperHD", tvg-logo: "https://static.epg.best/it/RaiUno.it.png", group-title: "SuperHD"}}'
+        expected_output = '{name: "Rai 1 SuperHD", duration: "-1", url: "", attributes: {tvg-id: "Rai1.it", tvg-name: "Rai 1 SuperHD", tvg-logo: "https://static.epg.best/it/RaiUno.it.png", group-title: "SuperHD"}, extras: []}'
         real_output = str(original)
         self.assertEqual(expected_output, real_output)
 
