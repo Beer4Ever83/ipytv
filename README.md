@@ -21,6 +21,15 @@ detail [here](#format-considerations)).
 This library has been created from scratch to parse and handle the M3U Plus
 format only. It does not fully support regular M3U8 playlists.
 
+This library copies _as-is_ (i.e. it's treated as a plain string and not parsed
+in any way) all tags that are found between the `#EXTINF` row and the related
+url row as, for example:
+```text
+#EXTINF:-1 tvg-id="" tvg-name="hello" tvg-country="IT" tvg-url="" group-title="Greetings",Hello!
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0 
+https://my-website.com/hello
+```
+
 ## Installation
 This library requires Python 3 (and the related `pip` installer).
 
@@ -238,7 +247,8 @@ The `get_channels()` method of an M3UPlaylist object returns a list of
 `IPTVChannel` objects.
 
 An `IPTVChannel` object has 3 basic properties (`url`, `name` and
-`duration`) and an optional `attributes` dictionary.
+`duration`) and two optional fields: `attributes` (a dictionary) and `extras`
+(a list).
 
 For example:
 
@@ -253,13 +263,15 @@ channel = IPTVChannel(
         IPTVAttr.TVG_NAME.value: "Rai 1",
         IPTVAttr.TVG_LOGO.value: "https://static.epg.best/it/RaiUno.it.png",
         IPTVAttr.GROUP_TITLE.value: "RAI"
-    }
+    },
+    extras=['#EXTVLCOPT:http-user-agent=Lavf53.32.100']
 )
 print(channel.name)
 print(channel.attributes[IPTVAttr.GROUP_TITLE.value])
+print(channel.extras[0])
 ```
-The `IPTVAttr` enum class contains tags that are commonly found in IPTV
-Playlists.
+The `IPTVAttr` enum class contains attribute names that are commonly found in
+IPTV Playlists.
 
 ### The `doctor` module
 Internet-sourced IPTV playlists, often contain a number of format errors. This
