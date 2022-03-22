@@ -47,14 +47,17 @@ class IPTVAttr(Enum):
 class IPTVChannel(M3UEntry):
 
     def __init__(self, url: str = "", name: str = "",
-                 duration: str = "-1", attributes: Dict[str, str] = None):
+                 duration: str = "-1", attributes: Dict[str, str] = None,
+                 extras: List[str] = None):
         super().__init__(url, name, duration)
         self.attributes: Dict[str, str] = attributes if attributes is not None else {}
+        self.extras: List[str] = extras if extras is not None else []
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, IPTVChannel) \
-               and super().__eq__(other) \
-               and self.attributes == other.attributes
+            and super().__eq__(other) \
+            and self.attributes == other.attributes \
+            and self.extras == other.extras
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
@@ -64,7 +67,8 @@ class IPTVChannel(M3UEntry):
             url=self.url,
             name=self.name,
             duration=self.duration,
-            attributes=self.attributes.copy()
+            attributes=self.attributes.copy(),
+            extras=self.extras.copy()
         )
 
     def parse_extinf_string(self, extinf_string: str) -> None:
@@ -104,13 +108,57 @@ class IPTVChannel(M3UEntry):
     def __str__(self) -> str:
         attr_str = ''
         if len(self.attributes) > 0:
-            for attr in self.attributes:
-                attr_str += f'{attr}: "{self.attributes[attr]}", '
+            for name, value in self.attributes.items():
+                attr_str += f'{name}: "{value}", '
         if attr_str.endswith(', '):
             attr_str = attr_str[:-2]
+        extras_str = ''
+        if len(self.extras) > 0:
+            for extra in self.extras:
+                extras_str += f'{extra}, '
+        if extras_str.endswith(', '):
+            extras_str = extras_str[:-2]
         out = f'{{name: "{self.name}", duration: "{self.duration}", '\
-              f'url: "{self.url}", attributes: {{{attr_str}}}}}'
+              f'url: "{self.url}", attributes: {{{attr_str}}}, extras: [{extras_str}]}}'
         return out
+
+    def _build_m3u_plus_extinf_entry(self) -> str:
+        extinf_pattern = '#EXTINF:{}{},{}\n'
+        attrs = ''
+        for key, value in self.attributes.items():
+            attrs += f' {key}="{value}"'
+        return extinf_pattern.format(
+            self.duration,
+            attrs,
+            self.name
+        )
+
+    def _build_m3u8_extinf_entry(self) -> str:
+        extinf_pattern = '#EXTINF:{},{}\n'
+        return extinf_pattern.format(
+            self.duration,
+            self.name
+        )
+
+    def _build_extras_entry(self) -> str:
+        out = ''
+        for extra in self.extras:
+            out += f'{extra}\n'
+        return out
+
+    def _build_url_entry(self) -> str:
+        return f"{self.url}\n"
+
+    def to_m3u_plus_playlist_entry(self) -> str:
+        extinf_row = self._build_m3u_plus_extinf_entry()
+        extras_rows = self._build_extras_entry()
+        url_row = self._build_url_entry()
+        return f'{extinf_row}{extras_rows}{url_row}'
+
+    def to_m3u8_playlist_entry(self) -> str:
+        extinf_row = self._build_m3u8_extinf_entry()
+        url_row = self._build_url_entry()
+        return f'{extinf_row}{url_row}'
 
 
 def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
@@ -123,7 +171,8 @@ def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
                 log.warning("Skipping the following entry as it contains a malformed #EXTINF row:\n%s", entry)
             log.info("#EXTINF row found")
         elif m3u.is_comment_or_tag_row(row):
-            # a comment or a non-supported tag
+            # a comment or a non-supported tag, we add it to extras
+            channel.extras.append(row)
             log.warning("commented row or unsupported tag found:\n%s", row)
         else:
             channel.url = row

@@ -165,30 +165,16 @@ class M3UPlaylist:
         return groups
 
     def to_m3u_plus_playlist(self) -> str:
-        out = self.build_header()
-        entry_pattern = '\n#EXTINF:{}{},{}\n{}'
+        out = f"{self.build_header()}\n"
         for channel in self._channels:
-            attrs = ''
-            for attr in channel.attributes:
-                attrs += f' {attr}="{channel.attributes[attr]}"'
-            out += entry_pattern.format(
-                channel.duration,
-                attrs,
-                channel.name,
-                channel.url
-            )
-        return out
+            out += channel.to_m3u_plus_playlist_entry()
+        return out.rstrip()
 
     def to_m3u8_playlist(self) -> str:
-        out = f"{M3U_HEADER_TAG}"
-        entry_pattern = "\n#EXTINF:{},{}\n{}"
+        out = f"{m3u.M3U_HEADER_TAG}\n"
         for channel in self._channels:
-            out += entry_pattern.format(
-                channel.duration,
-                channel.name,
-                channel.url
-            )
-        return out
+            out += channel.to_m3u8_playlist_entry()
+        return out.rstrip()
 
     def copy(self) -> 'M3UPlaylist':
         new_pl = M3UPlaylist()
@@ -237,19 +223,23 @@ def loada(array: List) -> 'M3UPlaylist':
     if not isinstance(array, list):
         log.error("expected %s, got %s", type([]), type(array))
         raise WrongTypeException("Wrong type: array (List) expected")
-    first_row = array[0].strip()
-    if not m3u.is_m3u_header_row(first_row):
+    if len(array) < 2:
+        log.error("a playlist should have at least 2 rows (found %s)", len(array))
+        raise MalformedPlaylistException(f"a playlist should have at least 2 rows (found {len(array)})")
+    header = array[0].strip()
+    body = array[1:]
+    if not m3u.is_m3u_header_row(header):
         log.error(
             "the playlist's first row should start with \"%s\", but it's \"%s\"",
             M3U_HEADER_TAG,
-            first_row
+            header
         )
         raise MalformedPlaylistException(f"Missing or misplaced {M3U_HEADER_TAG} row")
     out_pl = M3UPlaylist()
-    out_pl.add_attributes(_parse_header(first_row))
+    out_pl.add_attributes(_parse_header(header))
     cores = mp.cpu_count()
     log.info("%s cores detected", cores)
-    chunks = _chunk_array(array, cores)
+    chunks = _chunk_body(body, cores)
     results = []
     log.info("spawning a pool of processes (one per core) to parse the playlist")
     with mp.Pool(processes=cores) as pool:
@@ -261,7 +251,7 @@ def loada(array: List) -> 'M3UPlaylist':
                 begin,
                 end
             )
-            result = pool.apply_async(_populate, (array, begin, end))
+            result = pool.apply_async(_populate, (body, begin, end))
             results.append(result)
         pool.close()
         log.debug("pool destroyed")
@@ -321,10 +311,30 @@ def _parse_header(header: str) -> Dict[str, str]:
     return attributes
 
 
-def _chunk_array(array: List, chunk_count: int) -> List:
+def _build_chunk(begin: int, end: int) -> Dict[str, int]:
+    return {
+        "begin": begin,
+        "end": end
+    }
+
+
+def _compute_chunk(array: List, start: int, chunk_size: int) -> Dict[str, int]:
     length = len(array)
-    chunk_size = math.floor(length / chunk_count) + 1
-    if chunk_size < __MIN_CHUNK_SIZE:
+    sub_array = array[start+chunk_size:]
+    if length-start > chunk_size:
+        for offset, row in enumerate(sub_array):
+            if m3u.is_extinf_row(row):
+                return _build_chunk(start, start+chunk_size+offset)
+            elif offset > 0 and m3u.is_url_row(row) and m3u.is_url_row(sub_array[offset-1]):
+                # Case of two adjacent url rows
+                return _build_chunk(start, start+chunk_size+offset)
+    return _build_chunk(start, length)
+
+
+def _chunk_body(array: List, chunk_count: int, enforce_min_size: bool = True) -> List:
+    length = len(array)
+    chunk_size = math.floor(length / chunk_count)
+    if enforce_min_size and chunk_size < __MIN_CHUNK_SIZE:
         return [
             {
                 "begin": 0,
@@ -332,23 +342,11 @@ def _chunk_array(array: List, chunk_count: int) -> List:
             }
         ]
     chunk_list = []
-    overlap = 0
-    end = 1
-    for i in range(0, length-chunk_size, chunk_size):
-        begin = i-overlap
-        end = begin + chunk_size
-        entry = {
-            "begin": begin,
-            "end": end
-        }
-        chunk_list.append(entry)
-        overlap += 1
-    # The last chunk can be bigger
-    entry = {
-        "begin": end-1,
-        "end": length
-    }
-    chunk_list.append(entry)
+    start = 0
+    while start < length:
+        chunk: Dict[str, int] = _compute_chunk(array, start, chunk_size)
+        chunk_list.append(chunk)
+        start = chunk["end"]
     log.debug("chunk_list: %s", chunk_list)
     return chunk_list
 
@@ -362,7 +360,7 @@ def _populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
     previous_row = array[begin]
     if m3u.is_extinf_row(previous_row):
         entry.append(array[begin])
-        log.debug("it seems that the previous chunk ended with an EXTINF row")
+        log.warning("it seems that the previous chunk ended with an EXTINF row")
     for index in range(begin+1, end):
         row = array[index].strip()
         log.debug("parsing row: %s", row)
@@ -377,8 +375,9 @@ def _populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
                 entry = []
             entry.append(row)
         elif m3u.is_comment_or_tag_row(row):
-            # case of a row with a non-supported tag or a comment; so we do nothing
-            log.warning("commented row or unsupported tag found: %s", row)
+            # case of a row with a non-supported tag or a comment; so it's copied as-is
+            entry.append(row)
+            log.warning("commented row or unsupported tag found:\n%s", row)
         else:
             # case of a plain url row (regardless if preceded by an #EXTINF row or not)
             entry.append(row)

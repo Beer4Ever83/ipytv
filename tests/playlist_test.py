@@ -1,4 +1,5 @@
 import unittest
+from typing import List
 
 import httpretty
 import m3u8
@@ -11,56 +12,103 @@ from ipytv.playlist import M3UPlaylist
 from tests import test_data
 
 
-class TestChunkArray0(unittest.TestCase):
+def produce_singles(n: int) -> List[str]:
+    out: List[str] = []
+    for i in range(n):
+        row = f"https://www.mywebsite.com/video/myvideo{i}.mp4"
+        out.append(row)
+    return out
+
+
+def produce_doubles(n: int) -> List[str]:
+    out: List[str] = []
+    for i in range(n):
+        row_1 = f'#EXTINF:-1 tvg-id="id_{i}" tvg-name="name_{i}" tvg-language="Italian" tvg-logo="https://i.imgur.com/{1}.png" tvg-country="IT" tvg-url="" group-title="Group",Channel {i}'
+        out.append(row_1)
+        row_2 = f"https://www.mywebsite.com/video/myvideo{i}.mp4"
+        out.append(row_2)
+    return out
+
+
+def produce_triples(n: int) -> List[str]:
+    out: List[str] = []
+    for i in range(n):
+        row_1 = f'#EXTINF:-1 tvg-id="id_{i}" tvg-name="name_{i}" tvg-language="Italian" tvg-logo="https://i.imgur.com/{1}.png" tvg-country="IT" tvg-url="" group-title="Group",Channel {i}'
+        out.append(row_1)
+        row_2 = f'#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.{i}'
+        out.append(row_2)
+        row_3 = f"https://www.mywebsite.com/video/myvideo{i}.mp4"
+        out.append(row_3)
+    return out
+
+
+class TestChunkBody0(unittest.TestCase):
     def runTest(self):
-        body = []
-        for i in range(0, 97):
-            body.append(i)
-        chunks = playlist._chunk_array(body, 4)
-        self.assertEqual(4, len(chunks))
-        self.assertEqual({"begin": 0, "end": 25}, chunks[0])
-        self.assertEqual({"begin": 24, "end": 49}, chunks[1])
-        self.assertEqual({"begin": 48, "end": 73}, chunks[2])
-        self.assertEqual({"begin": 72, "end": 97}, chunks[3])
+        body = produce_singles(5)   # total 05 rows
+        body += produce_doubles(4)  # total 13 rows
+        body += produce_triples(5)  # total 28 rows
+        chunks = playlist._chunk_body(body, 2, enforce_min_size=False)
+        self.assertEqual(2, len(chunks))
+        self.assertEqual({"begin": 0, "end": 16}, chunks[0])
+        self.assertEqual({"begin": 16, "end": 28}, chunks[1])
 
 
-class TestChunkArray1(unittest.TestCase):
+class TestChunkBody1(unittest.TestCase):
     def runTest(self):
-        body = []
-        for i in range(0, 98):
-            body.append(i)
-        chunks = playlist._chunk_array(body, 4)
-        self.assertEqual(4, len(chunks))
-        self.assertEqual({"begin": 0, "end": 25}, chunks[0])
-        self.assertEqual({"begin": 24, "end": 49}, chunks[1])
-        self.assertEqual({"begin": 48, "end": 73}, chunks[2])
-        self.assertEqual({"begin": 72, "end": 98}, chunks[3])
+        body = produce_singles(5)   # total 05 rows
+        body += produce_doubles(4)  # total 13 rows
+        body += produce_triples(5)  # total 28 rows
+        chunks = playlist._chunk_body(body, 3, enforce_min_size=False)
+        self.assertEqual(3, len(chunks))
+        self.assertEqual({"begin": 0, "end": 9}, chunks[0])
+        self.assertEqual({"begin": 9, "end": 19}, chunks[1])
+        self.assertEqual({"begin": 19, "end": 28}, chunks[2])
 
 
-class TestChunkArray2(unittest.TestCase):
+class TestChunkBody2(unittest.TestCase):
     def runTest(self):
-        body = []
-        for i in range(0, 99):
-            body.append(i)
-        chunks = playlist._chunk_array(body, 4)
-        self.assertEqual(4, len(chunks))
-        self.assertEqual({"begin": 0, "end": 25}, chunks[0])
-        self.assertEqual({"begin": 24, "end": 49}, chunks[1])
-        self.assertEqual({"begin": 48, "end": 73}, chunks[2])
-        self.assertEqual({"begin": 72, "end": 99}, chunks[3])
+        body = produce_singles(50)  # total 50 rows
+        chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
+        self.assertEqual(5, len(chunks))
+        self.assertEqual({"begin": 0, "end": 11}, chunks[0])
+        self.assertEqual({"begin": 11, "end": 22}, chunks[1])
+        self.assertEqual({"begin": 22, "end": 33}, chunks[2])
+        self.assertEqual({"begin": 33, "end": 44}, chunks[3])
+        self.assertEqual({"begin": 44, "end": 50}, chunks[4])
 
 
-class TestChunkArray3(unittest.TestCase):
+class TestChunkBody3(unittest.TestCase):
     def runTest(self):
-        body = []
-        for i in range(0, 100):
-            body.append(i)
-        chunks = playlist._chunk_array(body, 4)
+        body = produce_singles(5)   # total 5 rows
+        chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
+        self.assertEqual(3, len(chunks))
+        self.assertEqual({"begin": 0, "end": 2}, chunks[0])
+        self.assertEqual({"begin": 2, "end": 4}, chunks[1])
+        self.assertEqual({"begin": 4, "end": 5}, chunks[2])
+
+
+class TestChunkBody4(unittest.TestCase):
+    def runTest(self):
+        body = produce_singles(5)   # total 5 rows
+        body += produce_triples(1)  # total 8 rows
+        body += produce_singles(5)  # total 13 rows
+        chunks = playlist._chunk_body(body, 2, enforce_min_size=False)
+        self.assertEqual(2, len(chunks))
+        self.assertEqual({"begin": 0, "end": 8}, chunks[0])
+        self.assertEqual({"begin": 8, "end": 13}, chunks[1])
+
+
+class TestChunkBody5(unittest.TestCase):
+    def runTest(self):
+        body = produce_doubles(3)   # total 6 rows
+        body += produce_triples(1)  # total 9 rows
+        body += produce_doubles(3)  # total 15 rows
+        chunks = playlist._chunk_body(body, 4, enforce_min_size=False)
         self.assertEqual(4, len(chunks))
-        self.assertEqual({"begin": 0, "end": 26}, chunks[0])
-        self.assertEqual({"begin": 25, "end": 51}, chunks[1])
-        self.assertEqual({"begin": 50, "end": 76}, chunks[2])
-        self.assertEqual({"begin": 75, "end": 100}, chunks[3])
+        self.assertEqual({"begin": 0, "end": 4}, chunks[0])
+        self.assertEqual({"begin": 4, "end": 9}, chunks[1])
+        self.assertEqual({"begin": 9, "end": 13}, chunks[2])
+        self.assertEqual({"begin": 13, "end": 15}, chunks[3])
 
 
 class TestLoadaM3UPlusHuge(unittest.TestCase):
