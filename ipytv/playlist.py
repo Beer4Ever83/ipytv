@@ -223,6 +223,9 @@ def loada(array: List) -> 'M3UPlaylist':
     if not isinstance(array, list):
         log.error("expected %s, got %s", type([]), type(array))
         raise WrongTypeException("Wrong type: array (List) expected")
+    if len(array) < 2:
+        log.error("a playlist should have at least 2 rows (found %s)", len(array))
+        raise MalformedPlaylistException(f"a playlist should have at least 2 rows (found {len(array)})")
     header = array[0].strip()
     body = array[1:]
     if not m3u.is_m3u_header_row(header):
