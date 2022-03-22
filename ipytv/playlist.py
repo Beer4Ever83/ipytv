@@ -239,7 +239,7 @@ def loada(array: List) -> 'M3UPlaylist':
     out_pl.add_attributes(_parse_header(header))
     cores = mp.cpu_count()
     log.info("%s cores detected", cores)
-    chunks = _chunk_array(body, cores)
+    chunks = _chunk_body(body, cores)
     results = []
     log.info("spawning a pool of processes (one per core) to parse the playlist")
     with mp.Pool(processes=cores) as pool:
@@ -331,7 +331,7 @@ def _compute_chunk(array: List, start: int, chunk_size: int) -> Dict[str, int]:
     return _build_chunk(start, length)
 
 
-def _chunk_array(array: List, chunk_count: int, enforce_min_size: bool = True) -> List:
+def _chunk_body(array: List, chunk_count: int, enforce_min_size: bool = True) -> List:
     length = len(array)
     chunk_size = math.floor(length / chunk_count)
     if enforce_min_size and chunk_size < __MIN_CHUNK_SIZE:

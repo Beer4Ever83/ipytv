@@ -42,33 +42,33 @@ def produce_triples(n: int) -> List[str]:
     return out
 
 
-class TestChunkArray0(unittest.TestCase):
+class TestChunkBody0(unittest.TestCase):
     def runTest(self):
         body = produce_singles(5)   # total 05 rows
         body += produce_doubles(4)  # total 13 rows
         body += produce_triples(5)  # total 28 rows
-        chunks = playlist._chunk_array(body, 2, enforce_min_size=False)
+        chunks = playlist._chunk_body(body, 2, enforce_min_size=False)
         self.assertEqual(2, len(chunks))
         self.assertEqual({"begin": 0, "end": 16}, chunks[0])
         self.assertEqual({"begin": 16, "end": 28}, chunks[1])
 
 
-class TestChunkArray1(unittest.TestCase):
+class TestChunkBody1(unittest.TestCase):
     def runTest(self):
         body = produce_singles(5)   # total 05 rows
         body += produce_doubles(4)  # total 13 rows
         body += produce_triples(5)  # total 28 rows
-        chunks = playlist._chunk_array(body, 3, enforce_min_size=False)
+        chunks = playlist._chunk_body(body, 3, enforce_min_size=False)
         self.assertEqual(3, len(chunks))
         self.assertEqual({"begin": 0, "end": 9}, chunks[0])
         self.assertEqual({"begin": 9, "end": 19}, chunks[1])
         self.assertEqual({"begin": 19, "end": 28}, chunks[2])
 
 
-class TestChunkArray2(unittest.TestCase):
+class TestChunkBody2(unittest.TestCase):
     def runTest(self):
         body = produce_singles(50)  # total 50 rows
-        chunks = playlist._chunk_array(body, 5, enforce_min_size=False)
+        chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
         self.assertEqual(5, len(chunks))
         self.assertEqual({"begin": 0, "end": 11}, chunks[0])
         self.assertEqual({"begin": 11, "end": 22}, chunks[1])
@@ -77,33 +77,33 @@ class TestChunkArray2(unittest.TestCase):
         self.assertEqual({"begin": 44, "end": 50}, chunks[4])
 
 
-class TestChunkArray3(unittest.TestCase):
+class TestChunkBody3(unittest.TestCase):
     def runTest(self):
         body = produce_singles(5)   # total 5 rows
-        chunks = playlist._chunk_array(body, 5, enforce_min_size=False)
+        chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
         self.assertEqual(3, len(chunks))
         self.assertEqual({"begin": 0, "end": 2}, chunks[0])
         self.assertEqual({"begin": 2, "end": 4}, chunks[1])
         self.assertEqual({"begin": 4, "end": 5}, chunks[2])
 
 
-class TestChunkArray4(unittest.TestCase):
+class TestChunkBody4(unittest.TestCase):
     def runTest(self):
         body = produce_singles(5)   # total 5 rows
         body += produce_triples(1)  # total 8 rows
         body += produce_singles(5)  # total 13 rows
-        chunks = playlist._chunk_array(body, 2, enforce_min_size=False)
+        chunks = playlist._chunk_body(body, 2, enforce_min_size=False)
         self.assertEqual(2, len(chunks))
         self.assertEqual({"begin": 0, "end": 8}, chunks[0])
         self.assertEqual({"begin": 8, "end": 13}, chunks[1])
 
 
-class TestChunkArray5(unittest.TestCase):
+class TestChunkBody5(unittest.TestCase):
     def runTest(self):
         body = produce_doubles(3)   # total 6 rows
         body += produce_triples(1)  # total 9 rows
         body += produce_doubles(3)  # total 15 rows
-        chunks = playlist._chunk_array(body, 4, enforce_min_size=False)
+        chunks = playlist._chunk_body(body, 4, enforce_min_size=False)
         self.assertEqual(4, len(chunks))
         self.assertEqual({"begin": 0, "end": 4}, chunks[0])
         self.assertEqual({"begin": 4, "end": 9}, chunks[1])
