@@ -1,6 +1,6 @@
 import unittest
 
-import test_data
+from tests import test_data
 from ipytv import m3u
 
 

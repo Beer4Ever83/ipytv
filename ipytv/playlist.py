@@ -318,16 +318,43 @@ def _build_chunk(begin: int, end: int) -> Dict[str, int]:
     }
 
 
-def _compute_chunk(array: List, start: int, chunk_size: int) -> Dict[str, int]:
+def _find_chunk_end(sub_array: List[str]) -> int:
+    offset = len(sub_array)
+    for offset, row in enumerate(sub_array):
+        if m3u.is_extinf_row(row):
+            log.debug(
+                "chunking at the following row (offset %s) as it's an #EXTINF row:\n%s",
+                offset,
+                row
+            )
+            break
+        if offset > 0 and m3u.is_url_row(row) and m3u.is_url_row(sub_array[offset-1]):
+            log.debug(
+                "chunking at the following row (offset %s) as it's a url row after another url row:\n%s",
+                offset,
+                row
+            )
+            break
+    return offset
+
+
+def _compute_chunk(array: List, start: int, min_size: int) -> Dict[str, int]:
     length = len(array)
-    sub_array = array[start+chunk_size:]
-    if length-start > chunk_size:
-        for offset, row in enumerate(sub_array):
-            if m3u.is_extinf_row(row):
-                return _build_chunk(start, start+chunk_size+offset)
-            elif offset > 0 and m3u.is_url_row(row) and m3u.is_url_row(sub_array[offset-1]):
-                # Case of two adjacent url rows
-                return _build_chunk(start, start+chunk_size+offset)
+    sub_array = array[start + min_size:]
+    if length - start > min_size:
+        log.debug(
+            "there are enough rows (%s left) to populate at least one full-size chunk",
+            length - start
+        )
+        offset = _find_chunk_end(sub_array)
+        end = start + min_size + offset
+        log.debug("chunk end found at row %s", end)
+        return _build_chunk(start, end)
+    log.debug(
+        "there are less than (or exactly) %s rows (%s left), so the chunk end is the array end",
+        min_size,
+        length - start
+    )
     return _build_chunk(start, length)
 
 
@@ -335,6 +362,14 @@ def _chunk_body(array: List, chunk_count: int, enforce_min_size: bool = True) ->
     length = len(array)
     chunk_size = math.floor(length / chunk_count)
     if enforce_min_size and chunk_size < __MIN_CHUNK_SIZE:
+        log.debug(
+            "each of the %s chunks would be smaller than the minimum chunk size (%s) " +
+            "and enforce_min_size is set to %s, so only one chunk (as big as the whole " +
+            "array) will be created",
+            chunk_count,
+            __MIN_CHUNK_SIZE,
+            enforce_min_size
+        )
         return [
             {
                 "begin": 0,
@@ -360,14 +395,14 @@ def _populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
     previous_row = array[begin]
     if m3u.is_extinf_row(previous_row):
         entry.append(array[begin])
-        log.warning("it seems that the previous chunk ended with an EXTINF row")
-    for index in range(begin+1, end):
-        row = array[index].strip()
+        log.debug("chunk starting with an #EXTINF row")
+    for row in array[begin+1: end]:
+        row = row.strip()
         log.debug("parsing row: %s", row)
         if m3u.is_extinf_row(row):
             if m3u.is_extinf_row(previous_row):
                 # we are in the case of two adjacent #EXTINF rows; so we add a url-less entry.
-                # This shouldn't be theoretically allowed, but I've seen it happening in some
+                # This shouldn't be theoretically allowed, but I've seen it happen in some
                 # IPTV playlists where isolated #EXTINF rows are used as group separators.
                 log.warning("adjacent #EXTINF rows detected")
                 p_list.append_entry(entry)

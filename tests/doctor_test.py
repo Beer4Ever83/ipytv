@@ -1,7 +1,6 @@
 import unittest
 
-import test_data
-import tests.test_data
+from tests import test_data
 from ipytv import playlist
 from ipytv.channel import IPTVChannel, IPTVAttr
 from ipytv.doctor import M3UDoctor, IPTVChannelDoctor, M3UPlaylistDoctor
@@ -10,8 +9,8 @@ from ipytv.playlist import M3UPlaylist
 
 class TestFixSplitQuotedString(unittest.TestCase):
     def runTest(self):
-        fixed = M3UDoctor.sanitize(tests.test_data.split_quoted_string.split("\n"))
-        self.assertEqual(tests.test_data.expected_m3u_plus, playlist.loada(fixed))
+        fixed = M3UDoctor.sanitize(test_data.split_quoted_string.split("\n"))
+        self.assertEqual(test_data.expected_m3u_plus, playlist.loada(fixed))
 
 
 class TestURLEncodeLogo(unittest.TestCase):

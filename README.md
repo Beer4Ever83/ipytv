@@ -21,9 +21,15 @@ detail [here](#format-considerations)).
 This library has been created from scratch to parse and handle the M3U Plus
 format only. It does not fully support regular M3U8 playlists.
 
-This library copies _as-is_ (i.e. it's treated as a plain string and not parsed
-in any way) all tags that are found between the `#EXTINF` row and the related
-url row as, for example:
+### Supported tags
+Only `#EXTM3U`, `#EXTINF` and plain url rows are supported (i.e. they are parsed
+and their value is made available as an `IPTVChannel` object properties).
+
+All tags that are found between an `#EXTINF` row and its related url row are
+added as `extras` to a channel, but without performing any parsing (i.e. they're
+treated like plain strings).
+
+In the example below, the `#EXTVLCOPT` row is not parsed, but copied _as-is_:
 ```text
 #EXTINF:-1 tvg-id="" tvg-name="hello" tvg-country="IT" tvg-url="" group-title="Greetings",Hello!
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0 
