@@ -363,12 +363,10 @@ def _chunk_body(array: List, chunk_count: int, enforce_min_size: bool = True) ->
     chunk_size = math.floor(length / chunk_count)
     if enforce_min_size and chunk_size < __MIN_CHUNK_SIZE:
         log.debug(
-            "each of the %s chunks would be smaller than the minimum chunk size (%s) " +
-            "and enforce_min_size is set to %s, so only one chunk (as big as the whole " +
-            "array) will be created",
+            "no chunking as each of the %s chunks would be smaller than the configured minimum (%s < %s)",
             chunk_count,
-            __MIN_CHUNK_SIZE,
-            enforce_min_size
+            enforce_min_size,
+            __MIN_CHUNK_SIZE
         )
         return [
             {
