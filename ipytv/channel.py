@@ -67,8 +67,8 @@ class IPTVChannel(M3UEntry):
             url=self.url,
             name=self.name,
             duration=self.duration,
-            attributes=self.attributes.copy(),
-            extras=self.extras.copy()
+            attributes=self.attributes.copy(),  # shallow copy is ok, as we're dealing with primitive types
+            extras=self.extras.copy()           # shallow copy is ok, as we're dealing with primitive types
         )
 
     def parse_extinf_string(self, extinf_string: str) -> None:

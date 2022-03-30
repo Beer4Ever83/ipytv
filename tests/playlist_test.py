@@ -222,14 +222,18 @@ class TestToM3U8Playlist(unittest.TestCase):
 class TestClone(unittest.TestCase):
     def runTest(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+
         new_pl = pl.copy()
-        new_pl.append_channel(
-            IPTVChannel(name="mynewchannel", url="mynewurl")
-        )
-        self.assertEqual(pl.length()+1, new_pl.length())
-        current_name: str = new_pl.get_channel(0).name
-        new_pl.get_channel(0).name = "my " + current_name
-        self.assertNotEqual(pl.get_channel(0).name, new_pl.get_channel(0).name)
+        new_pl.get_channels()[0].name = "mynewchannel"
+        self.assertNotEqual(pl, new_pl)
+
+        new_pl = pl.copy()
+        new_pl.get_channels()[0] = IPTVChannel(name="mynewchannel", url="mynewurl")
+        self.assertNotEqual(pl, new_pl)
+
+        new_pl = pl.copy()
+        new_pl.get_attributes()["x-tvg-url"] = "newvalue"
+        self.assertNotEqual(pl, new_pl)
 
 
 class TestGroupByAttribute(unittest.TestCase):

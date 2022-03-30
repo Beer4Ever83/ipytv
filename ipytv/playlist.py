@@ -180,8 +180,9 @@ class M3UPlaylist:
         new_pl = M3UPlaylist()
         for channel in self._channels:
             new_pl.append_channel(channel.copy())
-        for k, v in self._attributes.items():
-            new_pl.add_attribute(k, v)
+        new_pl.add_attributes(
+            self.get_attributes().copy()     # shallow copy is ok, as we're dealing with primitive types
+        )
         return new_pl
 
     def __eq__(self, other: object) -> bool:
