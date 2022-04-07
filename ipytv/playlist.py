@@ -1,6 +1,7 @@
 import logging
 import math
 import multiprocessing as mp
+from multiprocessing.pool import AsyncResult
 from typing import List, Dict
 
 import requests
@@ -239,23 +240,27 @@ def loada(array: List) -> 'M3UPlaylist':
     out_pl = M3UPlaylist()
     out_pl.add_attributes(_parse_header(header))
     cores = mp.cpu_count()
-    log.info("%s cores detected", cores)
+    log.debug("%s cores detected", cores)
     chunks = _chunk_body(body, cores)
-    results = []
-    log.info("spawning a pool of processes (one per core) to parse the playlist")
+    results: List[AsyncResult] = []
+    log.debug("spawning a pool of processes (one per core) to parse the playlist")
     with mp.Pool(processes=cores) as pool:
         for chunk in chunks:
             begin = chunk["begin"]
             end = chunk["end"]
-            log.info(
+            log.debug(
                 "assigning a \"populate\" task (begin: %s, end: %s) to a process in the pool",
                 begin,
                 end
             )
             result = pool.apply_async(_populate, (body, begin, end))
             results.append(result)
+        log.debug("closing workers")
         pool.close()
-        log.debug("pool destroyed")
+        log.debug("workers closed")
+        log.debug("waiting for workers termination")
+        pool.join()
+        log.debug("workers terminated")
         for result in results:
             p_list = result.get()
             out_pl.append_channels(p_list.get_channels())
