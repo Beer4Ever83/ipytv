@@ -124,21 +124,11 @@ class M3UPlaylist:
         log.info("the channel with index %s has been deleted", str(index))
         return channel
 
-    def build_header(self) -> str:
+    def _build_header(self) -> str:
         out = M3U_HEADER_TAG
         for k, v in self._attributes.items():
             out += f' {k}="{v}"'
         return out
-
-    def reset(self) -> None:
-        self._channels = []
-        self._attributes = {}
-        self._iter_index = 0
-        log.info("playlist reset")
-
-    def append_entry(self, entry: List):
-        channel = ipytv.channel.from_playlist_entry(entry)
-        self.append_channel(channel)
 
     def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value,
                            include_no_group: bool = True) -> Dict:
@@ -166,7 +156,7 @@ class M3UPlaylist:
         return groups
 
     def to_m3u_plus_playlist(self) -> str:
-        out = f"{self.build_header()}\n"
+        out = f"{self._build_header()}\n"
         for channel in self._channels:
             out += channel.to_m3u_plus_playlist_entry()
         return out.rstrip()
@@ -306,7 +296,7 @@ def loadu(url: str) -> 'M3UPlaylist':
 
 
 def _parse_header(header: str) -> Dict[str, str]:
-    attrs = header.replace(f'{M3U_HEADER_TAG} ', '')
+    attrs = header.replace(f'{M3U_HEADER_TAG}', '').lstrip()
     attributes = {}
     for attr in attrs.split():
         entry = attr.split("=")
@@ -405,23 +395,28 @@ def _populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
         log.debug("parsing row: %s", row)
         if m3u.is_extinf_row(row):
             if m3u.is_extinf_row(previous_row):
-                # we are in the case of two adjacent #EXTINF rows; so we add a url-less entry.
-                # This shouldn't be theoretically allowed, but I've seen it happen in some
-                # IPTV playlists where isolated #EXTINF rows are used as group separators.
+                # case of two adjacent #EXTINF rows, so a url-less entry is
+                # added. This shouldn't be allowed, but sometimes those #EXTINF
+                # rows are used as group separators.
                 log.warning("adjacent #EXTINF rows detected")
-                p_list.append_entry(entry)
+                _append_entry(entry, p_list)
                 log.debug("adding entry to the playlist: %s", entry)
                 entry = []
             entry.append(row)
         elif m3u.is_comment_or_tag_row(row):
-            # case of a row with a non-supported tag or a comment; so it's copied as-is
+            # case of a row with a non-supported tag or a comment, so it's copied as-is
             entry.append(row)
             log.warning("commented row or unsupported tag found:\n%s", row)
         else:
             # case of a plain url row (regardless if preceded by an #EXTINF row or not)
             entry.append(row)
             log.debug("adding entry to the playlist: %s", entry)
-            p_list.append_entry(entry)
+            _append_entry(entry, p_list)
             entry = []
         previous_row = row
     return p_list
+
+
+def _append_entry(entry: List, pl: M3UPlaylist):
+    channel = ipytv.channel.from_playlist_entry(entry)
+    pl.append_channel(channel)

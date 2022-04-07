@@ -324,6 +324,12 @@ class TestGroupByUrlWithNoGroupEnabled(unittest.TestCase):
 
 class TestParseHeader(unittest.TestCase):
     def runTest(self):
+        # Case of a header with no attributes
+        header = '#EXTM3U'
+        attributes = playlist._parse_header(header)
+        self.assertEqual(0, len(attributes))
+
+        # Case of a header with attributes
         header = '#EXTM3U x-tvg-url="https://elcinema.com.epg.xml" tvg-shift="1"'
         attributes = playlist._parse_header(header)
         self.assertEqual(attributes['x-tvg-url'], 'https://elcinema.com.epg.xml')
@@ -335,7 +341,7 @@ class TestBuildHeader(unittest.TestCase):
         expected_header = '#EXTM3U x-tvg-url="https://elcinema.com.epg.xml" tvg-shift="1"'
         pl = M3UPlaylist()
         pl.add_attributes(playlist._parse_header(expected_header))
-        self.assertEqual(expected_header, pl.build_header())
+        self.assertEqual(expected_header, pl._build_header())
 
 
 class TestIterator(unittest.TestCase):
