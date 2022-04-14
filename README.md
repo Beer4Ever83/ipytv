@@ -12,18 +12,19 @@ while **IPTV Playlist** refers to playlists in M3U Plus format.
 
 M3U Plus stems from the [`extended M3U8`](https://en.wikipedia.org/wiki/M3U#Extended_M3U)
 format, of which it supports only 2 tags (`#EXTM3U` and `#EXTINF`).
- 
+
 The syntax of the `#EXTM3U` and `#EXTINF` tags has been modified to include
 extra attributes (e.g., logo, group, language). Unfortunately this has broken
 the backward compatibility with the original M3U8 standard (as explained in
 detail [here](#format-considerations)).
 
 This library has been created from scratch to parse and handle the M3U Plus
-format only. It does not fully support regular M3U8 playlists.
+format only. It does not fully support regular M3U8 playlists (only basic
+channel attributes are parsed).
 
 ### Supported tags
 Only `#EXTM3U`, `#EXTINF` and plain url rows are supported (i.e. they are parsed
-and their value is made available as an `IPTVChannel` object properties).
+and their value is made available as properties of an `IPTVChannel` object).
 
 All tags that are found between an `#EXTINF` row and its related url row are
 added as `extras` to a channel, but without performing any parsing (i.e. they're
