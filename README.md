@@ -1,6 +1,9 @@
 # IPyTV
 A python3 library to parse IPTV playlists in the M3U Plus format.
 
+[![Downloads](https://pepy.tech/badge/m3u-ipytv)](https://pepy.tech/project/m3u-ipytv)
+[![Downloads](https://pepy.tech/badge/m3u-ipytv/month)](https://pepy.tech/project/m3u-ipytv)
+[![Downloads](https://pepy.tech/badge/m3u-ipytv/week)](https://pepy.tech/project/m3u-ipytv)
 
 ## M3U Plus and IPTV
 The M3U Plus format is a _de facto_ standard for distributing IPTV playlists on
@@ -174,7 +177,7 @@ pl.update_attribute(attribute_name, "-2")
 value_before_deletion = pl.remove_attribute(attribute_name)
 ```
 
-There is also a methods that allows to add multiple attributes at once (instead
+There is also a method that allows to add multiple attributes at once (instead
 of single attributes) in the form of a dictionary:
 ```python
 pl.add_attributes({})
