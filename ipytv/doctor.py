@@ -1,3 +1,10 @@
+"""Fix common errors in M3U files and IPTV channels
+
+Classes:
+    M3UDoctor
+    IPTVChannelDoctor
+    M3UPlaylistDoctor
+"""
 import logging
 import re
 import urllib.parse

@@ -1,3 +1,13 @@
+"""Create and handle IPTV channels
+
+Classes:
+    M3UEntry
+    IPTVAttr
+    IPTVChannel
+
+Functions:
+    from_playlist_entry
+"""
 import logging
 import shlex
 from enum import Enum

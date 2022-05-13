@@ -1,3 +1,15 @@
+"""Create and handle IPTV playlists
+
+Classes:
+    M3UPlaylist
+
+Functions:
+    loada
+    loads
+    loadf
+    loadu
+
+"""
 import logging
 import math
 import multiprocessing as mp
@@ -19,7 +31,7 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 # The value of __MIN_CHUNK_SIZE cannot be smaller than 2
-__MIN_CHUNK_SIZE = 20
+__MIN_CHUNK_SIZE = 100
 
 
 class M3UPlaylist:
