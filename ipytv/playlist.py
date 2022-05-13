@@ -339,7 +339,7 @@ def _compute_chunk(array: List, start: int, min_size: int) -> Dict[str, int]:
     sub_array = array[start + min_size:]
     if length - start > min_size:
         log.debug(
-            "there are enough rows (%s left) to populate at least one full-size chunk",
+            "there are enough remaining rows (%s left) to populate at least one full-size chunk",
             length - start
         )
         offset = _find_chunk_end(sub_array)
@@ -361,7 +361,7 @@ def _chunk_body(array: List, chunk_count: int, enforce_min_size: bool = True) ->
         log.debug(
             "no chunking as each of the %s chunks would be smaller than the configured minimum (%s < %s)",
             chunk_count,
-            enforce_min_size,
+            chunk_size,
             __MIN_CHUNK_SIZE
         )
         return [

@@ -224,6 +224,7 @@ class TestClone(unittest.TestCase):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
 
         new_pl = pl.copy()
+        self.assertEqual(pl, new_pl)
         new_pl.get_channels()[0].name = "mynewchannel"
         self.assertNotEqual(pl, new_pl)
 
