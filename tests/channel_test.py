@@ -87,13 +87,26 @@ class TestCopy(unittest.TestCase):
             url="",
             name="Rai 1 SuperHD",
             duration="-1",
-            attributes=original_attributes
+            attributes=original_attributes,
+            extras=["#EXTVLCOPT:option1"]
         )
         clone = original.copy()
         self.assertEqual(original, clone)
         clone.name = "my " + clone.name
+        self.assertNotEqual(original.name, clone.name)
         self.assertNotEqual(original, clone)
-        self.assertEqual("my " + original.name, clone.name)
+
+        clone = original.copy()
+        self.assertEqual(original, clone)
+        clone.attributes[IPTVAttr.TVG_NAME.value] = "Rai 2 SuperHD"
+        self.assertNotEqual(original.attributes, clone.attributes)
+        self.assertNotEqual(original, clone)
+
+        clone = original.copy()
+        self.assertEqual(original, clone)
+        clone.extras.append("#EXTVLCOPT:option2")
+        self.assertNotEqual(original.extras, clone.extras)
+        self.assertNotEqual(original, clone)
 
 
 class TestToString(unittest.TestCase):

@@ -1,6 +1,7 @@
 import logging
 import math
 import multiprocessing as mp
+from multiprocessing.pool import AsyncResult
 from typing import List, Dict
 
 import requests
@@ -123,21 +124,11 @@ class M3UPlaylist:
         log.info("the channel with index %s has been deleted", str(index))
         return channel
 
-    def build_header(self) -> str:
+    def _build_header(self) -> str:
         out = M3U_HEADER_TAG
         for k, v in self._attributes.items():
             out += f' {k}="{v}"'
         return out
-
-    def reset(self) -> None:
-        self._channels = []
-        self._attributes = {}
-        self._iter_index = 0
-        log.info("playlist reset")
-
-    def append_entry(self, entry: List):
-        channel = ipytv.channel.from_playlist_entry(entry)
-        self.append_channel(channel)
 
     def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value,
                            include_no_group: bool = True) -> Dict:
@@ -165,7 +156,7 @@ class M3UPlaylist:
         return groups
 
     def to_m3u_plus_playlist(self) -> str:
-        out = f"{self.build_header()}\n"
+        out = f"{self._build_header()}\n"
         for channel in self._channels:
             out += channel.to_m3u_plus_playlist_entry()
         return out.rstrip()
@@ -180,8 +171,9 @@ class M3UPlaylist:
         new_pl = M3UPlaylist()
         for channel in self._channels:
             new_pl.append_channel(channel.copy())
-        for k, v in self._attributes.items():
-            new_pl.add_attribute(k, v)
+        new_pl.add_attributes(
+            self.get_attributes().copy()     # shallow copy is ok, as we're dealing with primitive types
+        )
         return new_pl
 
     def __eq__(self, other: object) -> bool:
@@ -238,23 +230,27 @@ def loada(array: List) -> 'M3UPlaylist':
     out_pl = M3UPlaylist()
     out_pl.add_attributes(_parse_header(header))
     cores = mp.cpu_count()
-    log.info("%s cores detected", cores)
+    log.debug("%s cores detected", cores)
     chunks = _chunk_body(body, cores)
-    results = []
-    log.info("spawning a pool of processes (one per core) to parse the playlist")
+    results: List[AsyncResult] = []
+    log.debug("spawning a pool of processes (one per core) to parse the playlist")
     with mp.Pool(processes=cores) as pool:
         for chunk in chunks:
             begin = chunk["begin"]
             end = chunk["end"]
-            log.info(
+            log.debug(
                 "assigning a \"populate\" task (begin: %s, end: %s) to a process in the pool",
                 begin,
                 end
             )
             result = pool.apply_async(_populate, (body, begin, end))
             results.append(result)
+        log.debug("closing workers")
         pool.close()
-        log.debug("pool destroyed")
+        log.debug("workers closed")
+        log.debug("waiting for workers termination")
+        pool.join()
+        log.debug("workers terminated")
         for result in results:
             p_list = result.get()
             out_pl.append_channels(p_list.get_channels())
@@ -300,7 +296,7 @@ def loadu(url: str) -> 'M3UPlaylist':
 
 
 def _parse_header(header: str) -> Dict[str, str]:
-    attrs = header.replace(f'{M3U_HEADER_TAG} ', '')
+    attrs = header.replace(f'{M3U_HEADER_TAG}', '').lstrip()
     attributes = {}
     for attr in attrs.split():
         entry = attr.split("=")
@@ -318,16 +314,43 @@ def _build_chunk(begin: int, end: int) -> Dict[str, int]:
     }
 
 
-def _compute_chunk(array: List, start: int, chunk_size: int) -> Dict[str, int]:
+def _find_chunk_end(sub_array: List[str]) -> int:
+    offset = len(sub_array)
+    for offset, row in enumerate(sub_array):
+        if m3u.is_extinf_row(row):
+            log.debug(
+                "chunking at the following row (offset %s) as it's an #EXTINF row:\n%s",
+                offset,
+                row
+            )
+            break
+        if offset > 0 and m3u.is_url_row(row) and m3u.is_url_row(sub_array[offset-1]):
+            log.debug(
+                "chunking at the following row (offset %s) as it's a url row after another url row:\n%s",
+                offset,
+                row
+            )
+            break
+    return offset
+
+
+def _compute_chunk(array: List, start: int, min_size: int) -> Dict[str, int]:
     length = len(array)
-    sub_array = array[start+chunk_size:]
-    if length-start > chunk_size:
-        for offset, row in enumerate(sub_array):
-            if m3u.is_extinf_row(row):
-                return _build_chunk(start, start+chunk_size+offset)
-            elif offset > 0 and m3u.is_url_row(row) and m3u.is_url_row(sub_array[offset-1]):
-                # Case of two adjacent url rows
-                return _build_chunk(start, start+chunk_size+offset)
+    sub_array = array[start + min_size:]
+    if length - start > min_size:
+        log.debug(
+            "there are enough remaining rows (%s left) to populate at least one full-size chunk",
+            length - start
+        )
+        offset = _find_chunk_end(sub_array)
+        end = start + min_size + offset
+        log.debug("chunk end found at row %s", end)
+        return _build_chunk(start, end)
+    log.debug(
+        "there are less than (or exactly) %s rows (%s left), so the chunk end is the array end",
+        min_size,
+        length - start
+    )
     return _build_chunk(start, length)
 
 
@@ -335,6 +358,12 @@ def _chunk_body(array: List, chunk_count: int, enforce_min_size: bool = True) ->
     length = len(array)
     chunk_size = math.floor(length / chunk_count)
     if enforce_min_size and chunk_size < __MIN_CHUNK_SIZE:
+        log.debug(
+            "no chunking as each of the %s chunks would be smaller than the configured minimum (%s < %s)",
+            chunk_count,
+            chunk_size,
+            __MIN_CHUNK_SIZE
+        )
         return [
             {
                 "begin": 0,
@@ -360,29 +389,34 @@ def _populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
     previous_row = array[begin]
     if m3u.is_extinf_row(previous_row):
         entry.append(array[begin])
-        log.warning("it seems that the previous chunk ended with an EXTINF row")
-    for index in range(begin+1, end):
-        row = array[index].strip()
+        log.debug("chunk starting with an #EXTINF row")
+    for row in array[begin+1: end]:
+        row = row.strip()
         log.debug("parsing row: %s", row)
         if m3u.is_extinf_row(row):
             if m3u.is_extinf_row(previous_row):
-                # we are in the case of two adjacent #EXTINF rows; so we add a url-less entry.
-                # This shouldn't be theoretically allowed, but I've seen it happening in some
-                # IPTV playlists where isolated #EXTINF rows are used as group separators.
+                # case of two adjacent #EXTINF rows, so a url-less entry is
+                # added. This shouldn't be allowed, but sometimes those #EXTINF
+                # rows are used as group separators.
                 log.warning("adjacent #EXTINF rows detected")
-                p_list.append_entry(entry)
+                _append_entry(entry, p_list)
                 log.debug("adding entry to the playlist: %s", entry)
                 entry = []
             entry.append(row)
         elif m3u.is_comment_or_tag_row(row):
-            # case of a row with a non-supported tag or a comment; so it's copied as-is
+            # case of a row with a non-supported tag or a comment, so it's copied as-is
             entry.append(row)
             log.warning("commented row or unsupported tag found:\n%s", row)
         else:
             # case of a plain url row (regardless if preceded by an #EXTINF row or not)
             entry.append(row)
             log.debug("adding entry to the playlist: %s", entry)
-            p_list.append_entry(entry)
+            _append_entry(entry, p_list)
             entry = []
         previous_row = row
     return p_list
+
+
+def _append_entry(entry: List, pl: M3UPlaylist):
+    channel = ipytv.channel.from_playlist_entry(entry)
+    pl.append_channel(channel)

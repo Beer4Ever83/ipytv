@@ -1,6 +1,9 @@
 # IPyTV
 A python3 library to parse IPTV playlists in the M3U Plus format.
 
+[![Downloads](https://pepy.tech/badge/m3u-ipytv)](https://pepy.tech/project/m3u-ipytv)
+[![Downloads](https://pepy.tech/badge/m3u-ipytv/month)](https://pepy.tech/project/m3u-ipytv)
+[![Downloads](https://pepy.tech/badge/m3u-ipytv/week)](https://pepy.tech/project/m3u-ipytv)
 
 ## M3U Plus and IPTV
 The M3U Plus format is a _de facto_ standard for distributing IPTV playlists on
@@ -12,18 +15,25 @@ while **IPTV Playlist** refers to playlists in M3U Plus format.
 
 M3U Plus stems from the [`extended M3U8`](https://en.wikipedia.org/wiki/M3U#Extended_M3U)
 format, of which it supports only 2 tags (`#EXTM3U` and `#EXTINF`).
- 
+
 The syntax of the `#EXTM3U` and `#EXTINF` tags has been modified to include
 extra attributes (e.g., logo, group, language). Unfortunately this has broken
 the backward compatibility with the original M3U8 standard (as explained in
 detail [here](#format-considerations)).
 
 This library has been created from scratch to parse and handle the M3U Plus
-format only. It does not fully support regular M3U8 playlists.
+format only. It does not fully support regular M3U8 playlists (only basic
+channel attributes are parsed).
 
-This library copies _as-is_ (i.e. it's treated as a plain string and not parsed
-in any way) all tags that are found between the `#EXTINF` row and the related
-url row as, for example:
+### Supported tags
+Only `#EXTM3U`, `#EXTINF` and plain url rows are supported (i.e. they are parsed
+and their value is made available as properties of an `IPTVChannel` object).
+
+All tags that are found between an `#EXTINF` row and its related url row are
+added as `extras` to a channel, but without performing any parsing (i.e. they're
+treated like plain strings).
+
+In the example below, the `#EXTVLCOPT` row is not parsed, but copied _as-is_:
 ```text
 #EXTINF:-1 tvg-id="" tvg-name="hello" tvg-country="IT" tvg-url="" group-title="Greetings",Hello!
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0 
@@ -167,7 +177,7 @@ pl.update_attribute(attribute_name, "-2")
 value_before_deletion = pl.remove_attribute(attribute_name)
 ```
 
-There is also a methods that allows to add multiple attributes at once (instead
+There is also a method that allows to add multiple attributes at once (instead
 of single attributes) in the form of a dictionary:
 ```python
 pl.add_attributes({})
