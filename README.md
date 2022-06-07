@@ -131,12 +131,12 @@ Use the `playlist.loadl(list)` function:
 ```python
 from ipytv import playlist
 
-list = [
+rows = [
     '#EXTM3U',
     '#EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1',
     'http://myown.link:80/luke/210274/78482'
 ]
-pl = playlist.loadl(list)
+pl = playlist.loadl(rows)
 print(pl.length())
 ```
 

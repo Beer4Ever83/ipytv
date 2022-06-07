@@ -223,15 +223,15 @@ class M3UPlaylist:
         return next_chan
 
 
-def loadl(array: List) -> 'M3UPlaylist':
-    if not isinstance(array, list):
-        log.error("expected %s, got %s", type([]), type(array))
-        raise WrongTypeException("Wrong type: array (List) expected")
-    if len(array) < 2:
-        log.error("a playlist should have at least 2 rows (found %s)", len(array))
-        raise MalformedPlaylistException(f"a playlist should have at least 2 rows (found {len(array)})")
-    header = array[0].strip()
-    body = array[1:]
+def loadl(rows: List) -> 'M3UPlaylist':
+    if not isinstance(rows, rows):
+        log.error("expected %s, got %s", type([]), type(rows))
+        raise WrongTypeException("Wrong type: List expected")
+    if len(rows) < 2:
+        log.error("a playlist should have at least 2 rows (found %s)", len(rows))
+        raise MalformedPlaylistException(f"a playlist should have at least 2 rows (found {len(rows)})")
+    header = rows[0].strip()
+    body = rows[1:]
     if not m3u.is_m3u_header_row(header):
         log.error(
             "the playlist's first row should start with \"%s\", but it's \"%s\"",
@@ -326,9 +326,9 @@ def _build_chunk(begin: int, end: int) -> Dict[str, int]:
     }
 
 
-def _find_chunk_end(sub_array: List[str]) -> int:
-    offset = len(sub_array)
-    for offset, row in enumerate(sub_array):
+def _find_chunk_end(sub_list: List[str]) -> int:
+    offset = len(sub_list)
+    for offset, row in enumerate(sub_list):
         if m3u.is_extinf_row(row):
             log.debug(
                 "chunking at the following row (offset %s) as it's an #EXTINF row:\n%s",
@@ -336,7 +336,7 @@ def _find_chunk_end(sub_array: List[str]) -> int:
                 row
             )
             break
-        if offset > 0 and m3u.is_url_row(row) and m3u.is_url_row(sub_array[offset-1]):
+        if offset > 0 and m3u.is_url_row(row) and m3u.is_url_row(sub_list[offset - 1]):
             log.debug(
                 "chunking at the following row (offset %s) as it's a url row after another url row:\n%s",
                 offset,
@@ -346,28 +346,28 @@ def _find_chunk_end(sub_array: List[str]) -> int:
     return offset
 
 
-def _compute_chunk(array: List, start: int, min_size: int) -> Dict[str, int]:
-    length = len(array)
-    sub_array = array[start + min_size:]
+def _compute_chunk(rows: List, start: int, min_size: int) -> Dict[str, int]:
+    length = len(rows)
+    sub_list = rows[start + min_size:]
     if length - start > min_size:
         log.debug(
             "there are enough remaining rows (%s left) to populate at least one full-size chunk",
             length - start
         )
-        offset = _find_chunk_end(sub_array)
+        offset = _find_chunk_end(sub_list)
         end = start + min_size + offset
         log.debug("chunk end found at row %s", end)
         return _build_chunk(start, end)
     log.debug(
-        "there are less than (or exactly) %s rows (%s left), so the chunk end is the array end",
+        "there are less than (or exactly) %s rows (%s left), so the chunk end is the list end",
         min_size,
         length - start
     )
     return _build_chunk(start, length)
 
 
-def _chunk_body(array: List, chunk_count: int, enforce_min_size: bool = True) -> List:
-    length = len(array)
+def _chunk_body(rows: List, chunk_count: int, enforce_min_size: bool = True) -> List:
+    length = len(rows)
     chunk_size = math.floor(length / chunk_count)
     if enforce_min_size and chunk_size < __MIN_CHUNK_SIZE:
         log.debug(
@@ -385,24 +385,24 @@ def _chunk_body(array: List, chunk_count: int, enforce_min_size: bool = True) ->
     chunk_list = []
     start = 0
     while start < length:
-        chunk: Dict[str, int] = _compute_chunk(array, start, chunk_size)
+        chunk: Dict[str, int] = _compute_chunk(rows, start, chunk_size)
         chunk_list.append(chunk)
         start = chunk["end"]
     log.debug("chunk_list: %s", chunk_list)
     return chunk_list
 
 
-def _populate(array: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
+def _populate(rows: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
     p_list = M3UPlaylist()
     if end == -1:
-        end = len(array)
+        end = len(rows)
     log.debug("populating playlist with rows from %s to %s", begin, end)
     entry = []
-    previous_row = array[begin]
+    previous_row = rows[begin]
     if m3u.is_extinf_row(previous_row):
-        entry.append(array[begin])
+        entry.append(rows[begin])
         log.debug("chunk starting with an #EXTINF row")
-    for row in array[begin+1: end]:
+    for row in rows[begin + 1: end]:
         row = row.strip()
         log.debug("parsing row: %s", row)
         if m3u.is_extinf_row(row):
