@@ -4,7 +4,7 @@ Classes:
     M3UPlaylist
 
 Functions:
-    loada
+    loadl
     loads
     loadf
     loadu
@@ -223,7 +223,7 @@ class M3UPlaylist:
         return next_chan
 
 
-def loada(array: List) -> 'M3UPlaylist':
+def loadl(array: List) -> 'M3UPlaylist':
     if not isinstance(array, list):
         log.error("expected %s, got %s", type([]), type(array))
         raise WrongTypeException("Wrong type: array (List) expected")
@@ -271,7 +271,7 @@ def loada(array: List) -> 'M3UPlaylist':
 
 def loads(string: str) -> 'M3UPlaylist':
     if isinstance(string, str):
-        return loada(string.split("\n"))
+        return loadl(string.split("\n"))
     log.error("expected %s, got %s", type(''), type(string))
     raise WrongTypeException("Wrong type: string expected")
 
@@ -282,7 +282,7 @@ def loadf(filename: str) -> 'M3UPlaylist':
         raise WrongTypeException("Wrong type: string expected")
     with open(filename, encoding='utf-8') as file:
         buffer = file.readlines()
-        return loada(buffer)
+        return loadl(buffer)
 
 
 def loadu(url: str) -> 'M3UPlaylist':

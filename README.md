@@ -124,19 +124,19 @@ pl = playlist.loads(string)
 print(pl.length())
 ```
 
-#### From an array (i.e. a list)
+#### From a list
 
-Use the `playlist.loada(array)` function:
+Use the `playlist.loadl(list)` function:
 
 ```python
 from ipytv import playlist
 
-array = [
+list = [
     '#EXTM3U',
     '#EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1',
     'http://myown.link:80/luke/210274/78482'
 ]
-pl = playlist.loada(array)
+pl = playlist.loadl(list)
 print(pl.length())
 ```
 
@@ -360,7 +360,7 @@ from ipytv import playlist
 with open('my-broken-playlist.m3u', encoding='utf-8') as in_file:
     content = in_file.readlines()
     fixed_content = M3UDoctor.sanitize(content)
-    pl = playlist.loada(fixed_content)
+    pl = playlist.loadl(fixed_content)
     fixed_pl = M3UPlaylistDoctor.sanitize(pl)
     with open('my-fixed-playlist.m3u', 'w', encoding='utf-8') as out_file:
         content = fixed_pl.to_m3u_plus_playlist()
