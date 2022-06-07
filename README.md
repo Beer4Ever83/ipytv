@@ -126,7 +126,7 @@ print(pl.length())
 
 #### From a list
 
-Use the `playlist.loadl(list)` function:
+Use the `playlist.loadl(rows)` function:
 
 ```python
 from ipytv import playlist
