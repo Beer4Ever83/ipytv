@@ -1,4 +1,5 @@
-"""Create and handle IPTV channels
+"""
+Create and handle IPTV channels
 
 Classes:
     M3UEntry
@@ -21,7 +22,8 @@ log.addHandler(logging.NullHandler())
 
 
 class M3UEntry:
-    """The base channel entity that models the standard #EXTINF and url rows in
+    """
+    The base channel entity that models the standard #EXTINF and url rows in
     plain M3U playlists.
 
     Attributes
@@ -37,7 +39,8 @@ class M3UEntry:
         as an integer (with sign or not)
     """
     def __init__(self, url: str, name: str = "", duration: str = "-1"):
-        """Parameters
+        """
+        Parameters
         ----------
         url: str
             The url where the medium can be found (can be a local file or a network
@@ -64,8 +67,10 @@ class M3UEntry:
 
 
 class IPTVAttr(Enum):
-    """An Enum class with a list of attributes commonly found in IPTV playlists
-    (as part of the #EXTINF row)"""
+    """
+    An Enum class with a list of attributes commonly found in IPTV playlists
+    (as part of the #EXTINF row)
+    """
     TVG_ID = "tvg-id"
     TVG_NAME = "tvg-name"
     TVG_LANGUAGE = "tvg-language"
@@ -84,7 +89,8 @@ class IPTVAttr(Enum):
 
 
 class IPTVChannel(M3UEntry):
-    """A class that represents a channel in an IPTV playlist
+    """
+    A class that represents a channel in an IPTV playlist
 
     Attributes
     ----------
@@ -135,6 +141,11 @@ class IPTVChannel(M3UEntry):
         return not self.__eq__(other)
 
     def copy(self) -> 'IPTVChannel':
+        """
+        Returns a copy of the object it's invoked on
+
+        :return: IPTVChannel
+        """
         return IPTVChannel(
             url=self.url,
             name=self.name,
@@ -144,6 +155,14 @@ class IPTVChannel(M3UEntry):
         )
 
     def parse_extinf_string(self, extinf_string: str) -> None:
+        """
+        .. py:function parse_extinf_string(extinf_string)
+
+        Populate an IPTVChannel fields with the attributes from an #EXTINF row
+
+        :param str extinf_string:   The whole #EXTINF string as found in an IPTV
+                                    playlist
+        """
         match = m3u.match_m3u_plus_extinf_row(extinf_string)
         if match is not None:
             # Case of a well-formed EXTINF row
