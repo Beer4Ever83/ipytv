@@ -38,7 +38,7 @@ function install_requirements() {
     # shellcheck source=.venv/bin/activate
     is_virtualenv || source "${PWD}/${VIRTUALENV_DIR}/bin/activate"
     local requirement_files=''
-    requirement_files=$(find . -name 'requirements*.txt' -maxdepth 1)
+    requirement_files=$(find . -maxdepth 1 -name 'requirements*.txt')
     for reqs in $requirement_files; do
         echo "installing python dependencies from ${reqs}..."
         pip install -r "${reqs}" >/dev/null || abort "Failure while installing dependencies from ${reqs}"
