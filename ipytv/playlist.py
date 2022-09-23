@@ -224,7 +224,7 @@ class M3UPlaylist:
 
 
 def loadl(rows: List) -> 'M3UPlaylist':
-    if not isinstance(rows, rows):
+    if not isinstance(rows, List):
         log.error("expected %s, got %s", type([]), type(rows))
         raise WrongTypeException("Wrong type: List expected")
     if len(rows) < 2:
