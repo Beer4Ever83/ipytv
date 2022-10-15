@@ -124,7 +124,7 @@ class TestLoadaM3UPlusHuge(unittest.TestCase):
             # Let's copy the same content over and over again
             for _ in range(factor):
                 new_buffer += buffer[1:]
-        pl2 = playlist.loada(new_buffer)
+        pl2 = playlist.loadl(new_buffer)
         self.assertEqual(expected_length, pl2.length(), "The size of the playlist is not the expected one")
 
 

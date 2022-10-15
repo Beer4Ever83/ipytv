@@ -1,3 +1,15 @@
+"""All ipytv-specific exceptions
+
+Classes:
+    IPyTVException
+    MalformedExtinfException
+    MalformedPlaylistException
+    URLException
+    WrongTypeException
+    IndexOutOfBoundsException
+    AttributeAlreadyPresentException
+    AttributeNotFoundException
+"""
 class IPyTVException(Exception):
     pass
 

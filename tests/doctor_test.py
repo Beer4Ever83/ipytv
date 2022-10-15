@@ -10,7 +10,7 @@ from ipytv.playlist import M3UPlaylist
 class TestFixSplitQuotedString(unittest.TestCase):
     def runTest(self):
         fixed = M3UDoctor.sanitize(test_data.split_quoted_string.split("\n"))
-        self.assertEqual(test_data.expected_m3u_plus, playlist.loada(fixed))
+        self.assertEqual(test_data.expected_m3u_plus, playlist.loadl(fixed))
 
 
 class TestURLEncodeLogo(unittest.TestCase):

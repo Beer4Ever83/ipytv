@@ -1,16 +1,32 @@
+"""Everything related with the parsing of M3U files
+
+Functions:
+    is_m3u_header_row
+    is_m3u_extinf_row
+    is_m3u_plus_extinf_row
+    match_m3u_plus_broken_extinf_row
+    get_m3u_plus_broken_attributes
+    match_m3u_plus_extinf_row
+    is_extinf_row
+    is_comment_or_tag_row
+    is_url_row
+
+Constants:
+    M3U_HEADER_TAG
+"""
 import re
 from typing import Optional, Dict
 
 M3U_HEADER_TAG = "#EXTM3U"
-M3U_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+,.*$'
-M3U_PLUS_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
-M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)' \
+__M3U_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+,.*$'
+__M3U_PLUS_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
+__M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)' \
     r'(?P<attributes_g>(\s+[\w-]+="[^"]*")*),' \
     r'(?P<name_g>.*)'
-M3U_PLUS_BROKEN_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)' \
+__M3U_PLUS_BROKEN_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)' \
     r'(?P<attributes_g>(\s+[\w-]+=".*)*),' \
     r'(?P<name_g>.*)'
-M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_REGEX = r'(?:\s+)[\w-]+="'
+__M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_REGEX = r'(?:\s+)[\w-]+="'
 
 
 def is_m3u_header_row(row: str) -> bool:
@@ -18,15 +34,15 @@ def is_m3u_header_row(row: str) -> bool:
 
 
 def is_m3u_extinf_row(row: str) -> bool:
-    return re.search(M3U_EXTINF_REGEX, row) is not None
+    return re.search(__M3U_EXTINF_REGEX, row) is not None
 
 
 def is_m3u_plus_extinf_row(row: str) -> bool:
-    return re.search(M3U_PLUS_EXTINF_REGEX, row) is not None
+    return re.search(__M3U_PLUS_EXTINF_REGEX, row) is not None
 
 
 def match_m3u_plus_broken_extinf_row(row: str) -> Optional[re.Match]:
-    return re.search(M3U_PLUS_BROKEN_EXTINF_PARSE_REGEX, row)
+    return re.search(__M3U_PLUS_BROKEN_EXTINF_PARSE_REGEX, row)
 
 
 def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
@@ -47,7 +63,7 @@ def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
     if match is None:
         return {}
     attributes = match.group("attributes_g").rstrip(',')
-    tokens = re.findall(M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_REGEX, attributes)
+    tokens = re.findall(__M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_REGEX, attributes)
     attrs = {}
     for i, token in enumerate(tokens):
         name = token.lstrip().rstrip('="')
@@ -60,7 +76,7 @@ def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
 
 
 def match_m3u_plus_extinf_row(row: str) -> Optional[re.Match]:
-    return re.match(M3U_PLUS_EXTINF_PARSE_REGEX, row)
+    return re.match(__M3U_PLUS_EXTINF_PARSE_REGEX, row)
 
 
 def is_extinf_row(row: str) -> bool:
