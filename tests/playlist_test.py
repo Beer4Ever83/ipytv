@@ -1,3 +1,4 @@
+import itertools
 import unittest
 from typing import List
 
@@ -6,6 +7,7 @@ import m3u8
 from deepdiff import DeepDiff
 
 import ipytv.playlist as playlist
+from ipytv import m3u
 from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.exceptions import IndexOutOfBoundsException, AttributeAlreadyPresentException, AttributeNotFoundException
 from ipytv.playlist import M3UPlaylist
@@ -40,6 +42,10 @@ def produce_triples(n: int) -> List[str]:
         row_3 = f"https://www.mywebsite.com/video/myvideo{i}.mp4"
         out.append(row_3)
     return out
+
+
+def strip_blank_lines(rows: List) -> List:
+    return list(itertools.filterfalse(m3u.is_empty_row, rows))
 
 
 class TestChunkBody0(unittest.TestCase):
@@ -202,7 +208,9 @@ class TestToM3UPlusPlaylist(unittest.TestCase):
     def runTest(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         with open("tests/resources/m3u_plus.m3u") as file:
-            expected_content = "".join(file.readlines())
+            expected_content = "".join(
+                strip_blank_lines(file.readlines())
+            ).rstrip()
             content = pl.to_m3u_plus_playlist()
             self.assertEqual(expected_content, content, "The two playlists are not equal")
 

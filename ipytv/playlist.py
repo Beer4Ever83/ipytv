@@ -419,7 +419,7 @@ def _populate(rows: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
             # case of a row with a non-supported tag or a comment, so it's copied as-is
             entry.append(row)
             log.warning("commented row or unsupported tag found:\n%s", row)
-        else:
+        elif m3u.is_url_row(row):
             # case of a plain url row (regardless if preceded by an #EXTINF row or not)
             entry.append(row)
             log.debug("adding entry to the playlist: %s", entry)

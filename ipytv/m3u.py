@@ -1,4 +1,4 @@
-"""Everything related with the parsing of M3U files
+"""Everything related with the parsing of M3U Plus files
 
 Functions:
     is_m3u_header_row
@@ -47,17 +47,18 @@ def match_m3u_plus_broken_extinf_row(row: str) -> Optional[re.Match]:
 
 def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
     """In the case of an EXTINF row with a list of "broken" attributes (i.e.
-    attributes the value of which contains badly nested dohble quotes), this
+    attributes the value of which contains badly nested double quotes), this
     function can parse the list of attributes by:
-    1. extract only the attribute list from the whole row (please note: the
-    leading space is kept, but the trailing comma is removed);
-    2. find all occurrences of the attribute-name=" pattern and extract the
-    attribute name from the results;
-    3. loop through all the attribute patterns and split the whole row in two
-    using the attribute name as separator, and take the right part of the split.
-    4. Split the right part in two, by using next attribute as separator: the
-    wanted value will be found in the left part of the split.
-    5. Replace all double quotes with underscores.
+    1. Extracting only the attribute list from the whole row (please note: the
+    leading space is kept, but the trailing comma is removed).
+    2. Finding all occurrences of the attribute-name=" pattern and extracting
+    the attribute name from the results.
+    3. Looping through all the attribute patterns and splitting the whole row in
+    two, using the attribute name as separator, and taking the right part of the
+    split.
+    4. Splitting the right part in two, by using next attribute as separator:
+    the wanted value will be found in the left part of the split.
+    5. Replacing all misplaced double quotes with underscores.
     """
     match = match_m3u_plus_broken_extinf_row(row)
     if match is None:
@@ -70,7 +71,7 @@ def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
         right = row.split(token)[1]
         separator = tokens[i+1] if i < len(tokens)-1 else '",'
         left = right.split(separator)[0].rstrip('"')
-        # Let's replace double quotes with underscore
+        # Let's replace misplaced double quotes with underscore
         attrs[name] = left.replace('"', '_')
     return attrs
 
@@ -87,5 +88,9 @@ def is_comment_or_tag_row(row: str) -> bool:
     return row.startswith('#')
 
 
+def is_empty_row(row: str) -> bool:
+    return len(row.strip()) == 0
+
+
 def is_url_row(row: str) -> bool:
-    return not is_comment_or_tag_row(row)
+    return not is_m3u_header_row(row) and not is_comment_or_tag_row(row) and not is_empty_row(row)
