@@ -208,9 +208,7 @@ class TestToM3UPlusPlaylist(unittest.TestCase):
     def runTest(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         with open("tests/resources/m3u_plus.m3u") as file:
-            expected_content = "".join(
-                strip_blank_lines(file.readlines())
-            ).rstrip()
+            expected_content = "".join(strip_blank_lines(file.readlines()))
             content = pl.to_m3u_plus_playlist()
             self.assertEqual(expected_content, content, "The two playlists are not equal")
 
@@ -221,10 +219,7 @@ class TestToM3U8Playlist(unittest.TestCase):
         pl_string = pl.to_m3u8_playlist()
         pl_m3u8 = m3u8.loads(pl_string)
         pl_m3u8_string = pl_m3u8.dumps()
-        # The rstrip() method invocation is needed because the dumps() method of
-        # the m3u8 library adds a (redundant?) final newline character that this
-        # library doesn't add.
-        self.assertEqual(pl_string, pl_m3u8_string.rstrip())
+        self.assertEqual(pl_string, pl_m3u8_string)
 
 
 class TestClone(unittest.TestCase):

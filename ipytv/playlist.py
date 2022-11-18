@@ -171,13 +171,13 @@ class M3UPlaylist:
         out = f"{self._build_header()}\n"
         for channel in self._channels:
             out += channel.to_m3u_plus_playlist_entry()
-        return out.rstrip()
+        return out
 
     def to_m3u8_playlist(self) -> str:
         out = f"{m3u.M3U_HEADER_TAG}\n"
         for channel in self._channels:
             out += channel.to_m3u8_playlist_entry()
-        return out.rstrip()
+        return out
 
     def copy(self) -> 'M3UPlaylist':
         new_pl = M3UPlaylist()
