@@ -39,7 +39,7 @@ function exclude_from_return_code() {
 
 LIB_DIR=$(realpath "${my_dir}/../${LIB_NAME}")
 pushd "${LIB_DIR}" >/dev/null || abort
-pylint ./*
+pylint --max-line-length=120 ./*
 lint_result=$?
 decode_pylint_exit_code ${lint_result}
 popd >/dev/null || abort
