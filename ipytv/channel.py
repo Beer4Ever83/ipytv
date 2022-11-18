@@ -12,7 +12,7 @@ Functions:
 import logging
 import shlex
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from ipytv import m3u
 from ipytv.exceptions import MalformedExtinfException
@@ -125,8 +125,8 @@ class IPTVChannel(M3UEntry):
         a standard m3u8 playlist
     """
     def __init__(self, url: str = "", name: str = "",
-                 duration: str = "-1", attributes: Dict[str, str] = None,
-                 extras: List[str] = None):
+                 duration: str = "-1", attributes: Optional[Dict[str, str]] = None,
+                 extras: Optional[List[str]] = None):
         super().__init__(url, name, duration)
         self.attributes: Dict[str, str] = attributes if attributes is not None else {}
         self.extras: List[str] = extras if extras is not None else []
