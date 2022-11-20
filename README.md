@@ -1,4 +1,4 @@
-# IPyTV
+![IPyTV logo](doc/logo.png "IPyTV logo")
 
 A python3 library to parse IPTV playlists in the M3U Plus format.
 
