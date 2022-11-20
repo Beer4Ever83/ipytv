@@ -41,22 +41,20 @@ class M3UDoctor:
     @staticmethod
     def _fix_unquoted_numeric_attributes(m3u_rows: List[str]) -> List:
         """
-        This covers the case of EXTINF rows with unquoted numeric attributes.
+        This covers the case of EXTM3U and EXTINF rows with unquoted numeric attributes.
         Example:
             #EXTINF:-1 tvg-shift=-10.5 group-title="Cinema" tvg-id=22,Channel 22
         """
-        unquoted_attribute_regex = r"(?P<attribute_g>\s+(?P<name_g>[\w-]+)=\s*(?P<value_g>-?\d+(:?\.\d+)?))"
+        unquoted_numbers_regex = r"(?P<attribute_g>\s+(?P<name_g>[\w-]+)=\s*(?P<value_g>-?\d+(:?\.\d+)?))"
         fixed_m3u_rows: List = []
         for current_row in m3u_rows:
             new_row = current_row
-            if m3u.is_extinf_row(current_row):
-                matches = re.finditer(unquoted_attribute_regex, current_row)
-                if matches is not None:
-                    for match in matches:
-                        attribute = match.group("attribute_g")
-                        name = match.group("name_g")
-                        value = match.group("value_g")
-                        new_row = current_row.replace(attribute, f" {name}=\"{value}\"")
+            if m3u.is_m3u_header_row(current_row) or m3u.is_extinf_row(current_row):
+                for match in re.finditer(unquoted_numbers_regex, current_row):
+                    attribute = match.group("attribute_g")
+                    name = match.group("name_g")
+                    value = match.group("value_g")
+                    new_row = current_row.replace(attribute, f" {name}=\"{value}\"")
             fixed_m3u_rows.append(new_row)
         return fixed_m3u_rows
 
