@@ -34,7 +34,8 @@ m3u_plus_channel_2 = IPTVChannel(
         IPTVAttr.TVG_ID.value: "",
         IPTVAttr.TVG_NAME.value: "TEMATICO MASSIMO TROISI",
         IPTVAttr.TVG_LOGO.value: "",
-        IPTVAttr.GROUP_TITLE.value: "Italia"
+        IPTVAttr.GROUP_TITLE.value: "Italia",
+        IPTVAttr.TVG_SHIFT.value: "-0.5"
     }
 )
 m3u_plus_channel_3 = IPTVChannel(
@@ -42,7 +43,7 @@ m3u_plus_channel_3 = IPTVChannel(
     name="----I N T R A T T E N I M E N T O----",
     duration="-1",
     attributes={
-        IPTVAttr.TVG_ID.value: "",
+        IPTVAttr.TVG_ID.value: "-10.5",
         IPTVAttr.TVG_NAME.value: "----I N T R A T T E N I M E N T O----",
         IPTVAttr.TVG_LOGO.value: "",
         IPTVAttr.GROUP_TITLE.value: "Intrattenimento"
@@ -101,10 +102,20 @@ http://myown.link:80/luke/210274/78482
 #EXTINF:-1 tvg-id="" tvg-name="Cielo" tvg-logo="" group-title="Italia",Cielo
 http://myown.link:80/luke/210274/89844
 #EXTINF:-1 tvg-id="" tvg-name="TEMATICO MASSIMO TROISI" tvg-logo="" group-title="Italia
-",TEMATICO MASSIMO TROISI
+" tvg-shift="-0.5",TEMATICO MASSIMO TROISI
 http://myown.link:80/luke/109163/89800
-#EXTINF:-1 tvg-id="
+#EXTINF:-1 tvg-id="-10.5
 " tvg-name="----I N T R A T T E N I M E N T O----" tvg-logo="" group-title="Intrattenimento",----I N T R A T T E N I M E N T O----
+http://myown.link:80/luke/109163/78282"""
+
+unquoted_attributes = """#EXTM3U x-tvg-url="http://myown.link:80/luke/220311/22311"
+#EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" tvg-logo="https://static.epg.best/it/RaiUno.it.png" group-title="RAI",Rai 1
+http://myown.link:80/luke/210274/78482
+#EXTINF:-1 tvg-id="" tvg-name="Cielo" tvg-logo="" group-title="Italia",Cielo
+http://myown.link:80/luke/210274/89844
+#EXTINF:-1 tvg-id="" tvg-name="TEMATICO MASSIMO TROISI" tvg-logo="" group-title="Italia" tvg-shift=-0.5,TEMATICO MASSIMO TROISI
+http://myown.link:80/luke/109163/89800
+#EXTINF:-1 tvg-id=-10.5 tvg-name="----I N T R A T T E N I M E N T O----" tvg-logo="" group-title="Intrattenimento",----I N T R A T T E N I M E N T O----
 http://myown.link:80/luke/109163/78282"""
 
 expected_urlencoded_list = [

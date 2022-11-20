@@ -13,6 +13,12 @@ class TestFixSplitQuotedString(unittest.TestCase):
         self.assertEqual(test_data.expected_m3u_plus, playlist.loadl(fixed))
 
 
+class TestFixUnquotedAttributes(unittest.TestCase):
+    def runTest(self):
+        fixed = M3UDoctor.sanitize(test_data.unquoted_attributes.split("\n"))
+        self.assertEqual(test_data.expected_m3u_plus, playlist.loadl(fixed))
+
+
 class TestURLEncodeLogo(unittest.TestCase):
     def runTest(self):
         extinf_string = """#EXTINF:-1 tvg-id="" tvg-name="" """ \
