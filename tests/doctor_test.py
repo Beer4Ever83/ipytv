@@ -1,4 +1,5 @@
 import unittest
+from typing import List, Dict
 
 from tests import test_data
 from ipytv import playlist
@@ -7,16 +8,35 @@ from ipytv.doctor import M3UDoctor, IPTVChannelDoctor, M3UPlaylistDoctor
 from ipytv.playlist import M3UPlaylist
 
 
-class TestFixSplitQuotedString(unittest.TestCase):
+class TestSanitizeSplitQuotedString(unittest.TestCase):
     def runTest(self):
         fixed = M3UDoctor.sanitize(test_data.split_quoted_string.split("\n"))
         self.assertEqual(test_data.expected_m3u_plus, playlist.loadl(fixed))
 
 
-class TestFixUnquotedAttributes(unittest.TestCase):
+class TestSanitizeUnquotedNumericAttributes(unittest.TestCase):
     def runTest(self):
         fixed = M3UDoctor.sanitize(test_data.unquoted_attributes.split("\n"))
         self.assertEqual(test_data.expected_m3u_plus, playlist.loadl(fixed))
+
+
+class TestFixUnquotedNumericAttributes(unittest.TestCase):
+    def runTest(self):
+        checks: List[Dict[str, List[str]]] = [
+            {
+                "input_row":    ['#EXTINF:-1 cn-id=10338245 cn-records=1 group-title="Эфир", Первый'],
+                "expected_row": ['#EXTINF:-1 cn-id="10338245" cn-records="1" group-title="Эфир", Первый']
+            },
+            {
+                "input_row":    ['#EXTINF:-1 tvg-id=999 group-title="Italia" tvg-shift=-0.5,Channel'],
+                "expected_row": ['#EXTINF:-1 tvg-id="999" group-title="Italia" tvg-shift="-0.5",Channel']
+            }
+        ]
+        for c in checks:
+            row = c['input_row']
+            expected_row = c['expected_row']
+            fixed = M3UDoctor._fix_unquoted_numeric_attributes(row)
+            self.assertEqual(expected_row, fixed)
 
 
 class TestURLEncodeLogo(unittest.TestCase):

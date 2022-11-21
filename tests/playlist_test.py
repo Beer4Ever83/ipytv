@@ -1,4 +1,5 @@
 import itertools
+import logging
 import unittest
 from typing import List
 
@@ -7,7 +8,7 @@ import m3u8
 from deepdiff import DeepDiff
 
 import ipytv.playlist as playlist
-from ipytv import m3u
+from ipytv import m3u, doctor
 from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.exceptions import IndexOutOfBoundsException, AttributeAlreadyPresentException, AttributeNotFoundException
 from ipytv.playlist import M3UPlaylist
@@ -117,7 +118,7 @@ class TestChunkBody5(unittest.TestCase):
         self.assertEqual({"begin": 13, "end": 15}, chunks[3])
 
 
-class TestLoadaM3UPlusHuge(unittest.TestCase):
+class TestLoadlM3UPlusHuge(unittest.TestCase):
     def runTest(self):
         filename = "tests/resources/m3u_plus.m3u"
         # factor is the amount of copies of the content of the file we want to parse
@@ -132,6 +133,25 @@ class TestLoadaM3UPlusHuge(unittest.TestCase):
                 new_buffer += buffer[1:]
         pl2 = playlist.loadl(new_buffer)
         self.assertEqual(expected_length, pl2.length(), "The size of the playlist is not the expected one")
+
+
+class TestLoadlM3UPlusWithEmptyRows(unittest.TestCase):
+    def runTest(self):
+        rows = """#EXTM3U url-tvg="http://www.cn.ru/data/tv/schedule.zip" cache=500 deinterlace=1 aspect-ratio=4:3 croppadd=10x10 tvg-shift=0
+
+#EXT-INETRA-CHANNEL-INF: channel-id=10338245 recordable=true age-restriction=16 territory-id=16
+#EXT-INETRA-STREAM-INF: aspect-ratio=16:9 has-timeshift=true
+#EXTINF:-1 cn-id=10338245 cn-records=1 group-title="Эфир", Первый
+http://cache-tv.nsotelecom.ru/streaming/1kanal/16/g2500/playlist.m3u8
+
+#EXT-INETRA-CHANNEL-INF: channel-id=10338258 recordable=true age-restriction=16 territory-id=16
+#EXT-INETRA-STREAM-INF: id=233 aspect-ratio=16:9 has-timeshift=true
+#EXTINF:-1 cn-id=10338258 cn-records=1 group-title="Эфир", Россия 1
+http://cache-tv.nsotelecom.ru/streaming/rossija/16/g2500/playlist.m3u8
+"""
+        # Let's copy the same content over and over again
+        pl = playlist.loadl(doctor.M3UDoctor.sanitize(rows.split("\n")))
+        self.assertEqual(2, pl.length(), "The size of the playlist is not the expected one")
 
 
 class TestLoadfM3UPlus(unittest.TestCase):

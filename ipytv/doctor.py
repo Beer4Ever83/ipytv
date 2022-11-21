@@ -44,6 +44,7 @@ class M3UDoctor:
         This covers the case of EXTM3U and EXTINF rows with unquoted numeric attributes.
         Example:
             #EXTINF:-1 tvg-shift=-10.5 group-title="Cinema" tvg-id=22,Channel 22
+            #EXTINF:-1 cn-id=10338245 cn-records=1 group-title="Эфир", Первый
         """
         unquoted_numbers_regex = r"(?P<attribute_g>\s+(?P<name_g>[\w-]+)=\s*(?P<value_g>-?\d+(:?\.\d+)?))"
         fixed_m3u_rows: List = []
@@ -54,7 +55,7 @@ class M3UDoctor:
                     attribute = match.group("attribute_g")
                     name = match.group("name_g")
                     value = match.group("value_g")
-                    new_row = current_row.replace(attribute, f" {name}=\"{value}\"")
+                    new_row = new_row.replace(attribute, f" {name}=\"{value}\"")
             fixed_m3u_rows.append(new_row)
         return fixed_m3u_rows
 

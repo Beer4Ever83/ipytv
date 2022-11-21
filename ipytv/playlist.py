@@ -11,6 +11,8 @@ Functions:
 
 """
 import logging
+from multiprocessing import current_process
+
 import math
 import multiprocessing as mp
 from multiprocessing.pool import AsyncResult
