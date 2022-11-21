@@ -135,25 +135,6 @@ class TestLoadlM3UPlusHuge(unittest.TestCase):
         self.assertEqual(expected_length, pl2.length(), "The size of the playlist is not the expected one")
 
 
-class TestLoadlM3UPlusWithEmptyRows(unittest.TestCase):
-    def runTest(self):
-        rows = """#EXTM3U url-tvg="http://www.cn.ru/data/tv/schedule.zip" cache=500 deinterlace=1 aspect-ratio=4:3 croppadd=10x10 tvg-shift=0
-
-#EXT-INETRA-CHANNEL-INF: channel-id=10338245 recordable=true age-restriction=16 territory-id=16
-#EXT-INETRA-STREAM-INF: aspect-ratio=16:9 has-timeshift=true
-#EXTINF:-1 cn-id=10338245 cn-records=1 group-title="Эфир", Первый
-http://cache-tv.nsotelecom.ru/streaming/1kanal/16/g2500/playlist.m3u8
-
-#EXT-INETRA-CHANNEL-INF: channel-id=10338258 recordable=true age-restriction=16 territory-id=16
-#EXT-INETRA-STREAM-INF: id=233 aspect-ratio=16:9 has-timeshift=true
-#EXTINF:-1 cn-id=10338258 cn-records=1 group-title="Эфир", Россия 1
-http://cache-tv.nsotelecom.ru/streaming/rossija/16/g2500/playlist.m3u8
-"""
-        # Let's copy the same content over and over again
-        pl = playlist.loadl(doctor.M3UDoctor.sanitize(rows.split("\n")))
-        self.assertEqual(2, pl.length(), "The size of the playlist is not the expected one")
-
-
 class TestLoadfM3UPlus(unittest.TestCase):
     def runTest(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
