@@ -1,5 +1,4 @@
 import itertools
-import logging
 import unittest
 from typing import List
 
@@ -8,7 +7,7 @@ import m3u8
 from deepdiff import DeepDiff
 
 import ipytv.playlist as playlist
-from ipytv import m3u, doctor
+from ipytv import m3u
 from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.exceptions import IndexOutOfBoundsException, AttributeAlreadyPresentException, AttributeNotFoundException
 from ipytv.playlist import M3UPlaylist
