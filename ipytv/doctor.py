@@ -54,7 +54,7 @@ class M3UDoctor:
                     attribute = match.group("attribute_g")
                     name = match.group("name_g")
                     value = match.group("value_g")
-                    new_row = current_row.replace(attribute, f" {name}=\"{value}\"")
+                    new_row = new_row.replace(attribute, f" {name}=\"{value}\"")
             fixed_m3u_rows.append(new_row)
         return fixed_m3u_rows
 

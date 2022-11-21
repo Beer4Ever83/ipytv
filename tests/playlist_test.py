@@ -117,7 +117,7 @@ class TestChunkBody5(unittest.TestCase):
         self.assertEqual({"begin": 13, "end": 15}, chunks[3])
 
 
-class TestLoadaM3UPlusHuge(unittest.TestCase):
+class TestLoadlM3UPlusHuge(unittest.TestCase):
     def runTest(self):
         filename = "tests/resources/m3u_plus.m3u"
         # factor is the amount of copies of the content of the file we want to parse

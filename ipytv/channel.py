@@ -304,7 +304,7 @@ def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
             # a comment or a non-supported tag, we add it to extras
             channel.extras.append(row)
             log.warning("commented row or unsupported tag found:\n%s", row)
-        else:
+        elif m3u.is_url_row(row):
             channel.url = row
             log.info("URL row found")
     return channel
