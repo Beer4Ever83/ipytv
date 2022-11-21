@@ -398,15 +398,14 @@ def _populate(rows: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
         end = len(rows)
     log.debug("populating playlist with rows from %s to %s", begin, end)
     entry = []
-    previous_row = rows[begin]
-    if m3u.is_extinf_row(previous_row):
-        entry.append(rows[begin])
-        log.debug("chunk starting with an #EXTINF row")
-    for row in rows[begin + 1: end]:
-        row = row.strip()
+    previous_row = None
+    for row in rows[begin:end]:
         log.debug("parsing row: %s", row)
+        row = row.strip()
+        if not row:  # skip empty lines
+            continue
         if m3u.is_extinf_row(row):
-            if m3u.is_extinf_row(previous_row):
+            if previous_row is not None and m3u.is_extinf_row(previous_row):
                 # case of two adjacent #EXTINF rows, so a url-less entry is
                 # added. This shouldn't be allowed, but sometimes those #EXTINF
                 # rows are used as group separators.
@@ -425,6 +424,8 @@ def _populate(rows: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
             log.debug("adding entry to the playlist: %s", entry)
             _append_entry(entry, p_list)
             entry = []
+        else:
+            log.warning("badly formatted row found", row)
         previous_row = row
     return p_list
 
