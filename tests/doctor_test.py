@@ -24,8 +24,8 @@ class TestFixUnquotedNumericAttributes(unittest.TestCase):
     def runTest(self):
         checks: List[Dict[str, List[str]]] = [
             {
-                "input_row":    ['#EXTINF:-1 cn-id=10338245 cn-records=1 group-title="Эфир", Первый'],
-                "expected_row": ['#EXTINF:-1 cn-id="10338245" cn-records="1" group-title="Эфир", Первый']
+                "input_row":    ['#EXTINF:-1 cn-id=10338245 cn-records=1 group-title="my-group", First'],
+                "expected_row": ['#EXTINF:-1 cn-id="10338245" cn-records="1" group-title="my-group", First']
             },
             {
                 "input_row":    ['#EXTINF:-1 tvg-id=999 group-title="Italia" tvg-shift=-0.5,Channel'],

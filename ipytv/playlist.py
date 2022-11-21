@@ -11,13 +11,11 @@ Functions:
 
 """
 import logging
-from multiprocessing import current_process
-
-import math
 import multiprocessing as mp
 from multiprocessing.pool import AsyncResult
 from typing import List, Dict
 
+import math
 import requests
 from requests import RequestException
 
