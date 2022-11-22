@@ -230,6 +230,7 @@ def loadl(rows: List) -> 'M3UPlaylist':
     if len(rows) < 2:
         log.error("a playlist should have at least 2 rows (found %s)", len(rows))
         raise MalformedPlaylistException(f"a playlist should have at least 2 rows (found {len(rows)})")
+    rows = _remove_blank_rows(rows)
     header = rows[0].strip()
     if not m3u.is_m3u_header_row(header):
         log.error(
@@ -305,6 +306,14 @@ def loadu(url: str) -> 'M3UPlaylist':
         raise URLException(
             f"Failure while opening {url}.\nError: {exception}"
         ) from exception
+
+
+def _remove_blank_rows(rows: List[str]) -> List[str]:
+    new_list = []
+    for row in rows:
+        if not m3u.is_empty_row(row):
+            new_list.append(row)
+    return new_list
 
 
 def _parse_header(header: str) -> Dict[str, str]:
@@ -404,6 +413,7 @@ def _populate(rows: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
         log.debug("chunk starting with a url, comment or tag row")
     if m3u.is_url_row(previous_row):
         _append_entry(entry, p_list)
+        entry = []
         log.debug("adding entry to the playlist: %s", entry)
     for row in rows[begin + 1: end]:
         row = row.strip()
