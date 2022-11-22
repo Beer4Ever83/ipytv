@@ -231,7 +231,6 @@ def loadl(rows: List) -> 'M3UPlaylist':
         log.error("a playlist should have at least 2 rows (found %s)", len(rows))
         raise MalformedPlaylistException(f"a playlist should have at least 2 rows (found {len(rows)})")
     header = rows[0].strip()
-    body = rows[1:]
     if not m3u.is_m3u_header_row(header):
         log.error(
             "the playlist's first row should start with \"%s\", but it's \"%s\"",
@@ -243,6 +242,7 @@ def loadl(rows: List) -> 'M3UPlaylist':
     out_pl.add_attributes(_parse_header(header))
     cores = mp.cpu_count()
     log.debug("%s cores detected", cores)
+    body = rows[1:]
     chunks = _chunk_body(body, cores)
     results: List[AsyncResult] = []
     log.debug("spawning a pool of processes (one per core) to parse the playlist")
@@ -399,9 +399,12 @@ def _populate(rows: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
     log.debug("populating playlist with rows from %s to %s", begin, end)
     entry = []
     previous_row = rows[begin]
-    if m3u.is_extinf_row(previous_row):
+    if m3u.is_comment_or_tag_row(previous_row) or m3u.is_url_row(previous_row):
         entry.append(rows[begin])
-        log.debug("chunk starting with an #EXTINF row")
+        log.debug("chunk starting with a url, comment or tag row")
+    if m3u.is_url_row(previous_row):
+        _append_entry(entry)
+        log.debug("adding entry to the playlist: %s", entry)
     for row in rows[begin + 1: end]:
         row = row.strip()
         log.debug("parsing row: %s", row)

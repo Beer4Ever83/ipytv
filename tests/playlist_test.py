@@ -130,8 +130,25 @@ class TestLoadlM3UPlusHuge(unittest.TestCase):
             # Let's copy the same content over and over again
             for _ in range(factor):
                 new_buffer += buffer[1:]
-        pl2 = playlist.loadl(new_buffer)
-        self.assertEqual(expected_length, pl2.length(), "The size of the playlist is not the expected one")
+        pl = playlist.loadl(new_buffer)
+        self.assertEqual(expected_length, pl.length(), "The size of the playlist is not the expected one")
+
+
+class TestLoadlM3UPlusWithExtras(unittest.TestCase):
+    def runTest(self):
+        input_rows = [
+            '#EXTM3U',
+            '#EXTVLCOPTS:http-referrer',
+            '#EXTINF:-1 tvg-id="MTV" group-title="Music",MTV',
+            'https://myownurl.com/playlist.m3u8',
+
+            '#EXTVLCOPTS:http-referrer',
+            '#EXTINF:-1 tvg-id="MTV+1" group-title="Music",MTV+1',
+            'https://myownurl.com/playlist1.m3u8'
+        ]
+        pl = playlist.loadl(input_rows)
+        self.assertEqual(2, pl.length(), "The size of the playlist is not the expected one")
+        self.assertEqual(1, len(pl.get_channel(0).extras), "The size of the extras for channel 0 is not the expected one")
 
 
 class TestLoadfM3UPlus(unittest.TestCase):
