@@ -73,9 +73,9 @@ class TestChunkBody1(unittest.TestCase):
         body += produce_triples(5)  # total 28 rows
         chunks = playlist._chunk_body(body, 3, enforce_min_size=False)
         self.assertEqual(3, len(chunks))
-        self.assertEqual({"begin": 0, "end": 9}, chunks[0])
-        self.assertEqual({"begin": 9, "end": 19}, chunks[1])
-        self.assertEqual({"begin": 19, "end": 28}, chunks[2])
+        self.assertEqual({"begin": 0, "end": 11}, chunks[0])
+        self.assertEqual({"begin": 11, "end": 22}, chunks[1])
+        self.assertEqual({"begin": 22, "end": 28}, chunks[2])
 
 
 class TestChunkBody2(unittest.TestCase):

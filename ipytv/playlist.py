@@ -330,41 +330,40 @@ def _parse_header(header: str) -> Dict[str, str]:
 
 def _build_chunk(begin: int, end: int) -> Dict[str, int]:
     return {
+        # begin is the index of the first element of the current chunk
         "begin": begin,
+        # end is the index of the first element of the next chunk or the first position after the end of the list
         "end": end
     }
 
 
 def _find_chunk_end(sub_list: List[str]) -> int:
-    offset = len(sub_list)
+    offset = len(sub_list) - 1
     for offset, row in enumerate(sub_list):
-        if m3u.is_extinf_row(row):
+        if m3u.is_url_row(row):
             log.debug(
-                "chunking at the following row (offset %s) as it's an #EXTINF row:\n%s",
+                "chunking at the following row (offset %s) as it's a url row:\n%s",
                 offset,
                 row
             )
             break
-        if offset > 0 and m3u.is_url_row(row) and m3u.is_url_row(sub_list[offset - 1]):
-            log.debug(
-                "chunking at the following row (offset %s) as it's a url row after another url row:\n%s",
-                offset,
-                row
-            )
-            break
+    # since sub_list begins
     return offset
 
 
 def _compute_chunk(rows: List, start: int, min_size: int) -> Dict[str, int]:
     length = len(rows)
-    sub_list = rows[start + min_size:]
     if length - start > min_size:
         log.debug(
             "there are enough remaining rows (%s left) to populate at least one full-size chunk",
             length - start
         )
-        offset = _find_chunk_end(sub_list)
-        end = start + min_size + offset
+        end = start + min_size + 1
+        if not m3u.is_url_row(rows[end-1]):
+            sub_list = rows[end:]
+            # Let's grow the current chunk until the first url row
+            offset = _find_chunk_end(sub_list) + 1
+            end += offset
         log.debug("chunk end found at row %s", end)
         return _build_chunk(start, end)
     log.debug(
