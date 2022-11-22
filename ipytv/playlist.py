@@ -347,7 +347,7 @@ def _find_chunk_end(sub_list: List[str]) -> int:
                 row
             )
             break
-    # since sub_list begins
+    # offset is the position relative to sub_list where the first url row has been found
     return offset
 
 
