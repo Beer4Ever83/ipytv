@@ -403,7 +403,7 @@ def _populate(rows: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
         entry.append(rows[begin])
         log.debug("chunk starting with a url, comment or tag row")
     if m3u.is_url_row(previous_row):
-        _append_entry(entry)
+        _append_entry(entry, p_list)
         log.debug("adding entry to the playlist: %s", entry)
     for row in rows[begin + 1: end]:
         row = row.strip()
