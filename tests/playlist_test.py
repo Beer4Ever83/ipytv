@@ -1,6 +1,6 @@
 import itertools
 import unittest
-from typing import List
+from typing import List, Dict
 
 import httpretty
 import m3u8
@@ -48,6 +48,13 @@ def strip_blank_lines(rows: List) -> List:
     return list(itertools.filterfalse(m3u.is_empty_row, rows))
 
 
+def count_extras(pl: M3UPlaylist) -> int:
+    amount = 0
+    for ch in pl:
+        amount += len(ch.extras)
+    return amount
+
+
 class TestChunkBody0(unittest.TestCase):
     def runTest(self):
         body = produce_singles(5)   # total 05 rows
@@ -55,8 +62,8 @@ class TestChunkBody0(unittest.TestCase):
         body += produce_triples(5)  # total 28 rows
         chunks = playlist._chunk_body(body, 2, enforce_min_size=False)
         self.assertEqual(2, len(chunks))
-        self.assertEqual({"begin": 0, "end": 16}, chunks[0])
-        self.assertEqual({"begin": 16, "end": 28}, chunks[1])
+        self.assertEqual({"beginning": 0, "end": 15}, chunks[0])
+        self.assertEqual({"beginning": 16, "end": 27}, chunks[1])
 
 
 class TestChunkBody1(unittest.TestCase):
@@ -66,9 +73,9 @@ class TestChunkBody1(unittest.TestCase):
         body += produce_triples(5)  # total 28 rows
         chunks = playlist._chunk_body(body, 3, enforce_min_size=False)
         self.assertEqual(3, len(chunks))
-        self.assertEqual({"begin": 0, "end": 9}, chunks[0])
-        self.assertEqual({"begin": 9, "end": 19}, chunks[1])
-        self.assertEqual({"begin": 19, "end": 28}, chunks[2])
+        self.assertEqual({"beginning": 0, "end": 10}, chunks[0])
+        self.assertEqual({"beginning": 11, "end": 21}, chunks[1])
+        self.assertEqual({"beginning": 22, "end": 27}, chunks[2])
 
 
 class TestChunkBody2(unittest.TestCase):
@@ -76,21 +83,23 @@ class TestChunkBody2(unittest.TestCase):
         body = produce_singles(50)  # total 50 rows
         chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
         self.assertEqual(5, len(chunks))
-        self.assertEqual({"begin": 0, "end": 11}, chunks[0])
-        self.assertEqual({"begin": 11, "end": 22}, chunks[1])
-        self.assertEqual({"begin": 22, "end": 33}, chunks[2])
-        self.assertEqual({"begin": 33, "end": 44}, chunks[3])
-        self.assertEqual({"begin": 44, "end": 50}, chunks[4])
+        self.assertEqual({"beginning": 0, "end": 9}, chunks[0])
+        self.assertEqual({"beginning": 10, "end": 19}, chunks[1])
+        self.assertEqual({"beginning": 20, "end": 29}, chunks[2])
+        self.assertEqual({"beginning": 30, "end": 39}, chunks[3])
+        self.assertEqual({"beginning": 40, "end": 49}, chunks[4])
 
 
 class TestChunkBody3(unittest.TestCase):
     def runTest(self):
         body = produce_singles(5)   # total 5 rows
         chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
-        self.assertEqual(3, len(chunks))
-        self.assertEqual({"begin": 0, "end": 2}, chunks[0])
-        self.assertEqual({"begin": 2, "end": 4}, chunks[1])
-        self.assertEqual({"begin": 4, "end": 5}, chunks[2])
+        self.assertEqual(5, len(chunks))
+        self.assertEqual({"beginning": 0, "end": 0}, chunks[0])
+        self.assertEqual({"beginning": 1, "end": 1}, chunks[1])
+        self.assertEqual({"beginning": 2, "end": 2}, chunks[2])
+        self.assertEqual({"beginning": 3, "end": 3}, chunks[3])
+        self.assertEqual({"beginning": 4, "end": 4}, chunks[4])
 
 
 class TestChunkBody4(unittest.TestCase):
@@ -100,8 +109,8 @@ class TestChunkBody4(unittest.TestCase):
         body += produce_singles(5)  # total 13 rows
         chunks = playlist._chunk_body(body, 2, enforce_min_size=False)
         self.assertEqual(2, len(chunks))
-        self.assertEqual({"begin": 0, "end": 8}, chunks[0])
-        self.assertEqual({"begin": 8, "end": 13}, chunks[1])
+        self.assertEqual({"beginning": 0, "end": 7}, chunks[0])
+        self.assertEqual({"beginning": 8, "end": 12}, chunks[1])
 
 
 class TestChunkBody5(unittest.TestCase):
@@ -111,10 +120,10 @@ class TestChunkBody5(unittest.TestCase):
         body += produce_doubles(3)  # total 15 rows
         chunks = playlist._chunk_body(body, 4, enforce_min_size=False)
         self.assertEqual(4, len(chunks))
-        self.assertEqual({"begin": 0, "end": 4}, chunks[0])
-        self.assertEqual({"begin": 4, "end": 9}, chunks[1])
-        self.assertEqual({"begin": 9, "end": 13}, chunks[2])
-        self.assertEqual({"begin": 13, "end": 15}, chunks[3])
+        self.assertEqual({"beginning": 0, "end": 3}, chunks[0])
+        self.assertEqual({"beginning": 4, "end": 8}, chunks[1])
+        self.assertEqual({"beginning": 9, "end": 12}, chunks[2])
+        self.assertEqual({"beginning": 13, "end": 14}, chunks[3])
 
 
 class TestLoadlM3UPlusHuge(unittest.TestCase):
@@ -130,8 +139,87 @@ class TestLoadlM3UPlusHuge(unittest.TestCase):
             # Let's copy the same content over and over again
             for _ in range(factor):
                 new_buffer += buffer[1:]
-        pl2 = playlist.loadl(new_buffer)
-        self.assertEqual(expected_length, pl2.length(), "The size of the playlist is not the expected one")
+        pl = playlist.loadl(new_buffer)
+        self.assertEqual(expected_length, pl.length(), "The size of the playlist is not the expected one")
+
+
+class TestLoadlM3UPlusWithExtras(unittest.TestCase):
+    def runTest(self):
+        checks: List[Dict[str, List[str]]] = [
+            {
+                "input_rows": [
+                    '#EXTM3U',
+                    '#EXTRAS0:',
+                    '#EXTINF:-1 tvg-id="MTV" group-title="Music",MTV',
+                    'https://myownurl.com/playlist0.m3u8',
+                    '',
+                    '#EXTRAS1:',
+                    '#EXTINF:-1 tvg-id="MTV+1" group-title="Music",MTV+1',
+                    'https://myownurl.com/playlist1.m3u8'
+                ],
+                "expected_channels": 2,
+                "expected_extras": 2
+            },
+            {
+                "input_rows": [
+                    '#EXTM3U',
+                    'https://myownurl.com/playlist0.m3u8',
+                    'https://myownurl.com/playlist1.m3u8',
+                    '',
+                    '#EXTRAS0:',
+                    '#EXTINF:-1 tvg-id="MTV+1" group-title="Music",MTV+1',
+                    'https://myownurl.com/playlist2.m3u8'
+                ],
+                "expected_channels": 3,
+                "expected_extras": 1
+            },
+            {
+                "input_rows": [
+                    '#EXTM3U',
+                    '',
+                    '#EXTRAS0:',
+                    '#EXTRAS1:',
+                    '#EXTRAS2:',
+                    'https://myownurl.com/playlist0.m3u8',
+                    'https://myownurl.com/playlist1.m3u8',
+                    '',
+                    '#EXTRAS3:',
+                    '#EXTINF:-1 tvg-id="MTV+1" group-title="Music",MTV+1',
+                    'https://myownurl.com/playlist2.m3u8'
+                ],
+                "expected_channels": 3,
+                "expected_extras": 4
+            },
+            {
+                "input_rows": [
+                    '#EXTM3U',
+                    '',
+                    '#EXTINF:-1,Name',
+                    '#EXTRAS0:',
+                    '#EXTRAS1:',
+                    '#EXTRAS2:',
+                    'https://myownurl.com/playlist0.m3u8',
+                    '#EXTRAS3:',
+                    '#EXTINF:-1,Name',
+                    'https://myownurl.com/playlist1.m3u8',
+                    '',
+                    '#EXTRAS4:',
+                    '#EXTINF:-1 tvg-id="MTV+1" group-title="Music",MTV+1',
+                    'https://myownurl.com/playlist2.m3u8',
+                    '#EXTINF:-1,Name',
+                    'https://myownurl.com/playlist3.m3u8'
+                ],
+                "expected_channels": 4,
+                "expected_extras": 5
+            }
+        ]
+        for c in checks:
+            input_rows = c["input_rows"]
+            expected_channels = c["expected_channels"]
+            expected_extras = c["expected_extras"]
+            pl = playlist.loadl(input_rows)
+            self.assertEqual(expected_channels, pl.length(), "The size of the playlist is not the expected one")
+            self.assertEqual(expected_extras, count_extras(pl), "The size of the extras is not the expected one")
 
 
 class TestLoadfM3UPlus(unittest.TestCase):
