@@ -249,14 +249,14 @@ def loadl(rows: List) -> 'M3UPlaylist':
     log.debug("spawning a pool of processes (one per core) to parse the playlist")
     with mp.Pool(processes=cores) as pool:
         for chunk in chunks:
-            begin = chunk["begin"]
+            beginning = chunk["beginning"]
             end = chunk["end"]
             log.debug(
-                "assigning a \"populate\" task (begin: %s, end: %s) to a process in the pool",
-                begin,
+                "assigning a \"populate\" task (beginning: %s, end: %s) to a process in the pool",
+                beginning,
                 end
             )
-            result = pool.apply_async(_populate, (body, begin, end))
+            result = pool.apply_async(_populate, (body, beginning, end))
             results.append(result)
         log.debug("closing workers")
         pool.close()
@@ -328,17 +328,16 @@ def _parse_header(header: str) -> Dict[str, str]:
     return attributes
 
 
-def _build_chunk(begin: int, end: int) -> Dict[str, int]:
+def _build_chunk(beginning: int, end: int) -> Dict[str, int]:
     return {
-        # begin is the index of the first element of the current chunk
-        "begin": begin,
-        # end is the index of the first element of the next chunk or the first position after the end of the list
+        # beginning is the index of the first element of the current chunk (element included)
+        "beginning": beginning,
+        # end is the index of the last element of the current chunk (element included)
         "end": end
     }
 
 
 def _find_chunk_end(sub_list: List[str]) -> int:
-    offset = len(sub_list) - 1
     for offset, row in enumerate(sub_list):
         if m3u.is_url_row(row):
             log.debug(
@@ -346,9 +345,9 @@ def _find_chunk_end(sub_list: List[str]) -> int:
                 offset,
                 row
             )
-            break
+            return offset
     # offset is the position relative to sub_list where the first url row has been found
-    return offset
+    return len(sub_list)
 
 
 def _compute_chunk(rows: List, start: int, min_size: int) -> Dict[str, int]:
@@ -358,25 +357,25 @@ def _compute_chunk(rows: List, start: int, min_size: int) -> Dict[str, int]:
             "there are enough remaining rows (%s left) to populate at least one full-size chunk",
             length - start
         )
-        end = start + min_size + 1
-        if not m3u.is_url_row(rows[end-1]):
-            sub_list = rows[end:]
-            # Let's grow the current chunk until the first url row
-            offset = _find_chunk_end(sub_list) + 1
-            end += offset
-        log.debug("chunk end found at row %s", end)
-        return _build_chunk(start, end)
+        provisional_end = start + min_size - 1
+        # sub_list's first element is potentially the last element of the chunk, but only if it's a url row
+        sub_list = rows[provisional_end:]
+        # Let's grow the current chunk until the first url row
+        offset = _find_chunk_end(sub_list)
+        final_end = provisional_end + offset
+        log.debug("chunk end found at row %s", final_end)
+        return _build_chunk(start, final_end)
     log.debug(
         "there are less than (or exactly) %s rows (%s left), so the chunk end is the list end",
         min_size,
         length - start
     )
-    return _build_chunk(start, length)
+    return _build_chunk(start, length-1)
 
 
 def _chunk_body(rows: List, chunk_count: int, enforce_min_size: bool = True) -> List:
     length = len(rows)
-    chunk_size = math.floor(length / chunk_count)
+    chunk_size = math.ceil(length / chunk_count)
     if enforce_min_size and chunk_size < __MIN_CHUNK_SIZE:
         log.debug(
             "no chunking as each of the %s chunks would be smaller than the configured minimum (%s < %s)",
@@ -385,36 +384,33 @@ def _chunk_body(rows: List, chunk_count: int, enforce_min_size: bool = True) -> 
             __MIN_CHUNK_SIZE
         )
         return [
-            {
-                "begin": 0,
-                "end": length
-            }
+            _build_chunk(0, length - 1)
         ]
     chunk_list = []
     start = 0
     while start < length:
         chunk: Dict[str, int] = _compute_chunk(rows, start, chunk_size)
         chunk_list.append(chunk)
-        start = chunk["end"]
+        start = chunk["end"] + 1
     log.debug("chunk_list: %s", chunk_list)
     return chunk_list
 
 
-def _populate(rows: List, begin: int = 0, end: int = -1) -> 'M3UPlaylist':
+def _populate(rows: List, beginning: int = 0, end: int = -1) -> 'M3UPlaylist':
     p_list = M3UPlaylist()
     if end == -1:
-        end = len(rows)
-    log.debug("populating playlist with rows from %s to %s", begin, end)
+        end = len(rows) - 1
+    log.debug("populating playlist with rows from %s to %s", beginning, end)
     entry = []
-    previous_row = rows[begin]
+    previous_row = rows[beginning]
     if m3u.is_comment_or_tag_row(previous_row) or m3u.is_url_row(previous_row):
-        entry.append(rows[begin])
+        entry.append(rows[beginning])
         log.debug("chunk starting with a url, comment or tag row")
     if m3u.is_url_row(previous_row):
         _append_entry(entry, p_list)
         entry = []
         log.debug("adding entry to the playlist: %s", entry)
-    for row in rows[begin + 1: end]:
+    for row in rows[beginning + 1: end + 1]:
         row = row.strip()
         log.debug("parsing row: %s", row)
         if m3u.is_extinf_row(row):
