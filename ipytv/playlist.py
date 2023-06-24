@@ -35,15 +35,64 @@ __MIN_CHUNK_SIZE = 100
 
 
 class M3UPlaylist:
+    """
+    A class that represents an IPTV playlist in M3U Plus format
+
+    Methods
+    ----------
+    length() -> int
+        Returns how many channels the playlist contains
+    get_attribute(name: str) -> str
+        Returns the value of the "name" playlist attribute. It throws AttributeNotFoundException if the attribute is not
+        found.
+    get_attributes() -> Dict[str, str]
+        Returns a dictionary with all the playlist attributes
+    add_attribute(name: str, value: str) -> None
+        Adds the attribute "name" with value "value" to the playlist. It throws AttributeAlreadyPresentException if the
+        attribute already exists
+    add_attributes(attributes: Dict[str, str]) -> None
+        Adds multiple attributes at once
+    update_attribute(name: str, value: str) -> None:
+        Change the value of an already existing attribute. It throws AttributeNotFoundException if the attribute is not
+        found
+    remove_attribute(name: str) -> str:
+        Removes the specified attribute. It throws AttributeNotFoundException if the attribute is not found
+    get_channel(index: int) -> IPTVChannel:
+
+    get_channels(self) -> List[IPTVChannel]:
+
+    insert_channel(index: int, channel: IPTVChannel) -> None:
+
+    insert_channels(index: int, chan_list: List[IPTVChannel]) -> None:
+
+    append_channel(channel: IPTVChannel) -> None:
+
+    append_channels(chan_list: List[IPTVChannel]) -> None:
+
+    update_channel(index: int, channel: IPTVChannel) -> None:
+
+    remove_channel(index: int) -> IPTVChannel:
+
+    group_by_attribute(attribute: str = IPTVAttr.GROUP_TITLE.value,
+
+    group_by_url(include_no_group: bool = True) -> Dict:
+
+    to_m3u_plus_playlist(self) -> str:
+
+    to_m3u8_playlist(self) -> str:
+
+    copy(self) -> 'M3UPlaylist':
+
+    """
     NO_GROUP_KEY = '_NO_GROUP_'
     NO_URL_KEY = '_NO_URL_'
 
     def __init__(self):
         self._channels: List[IPTVChannel] = []
-        self._attributes: Dict = {}
+        self._attributes: Dict[str, str] = {}
         self._iter_index: int = -1
 
-    def length(self):
+    def length(self) -> int:
         return len(self._channels) if self._channels is not None else 0
 
     def _check_attribute(self, name: str) -> None:
@@ -55,7 +104,7 @@ class M3UPlaylist:
         self._check_attribute(name)
         return self._attributes[name]
 
-    def get_attributes(self) -> Dict:
+    def get_attributes(self) -> Dict[str, str]:
         return self._attributes
 
     def add_attribute(self, name: str, value: str) -> None:
@@ -204,12 +253,7 @@ class M3UPlaylist:
         return not self == other
 
     def __str__(self) -> str:
-        out = f"attributes: {self._attributes}\n" if len(self._attributes) > 0 else ''
-        index = 0
-        for chan in self._channels:
-            out += f"{index}: {chan}\n"
-            index += 1
-        return out
+        return self.to_m3u_plus_playlist()
 
     def __iter__(self) -> 'M3UPlaylist':
         self._iter_index = 0

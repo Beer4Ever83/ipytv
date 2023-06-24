@@ -36,7 +36,7 @@ class M3UEntry:
         #EXTINF row)
     duration: str
         The duration of the channel or entry as a string formatted as a float or
-        as an integer (with sign or not)
+        as an integer (with or without sign)
     """
     def __init__(self, url: str, name: str = "", duration: str = "-1"):
         """
