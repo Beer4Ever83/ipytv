@@ -7,3 +7,4 @@ dist/
 **/m3u_ipytv.egg-info
 **/.mypy_cache/
 pkgdata.txt
+out/

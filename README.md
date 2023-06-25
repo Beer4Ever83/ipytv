@@ -1,4 +1,4 @@
-![IPyTV logo](doc/logo.png "IPyTV logo")
+![IPyTV logo](doc/logo_hd.png "IPyTV logo")
 
 A python3 library to parse IPTV playlists in the M3U Plus format.
 
@@ -15,9 +15,9 @@ The terms _IPTV playlist_ and _M3U Plus playlist_ are generally used
 interchangeably, but in this repository **M3U Plus** refers to the data format,
 while **IPTV Playlist** refers to playlists in M3U Plus format.
 
-M3U Plus stems from
-the [`extended M3U8`](https://en.wikipedia.org/wiki/M3U#Extended_M3U)
-format, of which it supports only 2 tags (`#EXTM3U` and `#EXTINF`).
+M3U Plus stems from the
+[`extended M3U8`](https://en.wikipedia.org/wiki/M3U#Extended_M3U) format, of 
+which it supports only 2 tags (`#EXTM3U` and `#EXTINF`).
 
 The syntax of the `#EXTM3U` and `#EXTINF` tags has been modified to include
 extra attributes (e.g., logo, group, language). Unfortunately this has broken
@@ -42,7 +42,7 @@ In the example below, the `#EXTVLCOPT` row is not parsed, but copied _as-is_:
 ```text
 #EXTINF:-1 tvg-id="" tvg-name="hello" tvg-country="IT" tvg-url="" group-title="Greetings",Hello!
 #EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0 
-https://my-website.com/hello
+https://my-website.com/vod/hello.ts
 ```
 
 ## Installation
@@ -223,7 +223,7 @@ The `M3UPlaylist` class is basically a list of channels with some commodity
 functions. The channels in a playlist can be accessed by using one of the
 following methods.
 
-#### Individually
+#### Individually (by index)
 
 By using the `get_channel(index)` method:
 
@@ -298,12 +298,12 @@ pl.insert_channels([])
 
 ### Accessing the properties of a channel
 
-The `get_channels()` method of an M3UPlaylist object returns a list of
-`IPTVChannel` objects.
+The `get_channels()` method of an M3UPlaylist object returns a list of objects
+of the `IPTVChannel` class.
 
 An `IPTVChannel` object has 3 basic properties (`url`, `name` and
 `duration`) and two optional fields: `attributes` (a dictionary) and `extras`
-(a list).
+(a list of strings).
 
 For example:
 
@@ -333,7 +333,7 @@ IPTV Playlists.
 ### The `doctor` module
 
 Internet-sourced IPTV playlists, often contain a number of format errors. This
-module wants to address some common errors.
+module aims to detect and fix some of these errors.
 
 The module contains three classes, each with its own scope:
 
@@ -341,16 +341,13 @@ The module contains three classes, each with its own scope:
     - It contains methods to fix errors in m3u files (i.e. errors that would
       make it impossible to load an m3u file as a playlist).
 2. `IPTVChannelDoctor`
-
     - It contains methods to fix errors in a channel (i.e. errors in the
       attributes of an #EXTINF row).
-
 3. `M3UPlaylistDoctor`
-
     - It applies the fixes in `IPTVChannelDoctor` to all channels in the
       playlist.
 
-All the classes above offer one public static method named `sanitize()` that is
+All the classes above offer one public, static method named `sanitize()` that is
 in charge of applying all different fixes. It can be used as follows:
 
 ```python
@@ -402,10 +399,10 @@ straightforward:
 
 Let's break it down:
 
-1. the `#EXTINF:` tag
-1. the duration of the content (as an integer or float, signed or not)
-1. a comma character
-1. a title
+1. The `#EXTINF:` tag.
+1. The duration of the content (as an integer or float, signed or not).
+1. A comma character.
+1. A title.
 
 This is what an `#EXTINF` row in the M3U Plus format looks like:
 
@@ -413,19 +410,19 @@ This is what an `#EXTINF` row in the M3U Plus format looks like:
 #EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" tvg-logo="https://static.epg.best/it/RaiUno.it.png" group-title="RAI",Rai 1
 ```
 
-If we break it down, we see that points 3. and 4. have been added (and they
-break the previous definition for the `#EXTINF` tag):
+If we break it down, we see that points 3. and 4. below have been added (and 
+they break the previous definition for the `#EXTINF` tag):
 
-1. the `#EXTINF:` tag
-1. the duration of the content (as an integer or float, signed or not)
-1. a space
-1. a variable-length, space-separated list of attributes
-1. a comma character
-1. a title
+1. The `#EXTINF:` tag.
+1. The duration of the content (as an integer or float, signed or not).
+1. A space.
+1. A variable-length, space-separated list of attributes.
+1. A comma character.
+1. A title.
 
-The attributes in point 4 are in the `attribute="value"` format, where _value_
-may also contain non-escaped commas (and this really complicates the parsing
-logic).
+The attributes in point 4 are in the `attribute="value"` format, where `value`
+may also contain non-escaped commas and, sometimes, even unescaped double 
+quotes. This really complicates the parsing logic.
 
 It's worth noting that the M3U8 RFC document specifies how
 [attribute lists](https://tools.ietf.org/html/rfc8216#section-4.2) should be

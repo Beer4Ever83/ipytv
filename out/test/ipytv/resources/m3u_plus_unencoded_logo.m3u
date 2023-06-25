@@ -1,0 +1,9 @@
+#EXTM3U
+#EXTINF:-1 tvg-logo="https://some.image.service.com/images/V1_UY268_CR4,0,182,268_AL_.jpg",Vacanze 83
+http://myown.link:80/luke/109163/78281
+#EXTINF:-1 tvg-logo="https://some.image.service.com/images/%2C,%2C,%2C.png",Vacanze 90
+http://myown.link:80/luke/109163/78282
+#EXTINF:-1 tvg-logo="https://some.image.service.com/images/vacanze.jpg",Vacanze 91
+http://myown.link:80/luke/109163/78283
+#EXTINF:-1 tvg-logo="https://some.image.service.com/images/M/MV5BOTVkOWExNmYtZDdjMy00ODlhLTlhMTYtMjRmYzRhMmMwZWRlXkEyXkFqcGdeQXVyMzU0NzkwMDg@._V1_UY268_CR2,0,182,268_AL_.jpg",Vacanze 95
+http://myown.link:80/luke/109163/78284
