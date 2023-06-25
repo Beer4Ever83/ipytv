@@ -226,20 +226,41 @@ class M3UPlaylist:
             return where_main, where_sub
         return None, None
 
-    def _match_all(self, ch: IPTVChannel, pattern: str, case_sensitive: bool) -> bool:
-        channel_fields = list(vars(IPTVChannel()))
+    @staticmethod
+    def _extract_fields(ch: IPTVChannel) -> List[str]:
+        out = []
+        mains = list(vars(ch))
+        for main in mains:
+            value = getattr(ch, main)
+            if isinstance(value, list):
+                for key, _ in enumerate(value):
+                    out.append(f"{main}.{key}")
+            elif isinstance(value, dict):
+                for key, _ in value.items():
+                    out.append(f"{main}.{key}")
+            else:
+                out.append(main)
+        return out
+
+    @staticmethod
+    def _match_all(ch: IPTVChannel, pattern: str, case_sensitive: bool = True) -> bool:
+        channel_fields = M3UPlaylist._extract_fields(ch)
         for field in channel_fields:
-            where_main, where_sub = self._extract_where(field)
-            if self._match_single(ch, pattern, where_main, where_sub):
+            if M3UPlaylist._match_single(ch, pattern, field, case_sensitive=case_sensitive):
                 return True
         return False
 
-    def _match_single(self, ch: IPTVChannel, pattern: str, where: str, case_sensitive: bool) -> bool:
-        main, sub = self._extract_where(where)
+    @staticmethod
+    def _match_single(ch: IPTVChannel, pattern: str, where: str, case_sensitive: bool = True) -> bool:
+        flags: re.RegexFlag = re.IGNORECASE if case_sensitive is False else 0
+        main, sub = M3UPlaylist._extract_where(where)
         value = getattr(ch, main)
-        if isinstance(value, list) or isinstance(value, dict):
-            value = value[sub]
-        if re.fullmatch(pattern, value) is None:
+        if sub is not None:
+            if isinstance(value, list):
+                value = value[int(sub)]
+            elif isinstance(value, dict):
+                value = value[sub]
+        if re.fullmatch(pattern, value, flags=flags) is None:
             return False
         return True
 

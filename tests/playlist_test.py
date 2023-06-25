@@ -414,10 +414,36 @@ class TestGroupByUrlWithNoGroupEnabled(unittest.TestCase):
         self.assertEqual(0, len(diff))
 
 
+class TestMatchSingle(unittest.TestCase):
+    def runTest(self):
+        ch = test_data.m3u_plus_channel_0
+        result = M3UPlaylist._match_single(ch, ".*Rai.*", where="attributes.tvg-name")
+        self.assertTrue(result)
+        result = M3UPlaylist._match_single(ch, ".*rai.*", where="attributes.tvg-name")
+        self.assertFalse(result)
+        result = M3UPlaylist._match_single(ch, ".*rai.*", where="attributes.tvg-name", case_sensitive=False)
+        self.assertTrue(result)
+        result = M3UPlaylist._match_single(ch, ".*Music.*", where="duration")
+        self.assertFalse(result)
+
+
+class TestMatchAll(unittest.TestCase):
+    def runTest(self):
+        ch = test_data.m3u_plus_channel_0
+        result = M3UPlaylist._match_all(ch, ".*RAI.*")
+        self.assertTrue(result)
+        result = M3UPlaylist._match_all(ch, ".*rai 1.*", case_sensitive=False)
+        self.assertTrue(result)
+        result = M3UPlaylist._match_all(ch, ".*music.*", case_sensitive=False)
+        self.assertFalse(result)
+        result = M3UPlaylist._match_all(ch, "^-1$")
+        self.assertTrue(result)
+
+
 class TestSearch(unittest.TestCase):
     def runTest(self):
         pl = playlist.loadf("tests/resources/iptv-org.m3u")
-        results = pl.search("Rai")
+        results = pl.search(".*Rai.*")
         self.assertEqual(12, len(results))
 
 
