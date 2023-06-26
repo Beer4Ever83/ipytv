@@ -425,6 +425,8 @@ class TestMatchSingle(unittest.TestCase):
         self.assertTrue(result)
         result = M3UPlaylist._match_single(ch, ".*Music.*", where="duration")
         self.assertFalse(result)
+        result = M3UPlaylist._match_single(ch, ".*luke.*", where="url")
+        self.assertTrue(result)
 
 
 class TestMatchAll(unittest.TestCase):
@@ -438,13 +440,23 @@ class TestMatchAll(unittest.TestCase):
         self.assertFalse(result)
         result = M3UPlaylist._match_all(ch, "^-1$")
         self.assertTrue(result)
+        result = M3UPlaylist._match_all(ch, ".*luke.*")
+        self.assertTrue(result)
 
 
 class TestSearch(unittest.TestCase):
     def runTest(self):
-        pl = playlist.loadf("tests/resources/iptv-org.m3u")
-        results = pl.search(".*Rai.*")
-        self.assertEqual(12, len(results))
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        results = pl.search(".*luke.*")
+        self.assertEqual(4, len(results))
+        results = pl.search(".*Italia.*", where='attributes.group-title')
+        self.assertEqual(2, len(results))
+        # Search for empty tvg-id attribute
+        results = pl.search("^$", where='attributes.tvg-id')
+        self.assertEqual(2, len(results))
+        # Search for any empty attribute
+        results = pl.search("^$")
+        self.assertEqual(3, len(results))
 
 
 class TestParseHeader(unittest.TestCase):

@@ -14,7 +14,7 @@ import logging
 import multiprocessing as mp
 import re
 from multiprocessing.pool import AsyncResult
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional
 
 import math
 import requests
@@ -97,13 +97,13 @@ class M3UPlaylist:
         return len(self.get_channels()) if self.get_channels() is not None else 0
 
     def _check_attribute(self, name: str) -> None:
-        if name not in self.get_attributes():
+        if name not in self._attributes:
             log.error("the attribute %s does not exist", name)
             raise AttributeNotFoundException(f"the attribute {name} does not exist")
 
     def get_attribute(self, name: str) -> str:
         self._check_attribute(name)
-        return self.get_attribute(name)
+        return self._attributes[name]
 
     def get_attributes(self) -> Dict[str, str]:
         return self._attributes
@@ -218,13 +218,13 @@ class M3UPlaylist:
         return groups
 
     @staticmethod
-    def _extract_where(where: str) -> (str, str):
+    def _extract_where(where: str) -> Tuple[str, str | None]:
         if where is not None:
             where_split = where.split(".")
             where_main = where_split[0]
             where_sub = where_split[1] if len(where_split) > 1 else None
             return where_main, where_sub
-        return None, None
+        return "", None
 
     @staticmethod
     def _extract_fields(ch: IPTVChannel) -> List[str]:
@@ -252,7 +252,7 @@ class M3UPlaylist:
 
     @staticmethod
     def _match_single(ch: IPTVChannel, pattern: str, where: str, case_sensitive: bool = True) -> bool:
-        flags: re.RegexFlag = re.IGNORECASE if case_sensitive is False else 0
+        flags: re.RegexFlag = re.IGNORECASE if case_sensitive is False else re.RegexFlag(0)
         main, sub = M3UPlaylist._extract_where(where)
         value = getattr(ch, main)
         if sub is not None:
@@ -264,7 +264,7 @@ class M3UPlaylist:
             return False
         return True
 
-    def search(self, pattern: str, where: str = None, case_sensitive: bool = True) -> List[IPTVChannel]:
+    def search(self, pattern: str, where: Optional[str] = None, case_sensitive: bool = True) -> List[IPTVChannel]:
         output_list: List[IPTVChannel] = []
         for ch in self.get_channels():
             if where is None:
