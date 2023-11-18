@@ -218,7 +218,7 @@ class M3UPlaylist:
         return groups
 
     @staticmethod
-    def _extract_where(where: str) -> Tuple[str, str | None]:
+    def _decode_where(where: str) -> Tuple[str, str | None]:
         if where is not None:
             where_split = where.split(".")
             where_main = where_split[0]
@@ -243,36 +243,64 @@ class M3UPlaylist:
         return out
 
     @staticmethod
-    def _match_all(ch: IPTVChannel, pattern: str, case_sensitive: bool = True) -> bool:
+    def _match_all(ch: IPTVChannel, regex: str, case_sensitive: bool = True) -> bool:
         channel_fields = M3UPlaylist._extract_fields(ch)
         for field in channel_fields:
-            if M3UPlaylist._match_single(ch, pattern, field, case_sensitive=case_sensitive):
+            if M3UPlaylist._match_single(ch, regex, field, case_sensitive=case_sensitive):
                 return True
         return False
 
     @staticmethod
-    def _match_single(ch: IPTVChannel, pattern: str, where: str, case_sensitive: bool = True) -> bool:
+    def _match_single(ch: IPTVChannel, regex: str, where: str, case_sensitive: bool = True) -> bool:
         flags: re.RegexFlag = re.IGNORECASE if case_sensitive is False else re.RegexFlag(0)
-        main, sub = M3UPlaylist._extract_where(where)
+        main, sub = M3UPlaylist._decode_where(where)
         value = getattr(ch, main)
         if sub is not None:
             if isinstance(value, list):
                 value = value[int(sub)]
             elif isinstance(value, dict):
                 value = value[sub]
-        if re.fullmatch(pattern, value, flags=flags) is None:
+        if re.fullmatch(regex, value, flags=flags) is None:
             return False
         return True
 
-    def search(self, pattern: str, where: Optional[str] = None, case_sensitive: bool = True) -> List[IPTVChannel]:
+    def search(self, regex: str, where: Optional[str] | List[str] = None, case_sensitive: bool = True) -> List[IPTVChannel]:
+        """
+        .. py:method:: search
+
+        Searches for channels that have one or more attributes matching the
+        specified regex. The match can be done on a specific set of attributes
+        or on all of them and the comparison can be made in a case-sensitive
+        fashion or not. The method returns a list of matching IPTVChannel
+        objects.
+
+        :param  regex:  All channels matching this regular expression will be
+                        appended to the output list.
+        :type   regex:  str
+        :param  where:  Optional. The attribute(s) to match the regex against.
+                        Omit this (or set it to None) to search in all
+                        attributes.
+        :type   where:  str or list[str] or None
+        :param  case_sensitive: Optional. This flag controls whether the regex
+                                 match shall be done in a case-sensitive fashion
+                                or not.
+        :type   case_sensitive: bool
+
+        :return:    a list of IPTVChannel objects one or more attributes of
+                    which match the search pattern.
+        :rtype:     List[IPTVChannel]
+        """
         output_list: List[IPTVChannel] = []
         for ch in self.get_channels():
             if where is None:
-                if self._match_all(ch, pattern, case_sensitive):
+                if self._match_all(ch, regex, case_sensitive):
                     output_list.append(ch)
             else:
-                if self._match_single(ch, pattern, where, case_sensitive):
-                    output_list.append(ch)
+                if not isinstance(where, list):
+                    where = [where]
+                for w in where:
+                    if self._match_single(ch, regex, w, case_sensitive):
+                        output_list.append(ch)
         return output_list
 
     def to_m3u_plus_playlist(self) -> str:

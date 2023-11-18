@@ -457,6 +457,9 @@ class TestSearch(unittest.TestCase):
         # Search for any empty attribute
         results = pl.search("^$")
         self.assertEqual(3, len(results))
+        # Search in a set of attributes
+        results = pl.search(".*it.*", where=["attributes.tvg-logo", "attributes.group-title"], case_sensitive=False)
+        self.assertEqual(3, len(results))
 
 
 class TestParseHeader(unittest.TestCase):
