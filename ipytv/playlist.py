@@ -11,11 +11,12 @@ Functions:
 
 """
 import logging
-import multiprocessing as mp
-from multiprocessing.pool import AsyncResult
-from typing import List, Dict
-
 import math
+import multiprocessing as mp
+import re
+from multiprocessing.pool import AsyncResult
+from typing import List, Dict, Tuple, Optional, Union
+
 import requests
 from requests import RequestException
 
@@ -35,16 +36,65 @@ __MIN_CHUNK_SIZE = 100
 
 
 class M3UPlaylist:
+    """
+    A class that represents an IPTV playlist in M3U Plus format
+
+    Methods
+    ----------
+    length() -> int
+        Returns how many channels the playlist contains
+    get_attribute(name: str) -> str
+        Returns the value of the "name" playlist attribute. It throws AttributeNotFoundException if the attribute is not
+        found.
+    get_attributes() -> Dict[str, str]
+        Returns a dictionary with all the playlist attributes
+    add_attribute(name: str, value: str) -> None
+        Adds the attribute "name" with value "value" to the playlist. It throws AttributeAlreadyPresentException if the
+        attribute already exists
+    add_attributes(attributes: Dict[str, str]) -> None
+        Adds multiple attributes at once
+    update_attribute(name: str, value: str) -> None:
+        Change the value of an already existing attribute. It throws AttributeNotFoundException if the attribute is not
+        found
+    remove_attribute(name: str) -> str:
+        Removes the specified attribute. It throws AttributeNotFoundException if the attribute is not found
+    get_channel(index: int) -> IPTVChannel:
+
+    get_channels(self) -> List[IPTVChannel]:
+
+    insert_channel(index: int, channel: IPTVChannel) -> None:
+
+    insert_channels(index: int, chan_list: List[IPTVChannel]) -> None:
+
+    append_channel(channel: IPTVChannel) -> None:
+
+    append_channels(chan_list: List[IPTVChannel]) -> None:
+
+    update_channel(index: int, channel: IPTVChannel) -> None:
+
+    remove_channel(index: int) -> IPTVChannel:
+
+    group_by_attribute(attribute: str = IPTVAttr.GROUP_TITLE.value,
+
+    group_by_url(include_no_group: bool = True) -> Dict:
+
+    to_m3u_plus_playlist(self) -> str:
+
+    to_m3u8_playlist(self) -> str:
+
+    copy(self) -> 'M3UPlaylist':
+
+    """
     NO_GROUP_KEY = '_NO_GROUP_'
     NO_URL_KEY = '_NO_URL_'
 
     def __init__(self):
         self._channels: List[IPTVChannel] = []
-        self._attributes: Dict = {}
+        self._attributes: Dict[str, str] = {}
         self._iter_index: int = -1
 
-    def length(self):
-        return len(self._channels) if self._channels is not None else 0
+    def length(self) -> int:
+        return len(self.get_channels()) if self.get_channels() is not None else 0
 
     def _check_attribute(self, name: str) -> None:
         if name not in self._attributes:
@@ -55,21 +105,21 @@ class M3UPlaylist:
         self._check_attribute(name)
         return self._attributes[name]
 
-    def get_attributes(self) -> Dict:
+    def get_attributes(self) -> Dict[str, str]:
         return self._attributes
 
     def add_attribute(self, name: str, value: str) -> None:
-        if name not in self._attributes:
+        if name not in self.get_attributes():
             self._attributes[str(name)] = str(value)
             log.info("attribute added: %s: %s", name, value)
         else:
             log.error(
                 "the attribute %s is already present with value %s",
                 name,
-                self._attributes[name]
+                self.get_attribute(name)
             )
             raise AttributeAlreadyPresentException(
-                f"the attribute {name} is already present with value {self._attributes[name]}"
+                f"the attribute {name} is already present with value {self.get_attribute(name)}"
             )
 
     def add_attributes(self, attributes: Dict[str, str]) -> None:
@@ -83,7 +133,7 @@ class M3UPlaylist:
 
     def remove_attribute(self, name: str) -> str:
         self._check_attribute(name)
-        attribute = self._attributes[name]
+        attribute = self.get_attribute(name)
         del self._attributes[name]
         log.info("attribute %s deleted", name)
         return attribute
@@ -100,14 +150,14 @@ class M3UPlaylist:
 
     def get_channel(self, index: int) -> IPTVChannel:
         self._check_index(index)
-        return self._channels[index]
+        return self.get_channels()[index]
 
     def get_channels(self) -> List[IPTVChannel]:
         return self._channels
 
     def insert_channel(self, index: int, channel: IPTVChannel) -> None:
         self._check_index(index)
-        self._channels.insert(index, channel)
+        self.get_channels().insert(index, channel)
         log.info("channel %s inserted in position %s", channel, index)
 
     def insert_channels(self, index: int, chan_list: List[IPTVChannel]) -> None:
@@ -117,7 +167,7 @@ class M3UPlaylist:
         log.info("%s channels inserted to the playlist in position %s", len(chan_list), index)
 
     def append_channel(self, channel: IPTVChannel) -> None:
-        self._channels.append(channel)
+        self.get_channels().append(channel)
         log.info("channel added: %s", channel)
 
     def append_channels(self, chan_list: List[IPTVChannel]) -> None:
@@ -145,7 +195,7 @@ class M3UPlaylist:
     def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value,
                            include_no_group: bool = True) -> Dict:
         groups: Dict[str, List] = {}
-        for i, chan in enumerate(self._channels):
+        for i, chan in enumerate(self.get_channels()):
             group = self.NO_GROUP_KEY
             if attribute in chan.attributes and len(chan.attributes[attribute]) > 0:
                 group = chan.attributes[attribute]
@@ -155,9 +205,9 @@ class M3UPlaylist:
             groups[group].append(i)
         return groups
 
-    def group_by_url(self, include_no_group: bool = True) -> Dict:
+    def group_by_url(self, include_no_group: bool = True) -> Dict[str, List]:
         groups: Dict[str, List] = {}
-        for i, chan in enumerate(self._channels):
+        for i, chan in enumerate(self.get_channels()):
             group = self.NO_URL_KEY
             if len(chan.url) > 0:
                 group = chan.url
@@ -167,21 +217,107 @@ class M3UPlaylist:
             groups[group].append(i)
         return groups
 
+    @staticmethod
+    def _decode_where(where: str) -> Tuple[str, Union[str, None]]:
+        if where is not None:
+            where_split = where.split(".")
+            where_main = where_split[0]
+            where_sub = where_split[1] if len(where_split) > 1 else None
+            return where_main, where_sub
+        return "", None
+
+    @staticmethod
+    def _extract_fields(ch: IPTVChannel) -> List[str]:
+        out = []
+        mains = list(vars(ch))
+        for main in mains:
+            value = getattr(ch, main)
+            if isinstance(value, list):
+                for key, _ in enumerate(value):
+                    out.append(f"{main}.{key}")
+            elif isinstance(value, dict):
+                for key, _ in value.items():
+                    out.append(f"{main}.{key}")
+            else:
+                out.append(main)
+        return out
+
+    @staticmethod
+    def _match_all(ch: IPTVChannel, regex: str, case_sensitive: bool = True) -> bool:
+        channel_fields = M3UPlaylist._extract_fields(ch)
+        for field in channel_fields:
+            if M3UPlaylist._match_single(ch, regex, field, case_sensitive=case_sensitive):
+                return True
+        return False
+
+    @staticmethod
+    def _match_single(ch: IPTVChannel, regex: str, where: str, case_sensitive: bool = True) -> bool:
+        flags: re.RegexFlag = re.IGNORECASE if case_sensitive is False else re.RegexFlag(0)
+        main, sub = M3UPlaylist._decode_where(where)
+        value = getattr(ch, main)
+        if sub is not None:
+            if isinstance(value, list):
+                value = value[int(sub)]
+            elif isinstance(value, dict):
+                value = value[sub]
+        if re.fullmatch(regex, value, flags=flags) is None:
+            return False
+        return True
+
+    def search(self, regex: str, where: Union[Optional[str], List[str]] = None, case_sensitive: bool = True) -> List[IPTVChannel]:
+        """
+        .. py:method:: search
+
+        Searches for channels that have one or more attributes matching the
+        specified regex. The match can be done on a specific set of attributes
+        or on all of them and the comparison can be made in a case-sensitive
+        fashion or not. The method returns a list of matching IPTVChannel
+        objects.
+
+        :param  regex:  All channels matching this regular expression will be
+                        appended to the output list.
+        :type   regex:  str
+        :param  where:  Optional. The attribute(s) to match the regex against.
+                        Omit this (or set it to None) to search in all
+                        attributes.
+        :type   where:  str or list[str] or None
+        :param  case_sensitive: Optional. This flag controls whether the regex
+                                match shall be done in a case-sensitive fashion
+                                or not.
+        :type   case_sensitive: bool
+
+        :return:    a list of IPTVChannel objects one or more attributes of
+                    which match the search pattern.
+        :rtype:     List[IPTVChannel]
+        """
+        output_list: List[IPTVChannel] = []
+        for ch in self.get_channels():
+            if where is None:
+                if self._match_all(ch, regex, case_sensitive):
+                    output_list.append(ch)
+            else:
+                if not isinstance(where, list):
+                    where = [where]
+                for w in where:
+                    if self._match_single(ch, regex, w, case_sensitive):
+                        output_list.append(ch)
+        return output_list
+
     def to_m3u_plus_playlist(self) -> str:
         out = f"{self._build_header()}\n"
-        for channel in self._channels:
+        for channel in self.get_channels():
             out += channel.to_m3u_plus_playlist_entry()
         return out
 
     def to_m3u8_playlist(self) -> str:
         out = f"{m3u.M3U_HEADER_TAG}\n"
-        for channel in self._channels:
+        for channel in self.get_channels():
             out += channel.to_m3u8_playlist_entry()
         return out
 
     def copy(self) -> 'M3UPlaylist':
         new_pl = M3UPlaylist()
-        for channel in self._channels:
+        for channel in self.get_channels():
             new_pl.append_channel(channel.copy())
         new_pl.add_attributes(
             self.get_attributes().copy()     # shallow copy is ok, as we're dealing with primitive types
@@ -204,12 +340,7 @@ class M3UPlaylist:
         return not self == other
 
     def __str__(self) -> str:
-        out = f"attributes: {self._attributes}\n" if len(self._attributes) > 0 else ''
-        index = 0
-        for chan in self._channels:
-            out += f"{index}: {chan}\n"
-            index += 1
-        return out
+        return self.to_m3u_plus_playlist()
 
     def __iter__(self) -> 'M3UPlaylist':
         self._iter_index = 0

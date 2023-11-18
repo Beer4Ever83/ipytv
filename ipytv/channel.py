@@ -36,7 +36,7 @@ class M3UEntry:
         #EXTINF row)
     duration: str
         The duration of the channel or entry as a string formatted as a float or
-        as an integer (with sign or not)
+        as an integer (with or without sign)
     """
     def __init__(self, url: str, name: str = "", duration: str = "-1"):
         """
@@ -285,8 +285,9 @@ def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
     #EXTINF and the url row. In all other cases, all the tags included between
     an #EXTINF row and the related url row are considered as part of a channel.
 
-    :param:     entry
-    :type:      List[str]
+    :param  entry:  One or more rows belonging to the same channel, in the
+                    format found in IPTV playlists.
+    :type   entry:  list[str]
 
     :return:    An IPTVChannel object whose fields are populated with info from
                 the playlist rows.
