@@ -282,7 +282,7 @@ class M3UPlaylist:
                         attributes.
         :type   where:  str or list[str] or None
         :param  case_sensitive: Optional. This flag controls whether the regex
-                                 match shall be done in a case-sensitive fashion
+                                match shall be done in a case-sensitive fashion
                                 or not.
         :type   case_sensitive: bool
 
