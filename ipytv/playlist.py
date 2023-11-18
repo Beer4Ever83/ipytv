@@ -264,7 +264,7 @@ class M3UPlaylist:
             return False
         return True
 
-    def search(self, regex: str, where: Optional[str] | List[str] = None, case_sensitive: bool = True) -> List[IPTVChannel]:
+    def search(self, regex: str, where: Union[Optional[str], List[str]] = None, case_sensitive: bool = True) -> List[IPTVChannel]:
         """
         .. py:method:: search
 
