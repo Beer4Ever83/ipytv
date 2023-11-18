@@ -11,12 +11,12 @@ Functions:
 
 """
 import logging
+import math
 import multiprocessing as mp
 import re
 from multiprocessing.pool import AsyncResult
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Union
 
-import math
 import requests
 from requests import RequestException
 
@@ -218,7 +218,7 @@ class M3UPlaylist:
         return groups
 
     @staticmethod
-    def _decode_where(where: str) -> Tuple[str, str | None]:
+    def _decode_where(where: str) -> Tuple[str, Union[str, None]]:
         if where is not None:
             where_split = where.split(".")
             where_main = where_split[0]
