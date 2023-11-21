@@ -140,6 +140,10 @@ class IPTVChannel(M3UEntry):
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    def __hash__(self):
+        # TODO: this should be good enough for now, but it should be improved
+        return hash(str(self))
+
     def copy(self) -> 'IPTVChannel':
         """
         .. py:method:: Returns a copy of the object it's invoked on
