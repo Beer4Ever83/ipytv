@@ -141,7 +141,7 @@ class IPTVChannel(M3UEntry):
         return not self.__eq__(other)
 
     def __hash__(self):
-        # TODO: this should be good enough for now, but it should be improved
+        # Not ideal, but it should be good enough for now
         return hash(str(self))
 
     def copy(self) -> 'IPTVChannel':
