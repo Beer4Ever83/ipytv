@@ -451,6 +451,10 @@ class TestSearch(unittest.TestCase):
         self.assertEqual(4, len(results))
         results = pl.search(".*Italia.*", where='attributes.group-title')
         self.assertEqual(2, len(results))
+        results = pl.search(".*TROISI.*", where='name')
+        self.assertEqual(1, len(results))
+        results = pl.search(".*R.*", where='name')
+        self.assertEqual(3, len(results))
         # Search for empty tvg-id attribute
         results = pl.search("^$", where='attributes.tvg-id')
         self.assertEqual(2, len(results))
@@ -460,6 +464,9 @@ class TestSearch(unittest.TestCase):
         # Search in a set of attributes
         results = pl.search(".*it.*", where=["attributes.tvg-logo", "attributes.group-title"], case_sensitive=False)
         self.assertEqual(3, len(results))
+        # Check that no duplicates are added
+        results = pl.search(".*RAI.*", where=["attributes.tvg-id", "attributes.tvg-name", "attributes.tvg-logo", "attributes.group-title", "name"], case_sensitive=False)
+        self.assertEqual(1, len(results))
 
 
 class TestParseHeader(unittest.TestCase):
