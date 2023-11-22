@@ -15,7 +15,7 @@ import math
 import multiprocessing as mp
 import re
 from multiprocessing.pool import AsyncResult
-from typing import List, Dict, Tuple, Optional, Union, Set
+from typing import List, Dict, Tuple, Optional, Union
 
 import requests
 from requests import RequestException
@@ -290,18 +290,20 @@ class M3UPlaylist:
                     which match the search pattern.
         :rtype:     List[IPTVChannel]
         """
-        output_set: Set[IPTVChannel] = set()
+        output_list: List[IPTVChannel] = []
         for ch in self.get_channels():
             if where is None:
                 if self._match_all(ch, regex, case_sensitive):
-                    output_set.add(ch)
+                    output_list.append(ch)
             else:
                 if not isinstance(where, list):
                     where = [where]
                 for w in where:
                     if self._match_single(ch, regex, w, case_sensitive):
-                        output_set.add(ch)
-        return list(output_set)
+                        output_list.append(ch)
+                        # One match is enough
+                        break
+        return output_list
 
     def to_m3u_plus_playlist(self) -> str:
         out = f"{self._build_header()}\n"
