@@ -21,7 +21,7 @@ M3U_HEADER_TAG = "#EXTM3U"
 __M3U_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+,.*$'
 __M3U_PLUS_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
 __M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)' \
-    r'(?P<attributes_g>(\s+[\w-]+="[^"]*")*),' \
+    r'(?P<attributes_g>(\s+[\w-]+="[^"]*")*),?' \
     r'(?P<name_g>.*)'
 __M3U_PLUS_BROKEN_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)' \
     r'(?P<attributes_g>(\s+[\w-]+=".*)*),' \
