@@ -144,5 +144,23 @@ class TestSanitizeAllAttributes(unittest.TestCase):
         self.assertEqual(expected, fixed_pl)
 
 
+class TestSanitizeDuration(unittest.TestCase):
+    def runTest(self):
+        pl = playlist.loadl(test_data.space_before_comma.split("\n"))
+        self.assertEqual(4, pl.length())
+        for index in range(4):
+            # Before sanitizing the playlist, neither the duration nor the name of the channels are parsed correctly
+            duration = abs(int(float(pl.get_channel(index).duration)))
+            self.assertNotEqual(index+10, duration)
+            self.assertNotEqual(f"channel name {index}", pl.get_channel(index).name)
+        fixed = M3UDoctor.sanitize(test_data.space_before_comma.split("\n"))
+        pl = playlist.loadl(fixed)
+        for index in range(4):
+            # After sanitizing the playlist, both the duration and the name of the channels are parsed correctly
+            duration = abs(int(float(pl.get_channel(index).duration)))
+            self.assertEqual(index+10, duration)
+            self.assertEqual(f"channel name {index}", pl.get_channel(index).name)
+
+
 if __name__ == '__main__':
     unittest.main()

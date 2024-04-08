@@ -59,9 +59,30 @@ class M3UDoctor:
         return fixed_m3u_rows
 
     @staticmethod
+    def _fix_space_before_comma(m3u_rows: List[str]) -> List:
+        """
+        This covers the case of EXTINF rows with no attributes, but with one or more spaces between the comma and the
+        channel name.
+        Example:
+            #EXTINF:-1 ,Channel 22
+        """
+        spaces_before_comma_regex = r"^#EXTINF:(?P<duration_g>[-0-9\.]+)(?P<spaces_g>\s)+,(?P<name_g>.*)"
+        fixed_m3u_rows: List = []
+        for current_row in m3u_rows:
+            new_row = current_row
+            if m3u.is_extinf_row(current_row):
+                match = re.match(spaces_before_comma_regex, current_row)
+                if match:
+                    new_row = f"#EXTINF:{match.group('duration_g')},{match.group('name_g')}"
+            fixed_m3u_rows.append(new_row)
+        return fixed_m3u_rows
+
+
+    @staticmethod
     def sanitize(m3u_rows: List) -> List:
         fixed = M3UDoctor._fix_split_quoted_string(m3u_rows)
         fixed = M3UDoctor._fix_unquoted_numeric_attributes(fixed)
+        fixed = M3UDoctor._fix_space_before_comma(fixed)
         return fixed
 
 
