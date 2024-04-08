@@ -70,9 +70,10 @@ class M3UDoctor:
         fixed_m3u_rows: List = []
         for current_row in m3u_rows:
             new_row = current_row
-            match = re.match(spaces_before_comma_regex, current_row)
-            if m3u.is_extinf_row(current_row) and match:
-                new_row = f"#EXTINF:{match.group('duration_g')},{match.group('name_g')}"
+            if m3u.is_extinf_row(current_row):
+                match = re.match(spaces_before_comma_regex, current_row)
+                if match:
+                    new_row = f"#EXTINF:{match.group('duration_g')},{match.group('name_g')}"
             fixed_m3u_rows.append(new_row)
         return fixed_m3u_rows
 
