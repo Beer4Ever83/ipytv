@@ -154,3 +154,15 @@ expected_attributes_broken_extinf_row = {
     'tvg-logo': 'https://img.mysite.net/5425.jpg',
     'group-title': 'free, stream'
 }
+
+space_before_comma = """#EXTM3U url-tvg="http://epg.51zmt.top:8000/e.xml" catchup="append" catchup-source="?playseek=${(b)yyyyMMddHHmmss}-${(e)yyyyMMddHHmmss}"
+
+#EXTINF:10 ,channel name 0
+http://[2409:8087:2001:20:2800:0:df6e:eb11]/ott.mobaibox.com/PLTV/3/224/3221228242/index.m3u8
+#EXTINF:-11  ,channel name 1
+http://ainm.cc/a/play/php/cctv4k.php?id=4khd
+#EXTINF:12 ,channel name 2
+http://[2409:8087:2001:20:2800:0:df6e:eb13]/ott.mobaibox.com/PLTV/3/224/3221228228/index.m3u8
+#EXTINF:13.0   ,channel name 3
+http://r.jdshipin.com/krMB5
+"""

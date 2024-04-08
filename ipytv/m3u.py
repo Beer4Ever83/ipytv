@@ -89,7 +89,7 @@ def is_comment_or_tag_row(row: str) -> bool:
 
 
 def is_empty_row(row: str) -> bool:
-    return len(row.strip()) == 0
+    return not row.strip()
 
 
 def is_url_row(row: str) -> bool:
