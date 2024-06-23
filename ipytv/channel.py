@@ -275,7 +275,7 @@ class IPTVChannel(M3UEntry):
         url_row = self._build_url_entry()
         return f'{extinf_row}{url_row}'
 
-    def to_dict(self)   -> dict[str, Any]:
+    def to_dict(self)   -> Dict[str, Any]:
         """
         .. py:method:: to_dict
 
