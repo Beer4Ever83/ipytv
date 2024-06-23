@@ -13,7 +13,7 @@ the Internet.
 
 The terms _IPTV playlist_ and _M3U Plus playlist_ are generally used
 interchangeably, but in this repository **M3U Plus** refers to the data format,
-while **IPTV Playlist** refers to playlists in M3U Plus format.
+while **IPTV Playlist** refers to playlists in the M3U Plus format.
 
 M3U Plus stems from the
 [`extended M3U8`](https://en.wikipedia.org/wiki/M3U#Extended_M3U) format, of 

@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from ipytv.channel import IPTVAttr, IPTVChannel
@@ -125,6 +126,82 @@ class TestToString(unittest.TestCase):
         )
         expected_output = '{name: "Rai 1 SuperHD", duration: "-1", url: "", attributes: {tvg-id: "Rai1.it", tvg-name: "Rai 1 SuperHD", tvg-logo: "https://static.epg.best/it/RaiUno.it.png", group-title: "SuperHD"}, extras: []}'
         real_output = str(original)
+        self.assertEqual(expected_output, real_output)
+
+
+class TestToDict(unittest.TestCase):
+    def runTest(self):
+        original_attributes = {
+            IPTVAttr.TVG_ID.value: "Rai1.it",
+            IPTVAttr.TVG_NAME.value: "Rai 1 SuperHD",
+            IPTVAttr.TVG_LOGO.value: "https://static.epg.best/it/RaiUno.it.png",
+            IPTVAttr.GROUP_TITLE.value: "SuperHD"
+        }
+        original_extras = [
+            "#EXTVLCOPT:option1",
+            "#EXTVLCOPT:option2"
+        ]
+        original = IPTVChannel(
+            url="",
+            name="Rai 1 SuperHD",
+            duration="-1",
+            attributes=original_attributes,
+            extras=original_extras
+        )
+        expected_output = {
+            "name": "Rai 1 SuperHD",
+            "duration": "-1",
+            "url": "",
+            "attributes": {
+                "tvg-id": "Rai1.it",
+                "tvg-name": "Rai 1 SuperHD",
+                "tvg-logo": "https://static.epg.best/it/RaiUno.it.png",
+                "group-title": "SuperHD"
+            },
+            "extras": [
+                "#EXTVLCOPT:option1",
+                "#EXTVLCOPT:option2"
+            ]
+        }
+        real_output = original.to_dict()
+        self.assertEqual(expected_output, real_output)
+
+
+class TestToJson(unittest.TestCase):
+    def runTest(self):
+        original_attributes = {
+            IPTVAttr.TVG_ID.value: "Rai1.it",
+            IPTVAttr.TVG_NAME.value: "Rai 1 SuperHD",
+            IPTVAttr.TVG_LOGO.value: "https://static.epg.best/it/RaiUno.it.png",
+            IPTVAttr.GROUP_TITLE.value: "SuperHD"
+        }
+        original_extras = [
+            "#EXTVLCOPT:option1",
+            "#EXTVLCOPT:option2"
+        ]
+        original = IPTVChannel(
+            url="",
+            name="Rai 1 SuperHD",
+            duration="-1",
+            attributes=original_attributes,
+            extras=original_extras
+        )
+        expected_output = json.dumps({
+            "name": "Rai 1 SuperHD",
+            "duration": "-1",
+            "url": "",
+            "attributes": {
+                "tvg-id": "Rai1.it",
+                "tvg-name": "Rai 1 SuperHD",
+                "tvg-logo": "https://static.epg.best/it/RaiUno.it.png",
+                "group-title": "SuperHD"
+            },
+            "extras": [
+                "#EXTVLCOPT:option1",
+                "#EXTVLCOPT:option2"
+            ]
+        })
+        real_output = original.to_json()
         self.assertEqual(expected_output, real_output)
 
 

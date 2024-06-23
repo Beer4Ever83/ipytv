@@ -9,6 +9,7 @@ Classes:
 Functions:
     from_playlist_entry
 """
+import json
 import logging
 import shlex
 from enum import Enum
@@ -273,6 +274,34 @@ class IPTVChannel(M3UEntry):
         extinf_row = self._build_m3u8_extinf_entry()
         url_row = self._build_url_entry()
         return f'{extinf_row}{url_row}'
+
+    def to_dict(self)   -> dict[str, str|Dict[str, str]|List[str]]:
+        """
+        .. py:method:: to_dict
+
+        Serializes the current object into a dictionary.
+
+        :return:    a dictionary with the channel's fields
+        :rtype:     dict[str, str|Dict[str, str]|List[str]]
+        """
+        return {
+            "name": self.name,
+            "duration": self.duration,
+            "url": self.url,
+            "attributes": self.attributes,
+            "extras": self.extras
+        }
+
+    def to_json(self) -> str:
+        """
+        .. py:method:: to_json
+
+        Serializes the current object into a json structure.
+
+        :return:    a string with the json representation of the channel's fields
+        :rtype:     str
+        """
+        return json.dumps(self.to_dict())
 
 
 def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':

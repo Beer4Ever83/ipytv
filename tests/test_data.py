@@ -24,7 +24,10 @@ m3u_plus_channel_1 = IPTVChannel(
         IPTVAttr.TVG_NAME.value: "Cielo",
         IPTVAttr.TVG_LOGO.value: "",
         IPTVAttr.GROUP_TITLE.value: "Italia"
-    }
+    },
+    extras=[
+        "#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0"
+    ]
 )
 m3u_plus_channel_2 = IPTVChannel(
     url="http://myown.link:80/luke/109163/89800",
@@ -100,6 +103,7 @@ split_quoted_string = """#EXTM3U x-tvg-url="http://myown.link:80/luke/220311/223
 " tvg-logo="https://static.epg.best/it/RaiUno.it.png" group-title="RAI",Rai 1
 http://myown.link:80/luke/210274/78482
 #EXTINF:-1 tvg-id="" tvg-name="Cielo" tvg-logo="" group-title="Italia",Cielo
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0
 http://myown.link:80/luke/210274/89844
 #EXTINF:-1 tvg-id="" tvg-name="TEMATICO MASSIMO TROISI" tvg-logo="" group-title="Italia
 " tvg-shift="-0.5",TEMATICO MASSIMO TROISI
@@ -112,6 +116,7 @@ unquoted_attributes = """#EXTM3U x-tvg-url="http://myown.link:80/luke/220311/223
 #EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" tvg-logo="https://static.epg.best/it/RaiUno.it.png" group-title="RAI",Rai 1
 http://myown.link:80/luke/210274/78482
 #EXTINF:-1 tvg-id="" tvg-name="Cielo" tvg-logo="" group-title="Italia",Cielo
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0
 http://myown.link:80/luke/210274/89844
 #EXTINF:-1 tvg-id="" tvg-name="TEMATICO MASSIMO TROISI" tvg-logo="" group-title="Italia" tvg-shift=-0.5,TEMATICO MASSIMO TROISI
 http://myown.link:80/luke/109163/89800

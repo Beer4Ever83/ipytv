@@ -10,6 +10,7 @@ Functions:
     loadu
 
 """
+import json
 import logging
 import math
 import multiprocessing as mp
@@ -316,6 +317,19 @@ class M3UPlaylist:
         for channel in self.get_channels():
             out += channel.to_m3u8_playlist_entry()
         return out
+
+    def __to_dict(self) -> Dict[str, Union[str, Dict[str, Union[str, Dict[str, str], List[str]]]]]:
+        out = {
+            "attributes": self.get_attributes(),
+            "channels": [ch.to_dict() for ch in self.get_channels()]
+        }
+        return out
+
+    def to_json(self) -> str:
+        """"
+        Returns a JSON representation of the playlist
+        """
+        return json.dumps(self.__to_dict())
 
     def copy(self) -> 'M3UPlaylist':
         new_pl = M3UPlaylist()

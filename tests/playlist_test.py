@@ -1,4 +1,5 @@
 import itertools
+import json
 import unittest
 from typing import List, Dict
 
@@ -308,6 +309,15 @@ class TestToM3U8Playlist(unittest.TestCase):
         pl_m3u8 = m3u8.loads(pl_string)
         pl_m3u8_string = pl_m3u8.dumps()
         self.assertEqual(pl_string, pl_m3u8_string)
+
+
+class TestToJson(unittest.TestCase):
+    def runTest(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl_json = pl.to_json()
+        with open("tests/resources/m3u_plus.json") as json_file:
+            expected_json = json.load(json_file)
+            self.assertEqual(expected_json, json.loads(pl_json))
 
 
 class TestClone(unittest.TestCase):

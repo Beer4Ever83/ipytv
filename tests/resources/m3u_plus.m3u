@@ -4,6 +4,7 @@
 http://myown.link:80/luke/210274/78482
 
 #EXTINF:-1 tvg-id="" tvg-name="Cielo" tvg-logo="" group-title="Italia",Cielo
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0
 http://myown.link:80/luke/210274/89844
 
 #EXTINF:-1 tvg-id="" tvg-name="TEMATICO MASSIMO TROISI" tvg-logo="" group-title="Italia" tvg-shift="-0.5",TEMATICO MASSIMO TROISI
