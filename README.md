@@ -434,8 +434,7 @@ An M3UPlaylist object can be serialized into the following formats:
 
 #### JSON format
 The `pl.to_json_playlist()` method returns a JSON string that represents the playlist according to 
-the 
-following format:
+the following format:
 
 ```json
 {
@@ -472,7 +471,6 @@ following format:
   ]
 }
 ```
-
 
 ## Format considerations
 
