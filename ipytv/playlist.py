@@ -325,7 +325,7 @@ class M3UPlaylist:
         }
         return out
 
-    def to_json(self) -> str:
+    def to_json_playlist(self) -> str:
         """"
         Returns a JSON representation of the playlist
         """
@@ -453,6 +453,31 @@ def loadu(url: str) -> 'M3UPlaylist':
         raise URLException(
             f"Failure while opening {url}.\nError: {exception}"
         ) from exception
+
+
+def loadj(json_str: str) -> 'M3UPlaylist':
+    if not isinstance(json_str, str):
+        log.error("expected %s, got %s", type(''), type(json_str))
+        raise WrongTypeException("Wrong type: string expected")
+    try:
+        data = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        log.error("failure while decoding the JSON string: %s", e)
+        raise WrongTypeException("The input string should be a valid JSON string.") from e
+    pl = M3UPlaylist()
+    if "attributes" in data:
+        pl.add_attributes(data["attributes"])
+    if "channels" in data:
+        for json_ch in data["channels"]:
+            ch = IPTVChannel(
+                url=json_ch["url"],
+                name=json_ch["name"],
+                duration=json_ch["duration"],
+                attributes=json_ch["attributes"],
+                extras=json_ch["extras"]
+            )
+            pl.append_channel(ch)
+    return pl
 
 
 def _remove_blank_rows(rows: List[str]) -> List[str]:

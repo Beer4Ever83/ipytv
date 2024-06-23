@@ -293,6 +293,15 @@ class TestLoaduErrors(unittest.TestCase):
         httpretty.reset()
 
 
+class TestLoadj(unittest.TestCase):
+    def runTest(self):
+        expected_pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        with open("tests/resources/m3u_plus.json") as json_file:
+            json_str = "\n".join(json_file.readlines())
+        pl = playlist.loadj(json_str)
+        self.assertEqual(expected_pl, pl, "The two playlists are not equal")
+
+
 class TestToM3UPlusPlaylist(unittest.TestCase):
     def runTest(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -314,7 +323,7 @@ class TestToM3U8Playlist(unittest.TestCase):
 class TestToJson(unittest.TestCase):
     def runTest(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
-        pl_json = pl.to_json()
+        pl_json = pl.to_json_playlist()
         with open("tests/resources/m3u_plus.json") as json_file:
             expected_json = json.load(json_file)
             self.assertEqual(expected_json, json.loads(pl_json))

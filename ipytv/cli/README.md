@@ -27,6 +27,18 @@ iptv2json [--no-sanitize] input.m3u
       "extras": [
         "#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0"
       ]
+    },
+    {
+      "name": "Rai 2",
+      "duration": "-1",
+      "url": "http://myown.link:80/luke/210274/78483",
+      "attributes": {
+        "tvg-id": "Rai 2",
+        "tvg-name": "Rai 2",
+        "tvg-logo": "https://static.epg.best/it/RaiDue.it.png",
+        "group-title": "RAI"
+      },
+      "extras": []
     }
   ]
 }
