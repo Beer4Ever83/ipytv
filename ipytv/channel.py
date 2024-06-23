@@ -13,7 +13,7 @@ import json
 import logging
 import shlex
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from ipytv import m3u
 from ipytv.exceptions import MalformedExtinfException
@@ -275,7 +275,7 @@ class IPTVChannel(M3UEntry):
         url_row = self._build_url_entry()
         return f'{extinf_row}{url_row}'
 
-    def to_dict(self)   -> dict[str, str|Dict[str, str]|List[str]]:
+    def to_dict(self)   -> dict[str, Any]:
         """
         .. py:method:: to_dict
 
