@@ -16,7 +16,7 @@ import math
 import multiprocessing as mp
 import re
 from multiprocessing.pool import AsyncResult
-from typing import List, Dict, Tuple, Optional, Union
+from typing import List, Dict, Tuple, Optional, Union, Any
 
 import requests
 from requests import RequestException
@@ -318,7 +318,7 @@ class M3UPlaylist:
             out += channel.to_m3u8_playlist_entry()
         return out
 
-    def __to_dict(self) -> Dict[str, Union[str, Dict[str, Union[str, Dict[str, str], List[str]]]]]:
+    def __to_dict(self) -> Dict[str, Any]:
         out = {
             "attributes": self.get_attributes(),
             "channels": [ch.to_dict() for ch in self.get_channels()]
