@@ -464,6 +464,7 @@ def loadj(json_str: str) -> 'M3UPlaylist':
     except json.JSONDecodeError as e:
         log.error("failure while decoding the JSON string: %s", e)
         raise WrongTypeException("The input string should be a valid JSON string.") from e
+    # TODO: add validation against JSON Schema
     pl = M3UPlaylist()
     if "attributes" in data:
         pl.add_attributes(data["attributes"])

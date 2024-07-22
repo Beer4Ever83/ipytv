@@ -150,6 +150,7 @@ class M3UPlaylistDoctor:
         and that no commas appear in the attributes value.
         """
         new_playlist: M3UPlaylist = M3UPlaylist()
+        new_playlist.add_attributes(playlist.get_attributes())
         chan: IPTVChannel
         for chan in playlist:
             new_playlist.append_channel(IPTVChannelDoctor.sanitize(chan))

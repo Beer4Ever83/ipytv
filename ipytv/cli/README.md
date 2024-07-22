@@ -1,5 +1,5 @@
 # iptv2json
-A tool that makes use of the ipytv file to convert an m3u playlist into a json structure.
+A tool that makes use of the ipytv library to convert an m3u playlist into a json structure.
 This allows the navigation of the playlist with standard tools like jq.
 
 ## Command
@@ -42,4 +42,17 @@ iptv2json [--no-sanitize] input.m3u
     }
   ]
 }
+```
+
+# json2iptv
+A tool that makes use of the ipytv library to convert a json playlist (like the one produced by
+`iptv2json`) into an m3u playlist.
+The input json structure is validated against a schema and the conversion is rejected if the 
+validation fails.
+The output mp3 playlist is written to the standard output (it can be saved to a file by using
+redirection).
+
+## Command
+```shell
+json2iptv input.json
 ```
