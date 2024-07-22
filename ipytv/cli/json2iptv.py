@@ -13,7 +13,3 @@ def main(input_json_file: str) -> None:
         json_content = in_json.read()
         pl = playlist.loadj(json_content)
         click.echo(pl.to_m3u_plus_playlist())
-
-
-if __name__ == "__main__":
-    main()

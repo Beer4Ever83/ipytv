@@ -7,7 +7,7 @@ This allows the navigation of the playlist with standard tools like jq.
 iptv2json [--no-sanitize] input.m3u
 ```
 
-## Json output
+## Sample json output
 ```json
 {
   "attributes": {
@@ -42,6 +42,29 @@ iptv2json [--no-sanitize] input.m3u
     }
   ]
 }
+```
+
+## Usage examples
+For every channel in playlist.m3u, print the channel name:
+```shell
+iptv2json playlist.m3u | jq '.channels[].name'
+```
+
+For every channel in playlist.m3u, print the channel name and the url:
+```shell
+iptv2json playlist.m3u | jq '.channels[] | {name: .name, url: .url}'
+```
+
+Filter out all channels with the XXX string in the name:
+```shell
+iptv2json playlist.m3u | \
+  jq '.channels[] | select(.name | contains("XXX") | not)'
+```
+
+Filter out all channels with the XXX string in the group title:
+```shell
+iptv2json playlist.m3u | \
+  jq '.channels[] | select(.attributes."group-title" | contains("XXX") | not)'
 ```
 
 # json2iptv
