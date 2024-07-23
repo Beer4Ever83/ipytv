@@ -60,7 +60,7 @@ setup(
     license='MIT',
     keywords='m3u, m3u_plus, iptv, playlist',
     package_dir={'ipytv': 'ipytv'},
-    packages=find_packages(where='.', exclude=['tests']),
+    packages=find_packages(where='.', exclude=['tests*']),
     entry_points={
         'console_scripts': [
             'iptv2json = ipytv.cli.iptv2json:main',
@@ -70,8 +70,7 @@ setup(
     python_requires='>=3.6, <4',
     install_requires=parse_requirements("requirements.txt"),
     extras_require={},
-    package_data={},
-    data_files=[],
+    include_package_data=True,
     project_urls={
         'Bug Reports': 'https://github.com/Beer4Ever83/ipytv/issues',
         'Funding': 'https://www.buymeacoffee.com/beer4ever83',

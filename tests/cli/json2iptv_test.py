@@ -24,5 +24,13 @@ class TestJson2IptvNoParms(unittest.TestCase):
         self.assertNotEqual(0, result.exit_code)
 
 
+class TestJson2IptvBadJson(unittest.TestCase):
+    def runTest(self):
+        runner = CliRunner()
+        input_json = "tests/resources/unsupported.json"
+        result = runner.invoke(json2iptv_main, [input_json])
+        self.assertNotEqual(0, result.exit_code)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -18,6 +18,7 @@ import re
 from multiprocessing.pool import AsyncResult
 from typing import List, Dict, Tuple, Optional, Union, Any
 
+import jsonschema
 import requests
 from requests import RequestException
 
@@ -464,7 +465,12 @@ def loadj(json_str: str) -> 'M3UPlaylist':
     except json.JSONDecodeError as e:
         log.error("failure while decoding the JSON string: %s", e)
         raise WrongTypeException("The input string should be a valid JSON string.") from e
-    # TODO: add validation against JSON Schema
+    with open("ipytv/resources/schema.json", "r") as schema_file:
+        schema = json.load(schema_file)
+        try:
+            jsonschema.validate(data, schema=schema)
+        except jsonschema.ValidationError as e:
+            raise WrongTypeException(f"The input JSON string does not match the expected schema: {e.message}") from e
     pl = M3UPlaylist()
     if "attributes" in data:
         pl.add_attributes(data["attributes"])

@@ -10,7 +10,8 @@ from deepdiff import DeepDiff
 import ipytv.playlist as playlist
 from ipytv import m3u
 from ipytv.channel import IPTVAttr, IPTVChannel
-from ipytv.exceptions import IndexOutOfBoundsException, AttributeAlreadyPresentException, AttributeNotFoundException
+from ipytv.exceptions import IndexOutOfBoundsException, AttributeAlreadyPresentException, AttributeNotFoundException, \
+    WrongTypeException
 from ipytv.playlist import M3UPlaylist
 from tests import test_data
 
@@ -300,6 +301,13 @@ class TestLoadj(unittest.TestCase):
             json_str = "\n".join(json_file.readlines())
         pl = playlist.loadj(json_str)
         self.assertEqual(expected_pl, pl, "The two playlists are not equal")
+
+
+class TestLoadjWithUnsupportedJson(unittest.TestCase):
+    def runTest(self):
+        with open("tests/resources/unsupported.json") as json_file:
+            json_str = json_file.read()
+        self.assertRaises(WrongTypeException, playlist.loadj, json_str)
 
 
 class TestToM3UPlusPlaylist(unittest.TestCase):
