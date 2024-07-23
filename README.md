@@ -1,6 +1,10 @@
 ![IPyTV logo](doc/logo_hd.png "IPyTV logo")
 
-A python3 library to parse IPTV playlists in the M3U Plus format.
+* **ipytv**: A python3 library to parse IPTV playlists in the M3U Plus format.
+* **[iptv2json](ipytv/cli/README.md#iptv2json)**: A command line utility to convert an IPTV 
+  playlist into json format.
+* **[json2iptv](ipytv/cli/README.md#json2iptv)**: A command line utility to convert a json file 
+  (like the one produced by `iptv2json`) into an IPTV (m3u_plus) playlist.
 
 [![Downloads](https://pepy.tech/badge/m3u-ipytv)](https://pepy.tech/project/m3u-ipytv)
 [![Downloads](https://pepy.tech/badge/m3u-ipytv/month)](https://pepy.tech/project/m3u-ipytv)

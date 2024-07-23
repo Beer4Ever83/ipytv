@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import sys
 
 import click
 
@@ -21,4 +20,5 @@ def main(input_json_file: click.Path) -> None:
         click.echo(pl.to_m3u_plus_playlist())
 
 if __name__ == '__main__':
+    # pylint: disable=no-value-for-parameter
     main()

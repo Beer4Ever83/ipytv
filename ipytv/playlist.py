@@ -465,7 +465,7 @@ def loadj(json_str: str) -> 'M3UPlaylist':
     except json.JSONDecodeError as e:
         log.error("failure while decoding the JSON string: %s", e)
         raise WrongTypeException("The input string should be a valid JSON string.") from e
-    with open("ipytv/resources/schema.json", "r") as schema_file:
+    with open("ipytv/resources/schema.json", "r", encoding="utf-8") as schema_file:
         schema = json.load(schema_file)
         try:
             jsonschema.validate(data, schema=schema)

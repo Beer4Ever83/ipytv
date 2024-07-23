@@ -19,3 +19,7 @@ def main(input_m3u_file: str, no_sanitize: bool) -> None:
         pl = doctor.M3UPlaylistDoctor.sanitize(pl)
     json_pl = pl.to_json_playlist()
     click.echo(json_pl)
+
+if __name__ == '__main__':
+    # pylint: disable=no-value-for-parameter
+    main()
