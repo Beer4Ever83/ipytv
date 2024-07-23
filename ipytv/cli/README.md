@@ -44,29 +44,6 @@ iptv2json [--no-sanitize] input.m3u
 }
 ```
 
-## Usage examples
-For every channel in playlist.m3u, print the channel name:
-```shell
-iptv2json playlist.m3u | jq '.channels[].name'
-```
-
-For every channel in playlist.m3u, print the channel name and the url:
-```shell
-iptv2json playlist.m3u | jq '.channels[] | {name: .name, url: .url}'
-```
-
-Filter out all channels with the XXX string in the name:
-```shell
-iptv2json playlist.m3u | \
-  jq '.channels[] | select(.name | contains("XXX") | not)'
-```
-
-Filter out all channels with the XXX string in the group title:
-```shell
-iptv2json playlist.m3u | \
-  jq '.channels[] | select(.attributes."group-title" | contains("XXX") | not)'
-```
-
 # json2iptv
 A tool that makes use of the ipytv library to convert a json playlist (like the one produced by
 `iptv2json`) into an m3u playlist.
@@ -78,4 +55,28 @@ redirection).
 ## Command
 ```shell
 json2iptv input.json
+```
+
+# Usage examples
+For every channel in playlist.m3u, print only the channel name:
+```shell
+iptv2json playlist.m3u | jq '.channels[].name'
+```
+
+For every channel in playlist.m3u, print the channel name and the url:
+```shell
+iptv2json playlist.m3u | jq '.channels[] | {name: .name, url: .url}'
+```
+
+Print all the group titles in playlist.m3u in alphabetical order:
+```shell
+iptv2json playlist.m3u | jq '.channels[].attributes."group-title"' | sort -u
+```
+
+Take all the channels from playlist.m3u that don't have XXX in the group title and create a new 
+sfw.m3u playlist:
+```shell
+iptv2json playlist.m3u | \
+  jq 'del(.channels[] | select(.attributes."group-title" | contains("XXX")))' > sfw.json
+json2iptv sfw.json > sfw.m3u
 ```
