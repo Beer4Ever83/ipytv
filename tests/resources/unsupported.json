@@ -1,0 +1,58 @@
+{
+  "attributi": {
+    "x-tvg-url": "http://myown.link:80/luke/220311/22311"
+  },
+  "channels": [
+    {
+      "nome": "Rai 1",
+      "duration": "-1",
+      "url": "http://myown.link:80/luke/210274/78482",
+      "attributes": {
+        "tvg-id": "Rai 1",
+        "tvg-name": "Rai 1",
+        "tvg-logo": "https://static.epg.best/it/RaiUno.it.png",
+        "group-title": "RAI"
+      },
+      "extras": []
+    },
+    {
+      "name": "Cielo",
+      "duration": "-1",
+      "url": "http://myown.link:80/luke/210274/89844",
+      "attributes": {
+        "tvg-id": "",
+        "tvg-name": "Cielo",
+        "tvg-logo": "",
+        "group-title": "Italia"
+      },
+      "extras": [
+        "#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0"
+      ]
+    },
+    {
+      "name": "TEMATICO MASSIMO TROISI",
+      "duration": "-1",
+      "url": "http://myown.link:80/luke/109163/89800",
+      "attributes": {
+        "tvg-id": "",
+        "tvg-name": "TEMATICO MASSIMO TROISI",
+        "tvg-logo": "",
+        "group-title": "Italia",
+        "tvg-shift": "-0.5"
+      },
+      "extras": []
+    },
+    {
+      "name": "----I N T R A T T E N I M E N T O----",
+      "duration": "-1",
+      "url": "http://myown.link:80/luke/109163/78282",
+      "attributes": {
+        "tvg-id": "-10.5",
+        "tvg-name": "----I N T R A T T E N I M E N T O----",
+        "tvg-logo": "",
+        "group-title": "Intrattenimento"
+      },
+      "extras": []
+    }
+  ]
+}

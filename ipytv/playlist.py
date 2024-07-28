@@ -10,13 +10,16 @@ Functions:
     loadu
 
 """
+import json
 import logging
 import math
 import multiprocessing as mp
 import re
+import typing
 from multiprocessing.pool import AsyncResult
-from typing import List, Dict, Tuple, Optional, Union
+from typing import List, Dict, Tuple, Optional, Union, Any
 
+import jsonschema
 import requests
 from requests import RequestException
 
@@ -317,6 +320,19 @@ class M3UPlaylist:
             out += channel.to_m3u8_playlist_entry()
         return out
 
+    def __to_dict(self) -> Dict[str, Any]:
+        out = {
+            "attributes": self.get_attributes(),
+            "channels": [ch.to_dict() for ch in self.get_channels()]
+        }
+        return out
+
+    def to_json_playlist(self) -> str:
+        """"
+        Returns a JSON representation of the playlist
+        """
+        return json.dumps(self.__to_dict())
+
     def copy(self) -> 'M3UPlaylist':
         new_pl = M3UPlaylist()
         for channel in self.get_channels():
@@ -439,6 +455,44 @@ def loadu(url: str) -> 'M3UPlaylist':
         raise URLException(
             f"Failure while opening {url}.\nError: {exception}"
         ) from exception
+
+
+def loadj(json_dict: typing.Dict[str, Any]) -> 'M3UPlaylist':
+    if not isinstance(json_dict, dict):
+        log.error("expected %s, got %s", dict, type(json_dict))
+        raise WrongTypeException("Wrong type: json dict expected")
+    with open("ipytv/resources/schema.json", "r", encoding="utf-8") as schema_file:
+        schema = json.load(schema_file)
+        try:
+            jsonschema.validate(json_dict, schema=schema)
+        except jsonschema.exceptions.ValidationError as e:
+            raise WrongTypeException(f"The input JSON string does not match the expected schema: {e.message}") from e
+    pl = M3UPlaylist()
+    if "attributes" in json_dict:
+        pl.add_attributes(json_dict["attributes"])
+    if "channels" in json_dict:
+        for json_ch in json_dict["channels"]:
+            ch = IPTVChannel(
+                url=json_ch["url"],
+                name=json_ch["name"],
+                duration=json_ch["duration"],
+                attributes=json_ch["attributes"],
+                extras=json_ch["extras"]
+            )
+            pl.append_channel(ch)
+    return pl
+
+
+def loadjstr(json_str: str) -> 'M3UPlaylist':
+    if not isinstance(json_str, str):
+        log.error("expected %s, got %s", type(''), type(json_str))
+        raise WrongTypeException("Wrong type: string expected")
+    try:
+        data = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        log.error("failure while decoding the JSON string: %s", e)
+        raise WrongTypeException("The input string should be a valid JSON string.") from e
+    return loadj(data)
 
 
 def _remove_blank_rows(rows: List[str]) -> List[str]:

@@ -1,6 +1,10 @@
 ![IPyTV logo](doc/logo_hd.png "IPyTV logo")
 
-A python3 library to parse IPTV playlists in the M3U Plus format.
+* **ipytv**: A python3 library to parse IPTV playlists in the M3U Plus format.
+* **[iptv2json](ipytv/cli/README.md#iptv2json)**: A command line utility to convert an IPTV 
+  playlist into json format.
+* **[json2iptv](ipytv/cli/README.md#json2iptv)**: A command line utility to convert a json file 
+  (like the one produced by `iptv2json`) into an IPTV (m3u_plus) playlist.
 
 [![Downloads](https://pepy.tech/badge/m3u-ipytv)](https://pepy.tech/project/m3u-ipytv)
 [![Downloads](https://pepy.tech/badge/m3u-ipytv/month)](https://pepy.tech/project/m3u-ipytv)
@@ -13,7 +17,7 @@ the Internet.
 
 The terms _IPTV playlist_ and _M3U Plus playlist_ are generally used
 interchangeably, but in this repository **M3U Plus** refers to the data format,
-while **IPTV Playlist** refers to playlists in M3U Plus format.
+while **IPTV Playlist** refers to playlists in the M3U Plus format.
 
 M3U Plus stems from the
 [`extended M3U8`](https://en.wikipedia.org/wiki/M3U#Extended_M3U) format, of 
@@ -137,6 +141,50 @@ rows = [
     'http://myown.link:80/luke/210274/78482'
 ]
 pl = playlist.loadl(rows)
+print(pl.length())
+```
+
+#### From a json string
+
+Use the `playlist.loadj(json_str)` function:
+
+```python
+from ipytv import playlist
+
+json_str = """{
+  "attributes": {
+    "x-tvg-url": "http://myown.link:80/luke/220311/22311"
+  },
+  "channels": [
+    {
+      "name": "Rai 1",
+      "duration": "-1",
+      "url": "http://myown.link:80/luke/210274/78482",
+      "attributes": {
+        "tvg-id": "Rai 1",
+        "tvg-name": "Rai 1",
+        "tvg-logo": "https://static.epg.best/it/RaiUno.it.png",
+        "group-title": "RAI"
+      },
+      "extras": [
+        "#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0"
+      ]
+    },
+    {
+      "name": "Rai 2",
+      "duration": "-1",
+      "url": "http://myown.link:80/luke/210274/78483",
+      "attributes": {
+        "tvg-id": "Rai 2",
+        "tvg-name": "Rai 2",
+        "tvg-logo": "https://static.epg.best/it/RaiDue.it.png",
+        "group-title": "RAI"
+      },
+      "extras": []
+    }
+  ]
+}"""
+pl = playlist.loadj(json_str)
 print(pl.length())
 ```
 
@@ -377,6 +425,55 @@ from ipytv import playlist
 
 logging.basicConfig(level=logging.INFO)
 pl = playlist.loadu("https://iptv-org.github.io/iptv/categories/classic.m3u")
+```
+
+### Object serialization
+An M3UPlaylist object can be serialized into the following formats:
+- M3U Plus (i.e. a string in the M3U Plus format):
+  - `pl.to_m3u_plus_playlist()`
+- M3U8 (i.e. a string in the M3U8 format that can be parsed using the standard `m3u8` library):
+  - `pl.to_m3u8_playlist()`
+- JSON (i.e. a JSON string that can be parsed using the standard `json` library):
+  - `pl.to_json_playlist()`
+
+#### JSON format
+The `pl.to_json_playlist()` method returns a JSON string that represents the playlist according to 
+the following format:
+
+```json
+{
+  "attributes": {
+    "x-tvg-url": "http://myown.link:80/luke/220311/22311"
+  },
+  "channels": [
+    {
+      "name": "Rai 1",
+      "duration": "-1",
+      "url": "http://myown.link:80/luke/210274/78482",
+      "attributes": {
+        "tvg-id": "Rai 1",
+        "tvg-name": "Rai 1",
+        "tvg-logo": "https://static.epg.best/it/RaiUno.it.png",
+        "group-title": "RAI"
+      },
+      "extras": [
+        "#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0"
+      ]
+    },
+    {
+      "name": "Rai 2",
+      "duration": "-1",
+      "url": "http://myown.link:80/luke/210274/78483",
+      "attributes": {
+        "tvg-id": "Rai 2",
+        "tvg-name": "Rai 2",
+        "tvg-logo": "https://static.epg.best/it/RaiDue.it.png",
+        "group-title": "RAI"
+      },
+      "extras": []
+    }
+  ]
+}
 ```
 
 ## Format considerations
