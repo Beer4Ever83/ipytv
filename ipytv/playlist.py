@@ -15,6 +15,7 @@ import logging
 import math
 import multiprocessing as mp
 import re
+import typing
 from multiprocessing.pool import AsyncResult
 from typing import List, Dict, Tuple, Optional, Union, Any
 
@@ -456,7 +457,7 @@ def loadu(url: str) -> 'M3UPlaylist':
         ) from exception
 
 
-def loadj(json_dict: dict[str, Any]) -> 'M3UPlaylist':
+def loadj(json_dict: typing.Dict[str, Any]) -> 'M3UPlaylist':
     if not isinstance(json_dict, dict):
         log.error("expected %s, got %s", dict, type(json_dict))
         raise WrongTypeException("Wrong type: json dict expected")
