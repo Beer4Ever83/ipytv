@@ -456,26 +456,21 @@ def loadu(url: str) -> 'M3UPlaylist':
         ) from exception
 
 
-def loadj(json_str: str) -> 'M3UPlaylist':
-    if not isinstance(json_str, str):
-        log.error("expected %s, got %s", type(''), type(json_str))
-        raise WrongTypeException("Wrong type: string expected")
-    try:
-        data = json.loads(json_str)
-    except json.JSONDecodeError as e:
-        log.error("failure while decoding the JSON string: %s", e)
-        raise WrongTypeException("The input string should be a valid JSON string.") from e
+def loadj(json_dict: dict[str, Any]) -> 'M3UPlaylist':
+    if not isinstance(json_dict, dict):
+        log.error("expected %s, got %s", dict, type(json_dict))
+        raise WrongTypeException("Wrong type: json dict expected")
     with open("ipytv/resources/schema.json", "r", encoding="utf-8") as schema_file:
         schema = json.load(schema_file)
         try:
-            jsonschema.validate(data, schema=schema)
-        except jsonschema.ValidationError as e:
+            jsonschema.validate(json_dict, schema=schema)
+        except jsonschema.exceptions.ValidationError as e:
             raise WrongTypeException(f"The input JSON string does not match the expected schema: {e.message}") from e
     pl = M3UPlaylist()
-    if "attributes" in data:
-        pl.add_attributes(data["attributes"])
-    if "channels" in data:
-        for json_ch in data["channels"]:
+    if "attributes" in json_dict:
+        pl.add_attributes(json_dict["attributes"])
+    if "channels" in json_dict:
+        for json_ch in json_dict["channels"]:
             ch = IPTVChannel(
                 url=json_ch["url"],
                 name=json_ch["name"],
@@ -485,6 +480,18 @@ def loadj(json_str: str) -> 'M3UPlaylist':
             )
             pl.append_channel(ch)
     return pl
+
+
+def loadjstr(json_str: str) -> 'M3UPlaylist':
+    if not isinstance(json_str, str):
+        log.error("expected %s, got %s", type(''), type(json_str))
+        raise WrongTypeException("Wrong type: string expected")
+    try:
+        data = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        log.error("failure while decoding the JSON string: %s", e)
+        raise WrongTypeException("The input string should be a valid JSON string.") from e
+    return loadj(data)
 
 
 def _remove_blank_rows(rows: List[str]) -> List[str]:

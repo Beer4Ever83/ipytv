@@ -1,4 +1,4 @@
 # requirements for library
-requests >= 2.25.1
+requests >= 2.31.0
 click >= 8.1.7
 jsonschema >= 4.23.0

@@ -294,20 +294,20 @@ class TestLoaduErrors(unittest.TestCase):
         httpretty.reset()
 
 
-class TestLoadj(unittest.TestCase):
+class TestLoadjstr(unittest.TestCase):
     def runTest(self):
         expected_pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         with open("tests/resources/m3u_plus.json") as json_file:
             json_str = "\n".join(json_file.readlines())
-        pl = playlist.loadj(json_str)
+        pl = playlist.loadjstr(json_str)
         self.assertEqual(expected_pl, pl, "The two playlists are not equal")
 
 
-class TestLoadjWithUnsupportedJson(unittest.TestCase):
+class TestLoadjstrWithUnsupportedJson(unittest.TestCase):
     def runTest(self):
         with open("tests/resources/unsupported.json") as json_file:
             json_str = json_file.read()
-        self.assertRaises(WrongTypeException, playlist.loadj, json_str)
+        self.assertRaises(WrongTypeException, playlist.loadjstr, json_str)
 
 
 class TestToM3UPlusPlaylist(unittest.TestCase):

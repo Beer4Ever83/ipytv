@@ -13,7 +13,6 @@ class TestIptv2Json(unittest.TestCase):
         result = runner.invoke(iptv2json_main, [input_playlist])
         self.assertEqual(0, result.exit_code)
         generated_json = json.loads(result.output)
-        print(generated_json)
         with open("tests/resources/m3u_plus.json", "r") as f:
             expected_json = json.loads("\n".join(f.readlines()))
         self.assertEqual(expected_json, generated_json)

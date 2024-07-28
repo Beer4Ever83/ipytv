@@ -10,7 +10,7 @@ REPO_DIR=$(realpath "${my_dir}/..")
 export PYTHONPATH=${PYTHONPATH}:${REPO_DIR}:${LIB_DIR}:${TEST_DIR}
 
 pushd "${REPO_DIR}" >/dev/null || abort
-python -m unittest discover -s "${TEST_DIR}" -p '*_test.py'
+python -m unittest discover -t "${REPO_DIR}" -s "${TEST_DIR}" -p '*_test.py'
 test_result=$?
 popd >/dev/null || abort
 
