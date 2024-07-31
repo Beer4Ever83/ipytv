@@ -376,10 +376,11 @@ def loadl(rows: List) -> 'M3UPlaylist':
     if not isinstance(rows, List):
         log.error("expected %s, got %s", type([]), type(rows))
         raise WrongTypeException("Wrong type: List expected")
-    if len(rows) < 2:
-        log.error("a playlist should have at least 2 rows (found %s)", len(rows))
-        raise MalformedPlaylistException(f"a playlist should have at least 2 rows (found {len(rows)})")
     rows = _remove_blank_rows(rows)
+    pl_len = len(rows)
+    if pl_len < 1:
+        log.error("a playlist should have at least 1 row")
+        raise MalformedPlaylistException("a playlist should have at least 1 row")
     header = rows[0].strip()
     if not m3u.is_m3u_header_row(header):
         log.error(
@@ -390,6 +391,9 @@ def loadl(rows: List) -> 'M3UPlaylist':
         raise MalformedPlaylistException(f"Missing or misplaced {M3U_HEADER_TAG} row")
     out_pl = M3UPlaylist()
     out_pl.add_attributes(_parse_header(header))
+    # We're parsing an empty playlist, so we return an empty playlist object
+    if not pl_len > 1:
+        return out_pl
     cores = mp.cpu_count()
     log.debug("%s cores detected", cores)
     body = rows[1:]

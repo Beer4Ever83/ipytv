@@ -145,6 +145,12 @@ class TestLoadlM3UPlusHuge(unittest.TestCase):
         self.assertEqual(expected_length, pl.length(), "The size of the playlist is not the expected one")
 
 
+class TestLoadlM3UPlusEmptyPlaylist(unittest.TestCase):
+    def runTest(self):
+        pl = playlist.loadl(["#EXTM3U", ""])
+        self.assertEqual(0, pl.length(), "The size of the playlist is not the expected one")
+
+
 class TestLoadlM3UPlusWithExtras(unittest.TestCase):
     def runTest(self):
         checks: List[Dict[str, List[str]]] = [
@@ -253,6 +259,24 @@ class TestLoaduM3UPlus(unittest.TestCase):
         httpretty.disable()
         httpretty.reset()
         self.assertEqual(test_data.expected_m3u_plus, pl, "The two playlists are not equal")
+
+
+class TestLoaduM3UPlusWithEmptyPlaylist(unittest.TestCase):
+    def runTest(self):
+        url = "http://myown.link:80/luke/playlist.m3u"
+        body = "#EXTM3U\n"
+        with httpretty.enabled():
+            httpretty.register_uri(
+                httpretty.GET,
+                url,
+                adding_headers={"Content-Type": "application/octet-stream"},
+                body=body,
+                status=200
+            )
+            pl = playlist.loadu(url)
+        httpretty.disable()
+        httpretty.reset()
+        self.assertEqual(0, pl.length(), "Expected an empty playlist")
 
 
 class TestLoaduM3U8(unittest.TestCase):
