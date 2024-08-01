@@ -8,7 +8,8 @@ Functions:
     loads
     loadf
     loadu
-
+    loadj
+    loadjstr
 """
 import json
 import logging
