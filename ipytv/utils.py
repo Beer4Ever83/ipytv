@@ -4,7 +4,7 @@ Functions:
     extract_series: Create multiple playlists from a single playlist by grouping episodes from the same series together.
 """
 import re
-from typing import Dict
+from typing import Dict, Tuple
 
 from ipytv.playlist import M3UPlaylist
 
@@ -19,7 +19,7 @@ SEASON_AND_EPISODE_PATTERN_2 = re.compile(r'\s+(\d{1,2})[x.](\d+)(?:\s+|$).*', r
 SEASON_AND_EPISODE_PATTERN_3 = re.compile(r'(?<![0-9])\.(\d+)$', re.IGNORECASE)
 
 
-def extract_series(playlist: M3UPlaylist, exclude_single=False) -> (Dict[str, M3UPlaylist], M3UPlaylist):
+def extract_series(playlist: M3UPlaylist, exclude_single=False) -> Tuple[Dict[str, M3UPlaylist], M3UPlaylist]:
     """Create multiple playlists from a single playlist by grouping episodes from the same series together.
 
     Args:
@@ -31,7 +31,7 @@ def extract_series(playlist: M3UPlaylist, exclude_single=False) -> (Dict[str, M3
         A dictionary with show titles as keys and the related playlists as values, one for every series detected, plus
         an extra playlist with all the entries that don't look like series with the _NO_SERIES_ string as key.
     """
-    title_playlist_map: Dict[str: M3UPlaylist] = {}
+    title_playlist_map: Dict[str, M3UPlaylist] = {}
     not_series_playlist = M3UPlaylist()
     not_series_playlist.add_attributes(playlist.get_attributes())
     for channel in playlist:
@@ -80,9 +80,8 @@ def extract_show_name(channel_name: str) -> str:
     """
     if re.search(SEASON_AND_EPISODE_PATTERN_1, channel_name):
         return SEASON_AND_EPISODE_PATTERN_1.sub("", channel_name)
-    elif re.search(SEASON_AND_EPISODE_PATTERN_2, channel_name):
+    if re.search(SEASON_AND_EPISODE_PATTERN_2, channel_name):
         return SEASON_AND_EPISODE_PATTERN_2.sub("", channel_name)
-    elif re.search(SEASON_AND_EPISODE_PATTERN_3, channel_name):
+    if re.search(SEASON_AND_EPISODE_PATTERN_3, channel_name):
         return SEASON_AND_EPISODE_PATTERN_3.sub("", channel_name)
     return channel_name
-

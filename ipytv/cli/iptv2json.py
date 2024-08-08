@@ -19,7 +19,6 @@ def main(input_m3u_file: str, no_sanitize: bool) -> None:
     try:
         pl = playlist.loadl(content)
     # pylint: disable=W0703
-    # pylint: disable=W0133
     except Exception as e:
         click.echo("Exception while loading the specified M3U playlist")
         click.echo("Error: {}".format(e))

@@ -13,7 +13,6 @@ def main(input_json_file: str) -> None:
         try:
             pl = playlist.loadjstr(json_content)
         # pylint: disable=W0703
-        # pylint: disable=W0133
         except Exception as e:
             click.echo("Exception while loading the specified JSON playlist")
             click.echo("Error: {}".format(e))
