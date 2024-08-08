@@ -1,12 +1,14 @@
 """Multiple utility functions for the ipytv package.
 
 Functions:
-    group_by_similarity: Create multiple playlists from a single playlist by grouping similar entries together.
+    extract_series: Create multiple playlists from a single playlist by grouping episodes from the same series together.
 """
 import re
-from typing import List, Dict
+from typing import Dict
 
 from ipytv.playlist import M3UPlaylist
+
+NO_SERIES_KEY = '_NO_SERIES_'
 
 # Regular expression patterns to match season and episode numbers.
 # This should match "S05E10" or "s:01 e:13"
@@ -17,21 +19,22 @@ SEASON_AND_EPISODE_PATTERN_2 = re.compile(r'\s+(\d{1,2})[x.](\d+)(?:\s+|$).*', r
 SEASON_AND_EPISODE_PATTERN_3 = re.compile(r'(?<![0-9])\.(\d+)$', re.IGNORECASE)
 
 
-def extract_series(pl: M3UPlaylist, exclude_single=False) -> (List[M3UPlaylist], M3UPlaylist):
-    """Create multiple playlists from a single playlist by grouping similar entries together.
+def extract_series(playlist: M3UPlaylist, exclude_single=False) -> (Dict[str, M3UPlaylist], M3UPlaylist):
+    """Create multiple playlists from a single playlist by grouping episodes from the same series together.
 
     Args:
-        pl: The playlist to group.
+        playlist: The playlist to group.
         exclude_single: When set to True, the function will remove from the result all the playlists with only a single
-                        channel
+                        channel (the assumption here is that a show with just one episode is not a series).
 
     Returns:
-        A list of playlists.
+        A dictionary with show titles as keys and the related playlists as values, one for every series detected, plus
+        an extra playlist with all the entries that don't look like series with the _NO_SERIES_ string as key.
     """
     title_playlist_map: Dict[str: M3UPlaylist] = {}
     not_series_playlist = M3UPlaylist()
-    not_series_playlist.add_attributes(pl.get_attributes())
-    for channel in pl:
+    not_series_playlist.add_attributes(playlist.get_attributes())
+    for channel in playlist:
         # If it doesn't look like a series, we skip it
         if not is_episode_from_series(channel.name):
             not_series_playlist.append_channel(channel)
@@ -40,17 +43,24 @@ def extract_series(pl: M3UPlaylist, exclude_single=False) -> (List[M3UPlaylist],
         show_name = extract_show_name(channel.name).lower()
         if not show_name in title_playlist_map:
             title_playlist_map[show_name] = M3UPlaylist()
-            title_playlist_map[show_name].add_attributes(pl.get_attributes())
+            title_playlist_map[show_name].add_attributes(playlist.get_attributes())
         title_playlist_map[show_name].append_channel(channel)
 
-    playlists: List[M3UPlaylist] = list(title_playlist_map.values())
     if exclude_single:
-        playlists = [pl for pl in playlists if pl.length() > 1]
+        title_playlist_map = {k:v for k, v in title_playlist_map.items() if v.length() > 1}
 
-    return playlists, not_series_playlist
+    return title_playlist_map, not_series_playlist
 
 
 def is_episode_from_series(channel_name: str) -> bool:
+    """This function tells whether the name of a channel looks like an episode from a series.
+
+    Args:
+        channel_name:   The name from an IPTVChannel object (i.e. ch.name) to analyze.
+
+    Returns:
+        A boolean condition where True means that the channel looks like it's part of a series, False otherwise.
+    """
     if re.search(SEASON_AND_EPISODE_PATTERN_1, channel_name) \
         or re.search(SEASON_AND_EPISODE_PATTERN_2, channel_name) \
         or re.search(SEASON_AND_EPISODE_PATTERN_3, channel_name):
@@ -60,7 +70,7 @@ def is_episode_from_series(channel_name: str) -> bool:
 
 def extract_show_name(channel_name: str) -> str:
     """Extract the show name from a channel name. In other words: it tries to detect the season and episode numbers and
-    remove them (along with everything following these numbers, if any).
+    to remove them (along with everything following these numbers, if any).
 
     Args:
         channel_name: The channel.
