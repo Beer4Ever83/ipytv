@@ -73,7 +73,7 @@ class TestUtils(unittest.TestCase):
             "The Talking Dead E01",
             "The Talking Dead e01",
         ]
-        # Check that the show name is extracted correctly regardless of the case of the letters and the spaces
+        # Check that the show name is extracted correctly in all cases above
         for show in shows:
             self.assertEqual("The Talking Dead", extract_show_name(show))
         # Check that the season numbers from 01 to 99 and episode numbers from 01 to 999 are correctly handled
@@ -90,7 +90,7 @@ class TestUtils(unittest.TestCase):
             "The Talking Dead 1x1",
             "The Talking Dead 1.1",
         ]
-        # Check that the show name is extracted correctly regardless of the case of the letters and the spaces
+        # Check that the show name is extracted correctly in all cases above
         for show in shows:
             self.assertEqual("The Talking Dead", extract_show_name(show))
         # Check that the season numbers from 01 to 99 and episode numbers from 01 to 999 are correctly handled
@@ -105,7 +105,7 @@ class TestUtils(unittest.TestCase):
             "The Talking Dead.01",
             "The Talking Dead.1",
         ]
-        # Check that the show name is extracted correctly regardless of the case of the letters and the spaces
+        # Check that the show name is extracted correctly in all cases above
         for show in shows:
             self.assertEqual("The Talking Dead", extract_show_name(show))
         # Check that episode numbers from 01 to 999 are correctly handled
@@ -130,7 +130,6 @@ class TestUtils(unittest.TestCase):
             {"title": "Crappy Days.25", "is_series": True},
             {"title": "Crappy Days.25 - The Bonz", "is_series": False},
         ]
-        # Check that the show name is extracted correctly regardless of the case of the letters and the spaces
         for test in tests:
             self.assertTrue(is_episode_from_series(test["title"]) is test["is_series"], f"Failed for {test['title']}")
 
