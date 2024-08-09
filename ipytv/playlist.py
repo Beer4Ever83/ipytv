@@ -8,7 +8,8 @@ Functions:
     loads
     loadf
     loadu
-
+    loadj
+    loadjstr
 """
 import json
 import logging
@@ -392,7 +393,7 @@ def loadl(rows: List) -> 'M3UPlaylist':
     out_pl = M3UPlaylist()
     out_pl.add_attributes(_parse_header(header))
     # We're parsing an empty playlist, so we return an empty playlist object
-    if not pl_len > 1:
+    if pl_len <= 1:
         return out_pl
     cores = mp.cpu_count()
     log.debug("%s cores detected", cores)

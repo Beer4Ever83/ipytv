@@ -87,6 +87,8 @@ The library comprises several modules, each with a specific area of competence:
     - Constants and functions related to M3U files.
 - **playlist**
     - Everything related to the loading and handling of M3U playlists.
+- **utils**
+    - Commodity functions that work on playlist or channel objects.
 
 ### Loading an IPTV Playlist
 
@@ -410,6 +412,66 @@ with open('my-broken-playlist.m3u', encoding='utf-8') as in_file:
     with open('my-fixed-playlist.m3u', 'w', encoding='utf-8') as out_file:
         content = fixed_pl.to_m3u_plus_playlist()
         out_file.write(content)
+```
+
+### The `utils` module
+The `utils` module is a collection of commodity functions that perform various operations on 
+playlists or channels.
+The module currently contains the functions listed below (but more might be added in the future).
+
+-----
+#### is_episode_from_series(channel.name)
+A function that, given a channel name, checks whether the channel might be from a series or not.
+
+Example:
+```python
+from ipytv.utils import is_episode_from_series
+channel_name = "The Talking Dead S01 E07"
+if is_episode_from_series(channel_name):
+    print("This channel looks like an episode from a series")
+```
+
+-----
+#### extract_show_name(channel.name)
+A function that, given a channel name, extracts only the show name, by removing the season and 
+episode numbers (if any) and every other string following these numbers (if any).
+
+Example:
+```python
+from ipytv.utils import is_episode_from_series, extract_show_name
+channel_name = "The Talking Dead S01 E07"
+if is_episode_from_series(channel_name):
+    show_name = extract_show_name(channel_name)
+    print(f"This channel looks like an episode from the {show_name} series")
+```
+
+-----
+#### extract_series(playlist, exclude_single=False)
+A function that, given an M3UPlaylist object, tries to find all channels that look like episodes 
+of the same series and groups them together in a new playlist. The function returns a dictionary 
+with show names as keys and the related playlist as value. It also returns an extra playlist 
+that contains all the channels that are not episodes of a series. The `exclude_single` optional 
+parameter controls whether the function should return playlists with only one episode or not 
+(this is because, by definition, a series should be composed by at least two episodes, so the 
+function allows to remove all playlists with a single entry from the result).
+
+Example:
+```python
+import os
+from ipytv.playlist import loadu
+from ipytv.utils import extract_series
+pl = loadu("https://mametchikitty.github.io/Listas-IPTV/dibujos-animados.m3u")
+series_map, not_series_pl = extract_series(pl, exclude_single=True)
+out_dir = "./series"
+os.makedirs(out_dir)
+with open(f"{out_dir}/not_series.m3u", "w") as out_file:
+    out_file.write(not_series_pl.to_m3u_plus_playlist())
+
+for show_title, pl in series_map.items():
+    # Slashes and colons are not allowed as filenames
+    show_filename = show_title.replace("/", "_").replace(":", "_")
+    with open(f"{out_dir}/{show_filename}.m3u", "w") as out_file:
+        out_file.write(pl.to_m3u_plus_playlist())
 ```
 
 ### Logging
