@@ -29,21 +29,21 @@ function installation_test() {
     source "${TEMP_DIR}/.testvenv/bin/activate" || abort "Failure while activating the test virtual environment"
     pip install --upgrade pip || abort "Failure while upgrading pip"
     pip install -r requirements-deploy.txt || abort "Failure while installing deploy requirements"
-    pip install "${DIST_DIR}/${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz" || abort "Failure while installing the package"
+    pip install "${DIST_DIR}/${PACKAGE_PREFIX}-*.tar.gz" || abort "Failure while installing the package"
     # shellcheck disable=SC2155
-    local SHOW_OUTPUT=$(pip show "${PACKAGE_NAME}")
+    local SHOW_OUTPUT=$(pip show "${APP_NAME}")
     echo "$SHOW_OUTPUT" | grep -q "Version: ${PACKAGE_VERSION}" || abort "Package is not installed"
     deactivate
     rm -rf "${TEMP_DIR}"
 }
 
 function build_pkgdata() {
-    if [[ -z "${PACKAGE_NAME}" || -z "${PACKAGE_VERSION}" ]]; then
+    if [[ -z "${APP_NAME}" || -z "${PACKAGE_VERSION}" ]]; then
         abort "Missing one or more mandatory variables"
     fi
     cat >"${PKGDATA_FILE}" << HEREDOC
 # Auto-generated file. Do not edit.
-package.name=${PACKAGE_NAME}
+package.name=${APP_NAME}
 package.version=${PACKAGE_VERSION}
 HEREDOC
 }
