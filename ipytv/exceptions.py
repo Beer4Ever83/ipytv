@@ -40,3 +40,7 @@ class AttributeAlreadyPresentException(IPyTVException):
 
 class AttributeNotFoundException(IPyTVException):
     pass
+
+
+if __name__ == "__main__":
+    pass
