@@ -24,8 +24,8 @@ function installation_test() {
     python -m venv "${TEMP_DIR}/.testvenv" || abort "Failure while creating virtual environment (.testvenv)"
     source "${TEMP_DIR}/.testvenv/bin/activate" || abort "Failure while activating the test virtual environment"
     pip install --upgrade pip || abort "Failure while upgrading pip"
-    pip install -r requirements-deploy.txt || abort "Failure while installing deploy requirements"
-    pip install "${DIST_DIR}/${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz" || abort "Failure while installing the package"
+    pip install --user -r requirements-deploy.txt || abort "Failure while installing deploy requirements"
+    pip install --user "${DIST_DIR}/${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz" || abort "Failure while installing the package"
     # shellcheck disable=SC2155
     local SHOW_OUTPUT=$(pip show "${PACKAGE_NAME}")
     echo "$SHOW_OUTPUT" | grep -q "Version: ${PACKAGE_VERSION}" || abort "Package is not installed"
@@ -53,6 +53,9 @@ pushd "${REPO_DIR}" >/dev/null || abort
 cleanup
 build_pkgdata
 python -m build --no-isolation --sdist || abort "Failure while building the package"
+# debug: start
+find "${DIST_DIR}"
+# debug: end
 twine check "${DIST_DIR}/*" || abort "twine reported an error"
 installation_test
 popd >/dev/null || abort
