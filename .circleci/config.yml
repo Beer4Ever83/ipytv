@@ -39,7 +39,7 @@ workflows:
 jobs:
   test-lint:
     docker:
-      - image: cimg/python:3.8
+      - image: cimg/python:3.10
     resource_class: medium+
     steps:
       - checkout
@@ -88,7 +88,7 @@ jobs:
           command: scripts/test.sh
   deploy-test:
     docker:
-      - image: cimg/python:3.8
+      - image: cimg/python:3.10
     resource_class: small
     steps:
       - checkout
@@ -100,7 +100,7 @@ jobs:
           command: scripts/deploy.sh --test
   deploy:
     docker:
-      - image: cimg/python:3.8
+      - image: cimg/python:3.10
     resource_class: small
     steps:
       - checkout
