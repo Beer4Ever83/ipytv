@@ -29,7 +29,7 @@ function installation_test() {
     source "${TEMP_DIR}/.testvenv/bin/activate" || abort "Failure while activating the test virtual environment"
     pip install --upgrade pip || abort "Failure while upgrading pip"
     pip install -r requirements-deploy.txt || abort "Failure while installing deploy requirements"
-    pip install "${DIST_DIR}/${PACKAGE_PREFIX}-*.tar.gz" || abort "Failure while installing the package"
+    pip install "${DIST_DIR}/${PACKAGE_PREFIX}-${PACKAGE_VERSION}.tar.gz" || abort "Failure while installing the package"
     # shellcheck disable=SC2155
     local SHOW_OUTPUT=$(pip show "${APP_NAME}")
     echo "$SHOW_OUTPUT" | grep -q "Version: ${PACKAGE_VERSION}" || abort "Package is not installed"
