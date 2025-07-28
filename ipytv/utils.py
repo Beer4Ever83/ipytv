@@ -85,3 +85,7 @@ def extract_show_name(channel_name: str) -> str:
     if re.search(SEASON_AND_EPISODE_PATTERN_3, channel_name):
         return SEASON_AND_EPISODE_PATTERN_3.sub("", channel_name)
     return channel_name
+
+
+if __name__ == "__main__":
+    pass

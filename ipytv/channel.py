@@ -338,3 +338,7 @@ def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
             channel.url = row
             log.info("URL row found")
     return channel
+
+
+if __name__ == "__main__":
+    pass

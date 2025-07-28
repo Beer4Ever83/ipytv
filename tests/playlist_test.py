@@ -478,6 +478,12 @@ class TestMatchSingle(unittest.TestCase):
         self.assertFalse(result)
         result = M3UPlaylist._match_single(ch, ".*luke.*", where="url")
         self.assertTrue(result)
+        result = M3UPlaylist._match_single(ch, ".*luke.*", where="non-existent")
+        self.assertFalse(result)
+        result = M3UPlaylist._match_single(ch, ".*luke.*", where="attributes.non-existent")
+        self.assertFalse(result)
+        result = M3UPlaylist._match_single(ch, ".*luke.*", where="non-existent.tvg-name")
+        self.assertFalse(result)
 
 
 class TestMatchAll(unittest.TestCase):

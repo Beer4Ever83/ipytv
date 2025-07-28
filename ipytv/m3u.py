@@ -94,3 +94,7 @@ def is_empty_row(row: str) -> bool:
 
 def is_url_row(row: str) -> bool:
     return not is_m3u_header_row(row) and not is_comment_or_tag_row(row) and not is_empty_row(row)
+
+
+if __name__ == "__main__":
+    pass

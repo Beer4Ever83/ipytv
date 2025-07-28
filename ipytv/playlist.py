@@ -257,12 +257,18 @@ class M3UPlaylist:
     @staticmethod
     def _match_single(ch: IPTVChannel, regex: str, where: str, case_sensitive: bool = True) -> bool:
         flags: re.RegexFlag = re.IGNORECASE if case_sensitive is False else re.RegexFlag(0)
+        # The where parameter can be a simple attribute name or an attribute
+        # name with a sub-attribute (e.g. "url" or "attributes.group-title")
         main, sub = M3UPlaylist._decode_where(where)
+        if main not in vars(ch):
+            return False
         value = getattr(ch, main)
         if sub is not None:
             if isinstance(value, list):
                 value = value[int(sub)]
             elif isinstance(value, dict):
+                if sub not in value:
+                    return False
                 value = value[sub]
         if re.fullmatch(regex, value, flags=flags) is None:
             return False
@@ -274,7 +280,7 @@ class M3UPlaylist:
 
         Searches for channels that have one or more attributes matching the
         specified regex. The match can be done on a specific set of attributes
-        or on all of them and the comparison can be made in a case-sensitive
+        or on all of them, and the comparison can be made in a case-sensitive
         fashion or not. The method returns a list of matching IPTVChannel
         objects.
 
@@ -632,3 +638,7 @@ def _populate(rows: List, beginning: int = 0, end: int = -1) -> 'M3UPlaylist':
 def _append_entry(entry: List, pl: M3UPlaylist):
     channel = ipytv.channel.from_playlist_entry(entry)
     pl.append_channel(channel)
+
+
+if __name__ == "__main__":
+    pass
