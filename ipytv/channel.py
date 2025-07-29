@@ -4,7 +4,6 @@ This module provides classes for representing IPTV channels and playlist entries
 along with utilities for parsing EXTINF rows and converting between formats.
 
 Classes:
-    M3UEntry: Base class for M3U playlist entries
     IPTVAttr: Enum of common IPTV attributes
     IPTVChannel: Extended M3U entry with IPTV-specific features
 
@@ -22,37 +21,6 @@ from ipytv.exceptions import MalformedExtinfException
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
-
-
-class M3UEntry:
-    """Base channel entity that models standard #EXTINF and url rows in M3U playlists.
-
-    Attributes:
-        url: The URL where the medium can be found (local file or network resource).
-        name: The name of the channel or entry (part after the last comma in EXTINF).
-        duration: The duration as a string formatted as float or integer (with/without sign).
-    """
-
-    def __init__(self, url: str, name: str = "", duration: str = "-1"):
-        """Initialize an M3U entry.
-
-        Args:
-            url: The URL where the medium can be found.
-            name: The name of the channel or entry.
-            duration: The duration as a string formatted as float or integer.
-        """
-        self.url = url
-        self.name = name
-        self.duration = str(duration)
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, M3UEntry) \
-               and self.url == other.url \
-               and self.name == other.name \
-               and self.duration == other.duration
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
 
 
 class IPTVAttr(Enum):
@@ -74,10 +42,8 @@ class IPTVAttr(Enum):
     TVG_URL = "tvg-url"
 
 
-class IPTVChannel(M3UEntry):
-    """A channel in an IPTV playlist with extended attributes and metadata.
-
-    Extends M3UEntry with IPTV-specific attributes and extra tags support.
+class IPTVChannel:
+    """A channel in an IPTV playlist with attributes and metadata.
 
     Attributes:
         url: The URL where the medium can be found.
@@ -90,22 +56,18 @@ class IPTVChannel(M3UEntry):
     def __init__(self, url: str = "", name: str = "",
                  duration: str = "-1", attributes: Optional[Dict[str, str]] = None,
                  extras: Optional[List[str]] = None):
-        """Initialize an IPTV channel.
-
-        Args:
-            url: The URL where the medium can be found.
-            name: The name of the channel.
-            duration: The duration as a string.
-            attributes: Dictionary of EXTINF attributes.
-            extras: List of extra tags between EXTINF and URL rows.
-        """
-        super().__init__(url, name, duration)
+        """Initialize an IPTV channel."""
+        self.url = url
+        self.name = name
+        self.duration = str(duration)
         self.attributes: Dict[str, str] = attributes if attributes is not None else {}
         self.extras: List[str] = extras if extras is not None else []
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, IPTVChannel) \
-            and super().__eq__(other) \
+            and self.url == other.url \
+            and self.name == other.name \
+            and self.duration == other.duration \
             and self.attributes == other.attributes \
             and self.extras == other.extras
 
@@ -212,10 +174,9 @@ class IPTVChannel(M3UEntry):
         )
 
     def _build_extras_entry(self) -> str:
-        out = ''
-        for extra in self.extras:
-            out += f'{extra}\n'
-        return out
+        if not self.extras:
+            return ''
+        return '\n'.join(self.extras) + '\n'
 
     def _build_url_entry(self) -> str:
         return f"{self.url}\n"

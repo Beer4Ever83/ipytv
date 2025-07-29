@@ -536,7 +536,12 @@ class M3UPlaylist:
                 value = value[sub]
         return compiled_regex.fullmatch(value) is not None
 
-    def search(self, regex: str, where: Union[Optional[str], List[str]] = None, case_sensitive: bool = True) -> List[IPTVChannel]:
+    def search(
+        self,
+        regex: str,
+        where: Union[Optional[str], List[str]] = None,
+        case_sensitive: bool = True
+    ) -> List[IPTVChannel]:
         """Search for channels matching a regular expression.
 
         Searches for channels that have one or more attributes matching the
