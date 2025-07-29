@@ -550,8 +550,8 @@ class M3UPlaylist:
 
         Args:
             regex: Regular expression pattern to match against.
-            where: Optional field(s) to search in. If None, searches all fields.
-                   Can be a string like "name" or "attributes.group-title",
+            where: Optional field(s) to search in. If None, it searches all fields.
+                   It can be a string like "name" or "attributes.group-title",
                    or a list of such strings.
             case_sensitive: Whether the regex match should be case-sensitive.
 
