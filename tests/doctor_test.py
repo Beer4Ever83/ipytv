@@ -8,20 +8,17 @@ from ipytv.doctor import M3UDoctor, IPTVChannelDoctor, M3UPlaylistDoctor
 from ipytv.playlist import M3UPlaylist
 
 
-class TestSanitizeSplitQuotedString(unittest.TestCase):
-    def runTest(self):
+class TestM3UDoctor(unittest.TestCase):
+
+    def test_sanitize_split_quoted_string(self) -> None:
         fixed = M3UDoctor.sanitize(test_data.split_quoted_string.split("\n"))
         self.assertEqual(test_data.expected_m3u_plus, playlist.loadl(fixed))
 
-
-class TestSanitizeUnquotedNumericAttributes(unittest.TestCase):
-    def runTest(self):
+    def test_sanitize_unquoted_numeric_attributes(self) -> None:
         fixed = M3UDoctor.sanitize(test_data.unquoted_attributes.split("\n"))
         self.assertEqual(test_data.expected_m3u_plus, playlist.loadl(fixed))
 
-
-class TestFixUnquotedNumericAttributes(unittest.TestCase):
-    def runTest(self):
+    def test_fix_unquoted_numeric_attributes(self) -> None:
         checks: List[Dict[str, List[str]]] = [
             {
                 "input_row":    ['#EXTINF:-1 cn-id=10338245 cn-records=1 group-title="my-group", First'],
@@ -38,9 +35,7 @@ class TestFixUnquotedNumericAttributes(unittest.TestCase):
             fixed = M3UDoctor._fix_unquoted_numeric_attributes(row)
             self.assertEqual(expected_row, fixed)
 
-
-class TestURLEncodeLogo(unittest.TestCase):
-    def runTest(self):
+    def test_url_encode_logo(self) -> None:
         extinf_string = """#EXTINF:-1 tvg-id="" tvg-name="" """ \
                         """tvg-logo="https://some.image.com/images/V1_UX182_CR0,0,182,268_AL_.jpg" """ \
                         """group-title="",My channel"""
@@ -61,9 +56,7 @@ class TestURLEncodeLogo(unittest.TestCase):
         IPTVChannelDoctor._urlencode_value(ch, IPTVAttr.TVG_LOGO.value)
         self.assertEqual(expected, ch, "the two channels are not equal")
 
-
-class TestURLEncodeLogoNoChange(unittest.TestCase):
-    def runTest(self):
+    def test_url_encode_logo_no_change(self) -> None:
         extinf_string = """#EXTINF:-1 tvg-id="" tvg-name="" tvg-language="Hindi" tvg-logo="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTZNoM8_ZqOG-8Lksy07YD-ltPehSFnfWcmxTU1LxlwbC58_8jcfJ987g" tvg-country="IN" tvg-url="" group-title="News",ABP Asmita"""
         expected_attributes = {
             IPTVAttr.TVG_ID.value: "",
@@ -85,9 +78,7 @@ class TestURLEncodeLogoNoChange(unittest.TestCase):
         IPTVChannelDoctor._urlencode_value(ch, IPTVAttr.TVG_LOGO.value)
         self.assertEqual(expected, ch, "the two channels are not equal")
 
-
-class TestSanitizeAttributes(unittest.TestCase):
-    def runTest(self):
+    def test_sanitize_attributes(self) -> None:
         extinf_string = """#EXTINF:-1 tvg-ID="a" Tvg-name="contains, some,,commas" """ \
                 """tvG-Logo="c" GROUP-TITLE="d",My channel"""
         expected_attributes = {
@@ -107,17 +98,13 @@ class TestSanitizeAttributes(unittest.TestCase):
         new_ch = IPTVChannelDoctor.sanitize(ch)
         self.assertEqual(expected, new_ch, "the two channels are not equal")
 
-
-class TestSanitizeURLEncodesAllLogos(unittest.TestCase):
-    def runTest(self):
+    def test_sanitize_url_encodes_all_logos(self) -> None:
         pl = playlist.loadf("tests/resources/m3u_plus_unencoded_logo.m3u")
         self.assertNotEqual(test_data.expected_urlencoded, pl)
         fixed_pl = M3UPlaylistDoctor.sanitize(pl)
         self.assertEqual(test_data.expected_urlencoded, fixed_pl)
 
-
-class TestSanitizeAllAttributes(unittest.TestCase):
-    def runTest(self):
+    def test_sanitize_all_attributes(self) -> None:
         pl = M3UPlaylist()
         pl.append_channel(
             IPTVChannel(attributes={"tvg-ID": "a"})
@@ -143,9 +130,7 @@ class TestSanitizeAllAttributes(unittest.TestCase):
         fixed_pl = M3UPlaylistDoctor.sanitize(pl)
         self.assertEqual(expected, fixed_pl)
 
-
-class TestSanitizeDuration(unittest.TestCase):
-    def runTest(self):
+    def test_sanitize_duration(self) -> None:
         pl = playlist.loadl(test_data.space_before_comma.split("\n"))
         self.assertEqual(4, pl.length())
         for index in range(4):
