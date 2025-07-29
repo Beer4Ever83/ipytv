@@ -16,19 +16,37 @@ Functions:
     extract_show_name: Extract show name by removing episode information
 """
 import re
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 
 from ipytv.playlist import M3UPlaylist
 
 NO_SERIES_KEY = '_NO_SERIES_'
 
-# Regular expression patterns to match season and episode numbers.
+# Pre-compiled regular expression patterns to match season and episode numbers.
 # This should match "S05E10" or "s:01 e:13"
-SEASON_AND_EPISODE_PATTERN_1 = re.compile(r'\s+(S[:=]?\d+)?\s*(E[:=]?\d+).*', re.IGNORECASE)
+_SEASON_AND_EPISODE_PATTERN_1 = re.compile(r'\s+(S[:=]?\d+)?\s*(E[:=]?\d+).*', re.IGNORECASE)
 # This should match " 01x05" or " 05.13" but not " 1920x1024"
-SEASON_AND_EPISODE_PATTERN_2 = re.compile(r'\s+(\d{1,2})[x.](\d+)(?:\s+|$).*', re.IGNORECASE)
+_SEASON_AND_EPISODE_PATTERN_2 = re.compile(r'\s+(\d{1,2})[x.](\d+)(?:\s+|$).*', re.IGNORECASE)
 # This should match "Something.2" but not "25.10.2024"
-SEASON_AND_EPISODE_PATTERN_3 = re.compile(r'(?<![0-9])\.(\d+)$', re.IGNORECASE)
+_SEASON_AND_EPISODE_PATTERN_3 = re.compile(r'(?<![0-9])\.(\d+)$', re.IGNORECASE)
+
+
+def _find_episode_pattern(channel_name: str) -> Optional[re.Pattern]:
+    """Find which episode pattern matches the channel name.
+
+    Args:
+        channel_name: The channel name to check.
+
+    Returns:
+        The matching compiled pattern, or None if no pattern matches.
+    """
+    if _SEASON_AND_EPISODE_PATTERN_1.search(channel_name):
+        return _SEASON_AND_EPISODE_PATTERN_1
+    if _SEASON_AND_EPISODE_PATTERN_2.search(channel_name):
+        return _SEASON_AND_EPISODE_PATTERN_2
+    if _SEASON_AND_EPISODE_PATTERN_3.search(channel_name):
+        return _SEASON_AND_EPISODE_PATTERN_3
+    return None
 
 
 def extract_series(playlist: M3UPlaylist, exclude_single: bool = False) -> Tuple[Dict[str, M3UPlaylist], M3UPlaylist]:
@@ -104,11 +122,7 @@ def is_episode_from_series(channel_name: str) -> bool:
         >>> is_episode_from_series("Video 1920x1080")  # Resolution, not episode
         False
     """
-    return bool(
-        re.search(SEASON_AND_EPISODE_PATTERN_1, channel_name) or
-        re.search(SEASON_AND_EPISODE_PATTERN_2, channel_name) or
-        re.search(SEASON_AND_EPISODE_PATTERN_3, channel_name)
-    )
+    return _find_episode_pattern(channel_name) is not None
 
 
 def extract_show_name(channel_name: str) -> str:
@@ -134,12 +148,9 @@ def extract_show_name(channel_name: str) -> str:
         >>> extract_show_name("Regular Movie")  # No episode pattern
         'Regular Movie'
     """
-    if re.search(SEASON_AND_EPISODE_PATTERN_1, channel_name):
-        return SEASON_AND_EPISODE_PATTERN_1.sub("", channel_name).strip()
-    if re.search(SEASON_AND_EPISODE_PATTERN_2, channel_name):
-        return SEASON_AND_EPISODE_PATTERN_2.sub("", channel_name).strip()
-    if re.search(SEASON_AND_EPISODE_PATTERN_3, channel_name):
-        return SEASON_AND_EPISODE_PATTERN_3.sub("", channel_name).strip()
+    pattern = _find_episode_pattern(channel_name)
+    if pattern:
+        return pattern.sub("", channel_name).strip()
     return channel_name.strip()
 
 

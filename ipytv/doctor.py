@@ -21,6 +21,11 @@ from ipytv.playlist import M3UPlaylist
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
+# Pre-compiled regular expressions for better performance
+_SPLIT_QUOTED_STRING_PATTERN = re.compile(r"^\s*\"")
+_UNQUOTED_NUMBERS_PATTERN = re.compile(r"(?P<attribute_g>\s+(?P<name_g>[\w-]+)=\s*(?P<value_g>-?\d+(?:\.\d+)?))")
+_SPACES_BEFORE_COMMA_PATTERN = re.compile(r"^#EXTINF:(?P<duration_g>[-0-9\.]+)(?P<spaces_g>\s)+,(?P<name_g>.*)")
+
 
 class M3UDoctor:
     """Fixes structural issues in M3U file rows.
@@ -51,7 +56,7 @@ class M3UDoctor:
         fixed_m3u_rows: List = []
         for current_row in m3u_rows:
             new_row = current_row
-            if re.match(r"^\s*\"", current_row) and \
+            if _SPLIT_QUOTED_STRING_PATTERN.match(current_row) and \
                     len(fixed_m3u_rows) > 0 and \
                     m3u.is_extinf_row(fixed_m3u_rows[-1]):
                 previous_row = fixed_m3u_rows.pop()
@@ -78,12 +83,11 @@ class M3UDoctor:
             Output:
                 '#EXTINF:-1 tvg-shift="-10.5" tvg-id="22",Channel'
         """
-        unquoted_numbers_regex = r"(?P<attribute_g>\s+(?P<name_g>[\w-]+)=\s*(?P<value_g>-?\d+(:?\.\d+)?))"
         fixed_m3u_rows: List = []
         for current_row in m3u_rows:
             new_row = current_row
             if m3u.is_m3u_header_row(current_row) or m3u.is_extinf_row(current_row):
-                for match in re.finditer(unquoted_numbers_regex, current_row):
+                for match in _UNQUOTED_NUMBERS_PATTERN.finditer(current_row):
                     attribute = match.group("attribute_g")
                     name = match.group("name_g")
                     value = match.group("value_g")
@@ -110,12 +114,11 @@ class M3UDoctor:
             Output:
                 '#EXTINF:-1,Channel 22'
         """
-        spaces_before_comma_regex = r"^#EXTINF:(?P<duration_g>[-0-9\.]+)(?P<spaces_g>\s)+,(?P<name_g>.*)"
         fixed_m3u_rows: List = []
         for current_row in m3u_rows:
             new_row = current_row
             if m3u.is_extinf_row(current_row):
-                match = re.match(spaces_before_comma_regex, current_row)
+                match = _SPACES_BEFORE_COMMA_PATTERN.match(current_row)
                 if match:
                     new_row = f"#EXTINF:{match.group('duration_g')},{match.group('name_g')}"
             fixed_m3u_rows.append(new_row)

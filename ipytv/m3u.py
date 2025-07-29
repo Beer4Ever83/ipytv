@@ -10,15 +10,21 @@ import re
 from typing import Optional, Dict
 
 M3U_HEADER_TAG = "#EXTM3U"
-__M3U_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+,.*$'
-__M3U_PLUS_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
-__M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)' \
-    r'(?P<attributes_g>(\s+[\w-]+="[^"]*")*),' \
+
+# Pre-compiled regular expressions for better performance
+_M3U_EXTINF_PATTERN = re.compile(r'^#EXTINF:[-0-9\.]+,.*$')
+_M3U_PLUS_EXTINF_PATTERN = re.compile(r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$')
+_M3U_PLUS_EXTINF_PARSE_PATTERN = re.compile(
+    r'^#EXTINF:(?P<duration_g>[-0-9\.]+)'
+    r'(?P<attributes_g>(\s+[\w-]+="[^"]*")*),'
     r'(?P<name_g>.*)'
-__M3U_PLUS_BROKEN_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)' \
-    r'(?P<attributes_g>(\s+[\w-]+=".*)*),' \
+)
+_M3U_PLUS_BROKEN_EXTINF_PARSE_PATTERN = re.compile(
+    r'^#EXTINF:(?P<duration_g>[-0-9\.]+)'
+    r'(?P<attributes_g>(\s+[\w-]+=".*)*),'
     r'(?P<name_g>.*)'
-__M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_REGEX = r'(?:\s+)[\w-]+="'
+)
+_M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_PATTERN = re.compile(r'(?:\s+)[\w-]+="')
 
 
 def is_m3u_header_row(row: str) -> bool:
@@ -54,7 +60,7 @@ def is_m3u_extinf_row(row: str) -> bool:
         >>> is_m3u_extinf_row("#EXTINF:-1 tvg-id=\"1\",Channel")
         False
     """
-    return re.search(__M3U_EXTINF_REGEX, row) is not None
+    return _M3U_EXTINF_PATTERN.search(row) is not None
 
 
 def is_m3u_plus_extinf_row(row: str) -> bool:
@@ -72,7 +78,7 @@ def is_m3u_plus_extinf_row(row: str) -> bool:
         >>> is_m3u_plus_extinf_row("#EXTINF:-1,Channel Name")
         False
     """
-    return re.search(__M3U_PLUS_EXTINF_REGEX, row) is not None
+    return _M3U_PLUS_EXTINF_PATTERN.search(row) is not None
 
 
 def match_m3u_plus_broken_extinf_row(row: str) -> Optional[re.Match]:
@@ -93,7 +99,7 @@ def match_m3u_plus_broken_extinf_row(row: str) -> Optional[re.Match]:
         >>> match is not None
         True
     """
-    return re.search(__M3U_PLUS_BROKEN_EXTINF_PARSE_REGEX, row)
+    return _M3U_PLUS_BROKEN_EXTINF_PARSE_PATTERN.search(row)
 
 
 def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
@@ -122,7 +128,7 @@ def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
     if match is None:
         return {}
     attributes = match.group("attributes_g").rstrip(',')
-    tokens = re.findall(__M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_REGEX, attributes)
+    tokens = _M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_PATTERN.findall(attributes)
     attrs = {}
     for i, token in enumerate(tokens):
         name = token.lstrip().rstrip('="')
@@ -149,7 +155,7 @@ def match_m3u_plus_extinf_row(row: str) -> Optional[re.Match]:
         >>> match.group('name_g')
         'Channel'
     """
-    return re.match(__M3U_PLUS_EXTINF_PARSE_REGEX, row)
+    return _M3U_PLUS_EXTINF_PARSE_PATTERN.match(row)
 
 
 def is_extinf_row(row: str) -> bool:

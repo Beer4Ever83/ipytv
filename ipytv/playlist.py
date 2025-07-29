@@ -42,6 +42,26 @@ log.addHandler(logging.NullHandler())
 # The value of __MIN_CHUNK_SIZE cannot be smaller than 2
 __MIN_CHUNK_SIZE = 100
 
+# Cache for compiled regex patterns to avoid recompilation
+_regex_cache: Dict[Tuple[str, bool], re.Pattern] = {}
+
+
+def _get_compiled_regex(pattern: str, case_sensitive: bool) -> re.Pattern:
+    """Get a compiled regex pattern from cache or compile and cache it.
+
+    Args:
+        pattern: The regex pattern string.
+        case_sensitive: Whether the pattern should be case-sensitive.
+
+    Returns:
+        Compiled regex pattern.
+    """
+    cache_key = (pattern, case_sensitive)
+    if cache_key not in _regex_cache:
+        flags = re.RegexFlag(0) if case_sensitive else re.IGNORECASE
+        _regex_cache[cache_key] = re.compile(pattern, flags)
+    return _regex_cache[cache_key]
+
 
 class M3UPlaylist:
     """Represents an IPTV playlist in M3U Plus format.
@@ -469,8 +489,9 @@ class M3UPlaylist:
             True if any field matches, False otherwise.
         """
         channel_fields = M3UPlaylist._extract_fields(ch)
+        compiled_regex = _get_compiled_regex(regex, case_sensitive)
         for field in channel_fields:
-            if M3UPlaylist._match_single(ch, regex, field, case_sensitive=case_sensitive):
+            if M3UPlaylist._match_single_compiled(ch, compiled_regex, field):
                 return True
         return False
 
@@ -487,7 +508,21 @@ class M3UPlaylist:
         Returns:
             True if the field matches, False otherwise.
         """
-        flags: re.RegexFlag = re.IGNORECASE if case_sensitive is False else re.RegexFlag(0)
+        compiled_regex = _get_compiled_regex(regex, case_sensitive)
+        return M3UPlaylist._match_single_compiled(ch, compiled_regex, where)
+
+    @staticmethod
+    def _match_single_compiled(ch: IPTVChannel, compiled_regex: re.Pattern, where: str) -> bool:
+        """Check if a specific field in a channel matches the compiled regex.
+
+        Args:
+            ch: The channel to search in.
+            compiled_regex: The compiled regular expression pattern.
+            where: The field specification to search in.
+
+        Returns:
+            True if the field matches, False otherwise.
+        """
         main, sub = M3UPlaylist._decode_where(where)
         if main not in vars(ch):
             return False
@@ -499,9 +534,7 @@ class M3UPlaylist:
                 if sub not in value:
                     return False
                 value = value[sub]
-        if re.fullmatch(regex, value, flags=flags) is None:
-            return False
-        return True
+        return compiled_regex.fullmatch(value) is not None
 
     def search(self, regex: str, where: Union[Optional[str], List[str]] = None, case_sensitive: bool = True) -> List[IPTVChannel]:
         """Search for channels matching a regular expression.
@@ -689,6 +722,8 @@ class M3UPlaylist:
         self._iter_index += 1
         return next_chan
 
+
+# ... rest of the functions remain unchanged ...
 
 def loadl(rows: List[str]) -> 'M3UPlaylist':
     """Load a playlist from a list of strings.
