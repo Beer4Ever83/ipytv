@@ -39,7 +39,7 @@ function build_pkgdata() {
     fi
     cat >"${PKGDATA_FILE}" << HEREDOC
 # Auto-generated file. Do not edit.
-package.name=${APP_NAME}
+package.name=${PACKAGE_PREFIX}
 package.version=${PACKAGE_VERSION}
 HEREDOC
 }

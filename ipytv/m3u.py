@@ -1,70 +1,134 @@
 """Everything related with the parsing of M3U Plus files
 
-Functions:
-    is_m3u_header_row
-    is_m3u_extinf_row
-    is_m3u_plus_extinf_row
-    match_m3u_plus_broken_extinf_row
-    get_m3u_plus_broken_attributes
-    match_m3u_plus_extinf_row
-    is_extinf_row
-    is_comment_or_tag_row
-    is_url_row
+This module provides functions for parsing and validating M3U and M3U Plus playlist formats.
+It handles both well-formed and malformed EXTINF rows with various attribute formats.
 
 Constants:
-    M3U_HEADER_TAG
+    M3U_HEADER_TAG: The standard M3U header identifier "#EXTM3U"
 """
 import re
 from typing import Optional, Dict
 
 M3U_HEADER_TAG = "#EXTM3U"
-__M3U_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+,.*$'
-__M3U_PLUS_EXTINF_REGEX = r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$'
-__M3U_PLUS_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)' \
-    r'(?P<attributes_g>(\s+[\w-]+="[^"]*")*),' \
+
+# Pre-compiled regular expressions for better performance
+_M3U_EXTINF_PATTERN = re.compile(r'^#EXTINF:[-0-9\.]+,.*$')
+_M3U_PLUS_EXTINF_PATTERN = re.compile(r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$')
+_M3U_PLUS_EXTINF_PARSE_PATTERN = re.compile(
+    r'^#EXTINF:(?P<duration_g>[-0-9\.]+)'
+    r'(?P<attributes_g>(\s+[\w-]+="[^"]*")*),'
     r'(?P<name_g>.*)'
-__M3U_PLUS_BROKEN_EXTINF_PARSE_REGEX = r'^#EXTINF:(?P<duration_g>[-0-9\.]+)' \
-    r'(?P<attributes_g>(\s+[\w-]+=".*)*),' \
+)
+_M3U_PLUS_BROKEN_EXTINF_PARSE_PATTERN = re.compile(
+    r'^#EXTINF:(?P<duration_g>[-0-9\.]+)'
+    r'(?P<attributes_g>(\s+[\w-]+=".*)*),'
     r'(?P<name_g>.*)'
-__M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_REGEX = r'(?:\s+)[\w-]+="'
+)
+_M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_PATTERN = re.compile(r'(?:\s+)[\w-]+="')
 
 
 def is_m3u_header_row(row: str) -> bool:
+    """Check if a row is an M3U header row.
+
+    Args:
+        row: The string row to check.
+
+    Returns:
+        True if the row starts with the M3U header tag, False otherwise.
+
+    Example:
+        >>> is_m3u_header_row("#EXTM3U")
+        True
+        >>> is_m3u_header_row("#EXTINF:-1,Channel")
+        False
+    """
     return row.startswith(M3U_HEADER_TAG)
 
 
 def is_m3u_extinf_row(row: str) -> bool:
-    return re.search(__M3U_EXTINF_REGEX, row) is not None
+    """Check if a row is a standard M3U EXTINF row.
+
+    Args:
+        row: The string row to check.
+
+    Returns:
+        True if the row matches the standard M3U EXTINF format, False otherwise.
+
+    Example:
+        >>> is_m3u_extinf_row("#EXTINF:-1,Channel Name")
+        True
+        >>> is_m3u_extinf_row("#EXTINF:-1 tvg-id=\"1\",Channel")
+        False
+    """
+    return _M3U_EXTINF_PATTERN.search(row) is not None
 
 
 def is_m3u_plus_extinf_row(row: str) -> bool:
-    return re.search(__M3U_PLUS_EXTINF_REGEX, row) is not None
+    """Check if a row is an M3U Plus EXTINF row with attributes.
+
+    Args:
+        row: The string row to check.
+
+    Returns:
+        True if the row matches the M3U Plus EXTINF format with attributes, False otherwise.
+
+    Example:
+        >>> is_m3u_plus_extinf_row('#EXTINF:-1 tvg-id="1" group-title="News",Channel')
+        True
+        >>> is_m3u_plus_extinf_row("#EXTINF:-1,Channel Name")
+        False
+    """
+    return _M3U_PLUS_EXTINF_PATTERN.search(row) is not None
 
 
 def match_m3u_plus_broken_extinf_row(row: str) -> Optional[re.Match]:
-    return re.search(__M3U_PLUS_BROKEN_EXTINF_PARSE_REGEX, row)
+    """Match an M3U Plus EXTINF row that may have malformed attributes.
+
+    This function is designed to handle EXTINF rows where attribute values
+    contain improperly escaped quotes or other formatting issues.
+
+    Args:
+        row: The string row to match.
+
+    Returns:
+        A regex match object if the row matches the broken EXTINF pattern,
+        None otherwise.
+
+    Example:
+        >>> match = match_m3u_plus_broken_extinf_row('#EXTINF:-1 title="Show "Part 1"",Channel')
+        >>> match is not None
+        True
+    """
+    return _M3U_PLUS_BROKEN_EXTINF_PARSE_PATTERN.search(row)
 
 
 def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
-    """In the case of an EXTINF row with a list of "broken" attributes (i.e.
-    attributes the value of which contains badly nested double quotes), this
-    function can parse the list of attributes by:
-    1. Extracting only the attribute list from the whole row (please note: the
-    leading space is kept, but the trailing comma is removed).
-    2. Finding all occurrences of the attribute-name=" pattern and extracting
-    the attribute name from the results.
-    3. Looping through all the attribute patterns and splitting the whole row in
-    two, using the attribute name as separator, and taking the right part of the
-    split.
-    4. Splitting the right part in two, by using next attribute as separator:
-    the wanted value will be found in the left part of the split.
-    5. Replacing all misplaced double quotes with underscores.
+    """Extract attributes from a malformed M3U Plus EXTINF row.
+
+    Parses EXTINF rows with "broken" attributes where values contain
+    badly nested double quotes. The function:
+    1. Extracts the attribute list from the row
+    2. Finds attribute name patterns
+    3. Splits and extracts attribute values
+    4. Replaces misplaced quotes with underscores
+
+    Args:
+        row: The malformed EXTINF row string to parse.
+
+    Returns:
+        A dictionary mapping attribute names to their cleaned values.
+        It returns an empty dict if the row doesn't match the expected pattern.
+
+    Example:
+        >>> attrs = get_m3u_plus_broken_attributes('#EXTINF:-1 title="Show "Part 1"",Channel')
+        >>> attrs['title']
+        'Show _Part 1_'
     """
     match = match_m3u_plus_broken_extinf_row(row)
     if match is None:
         return {}
     attributes = match.group("attributes_g").rstrip(',')
-    tokens = re.findall(__M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_REGEX, attributes)
+    tokens = _M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_PATTERN.findall(attributes)
     attrs = {}
     for i, token in enumerate(tokens):
         name = token.lstrip().rstrip('="')
@@ -77,22 +141,92 @@ def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
 
 
 def match_m3u_plus_extinf_row(row: str) -> Optional[re.Match]:
-    return re.match(__M3U_PLUS_EXTINF_PARSE_REGEX, row)
+    """Match a well-formed M3U Plus EXTINF row.
+
+    Args:
+        row: The string row to match.
+
+    Returns:
+        A regex match object with named groups (duration_g, attributes_g, name_g)
+        if the row matches, None otherwise.
+
+    Example:
+        >>> match = match_m3u_plus_extinf_row('#EXTINF:-1 tvg-id="1",Channel')
+        >>> match.group('name_g')
+        'Channel'
+    """
+    return _M3U_PLUS_EXTINF_PARSE_PATTERN.match(row)
 
 
 def is_extinf_row(row: str) -> bool:
+    """Check if a row is any type of EXTINF row.
+
+    Args:
+        row: The string row to check.
+
+    Returns:
+        True if the row starts with "#EXTINF", False otherwise.
+
+    Example:
+        >>> is_extinf_row("#EXTINF:-1,Channel")
+        True
+        >>> is_extinf_row("#EXTM3U")
+        False
+    """
     return row.startswith("#EXTINF")
 
 
 def is_comment_or_tag_row(row: str) -> bool:
+    """Check if a row is a comment or tag row.
+
+    Args:
+        row: The string row to check.
+
+    Returns:
+        True if the row starts with '#', False otherwise.
+
+    Example:
+        >>> is_comment_or_tag_row("#EXTM3U")
+        True
+        >>> is_comment_or_tag_row("http://example.com/stream")
+        False
+    """
     return row.startswith('#')
 
 
 def is_empty_row(row: str) -> bool:
+    """Check if a row is empty or contains only whitespace.
+
+    Args:
+        row: The string row to check.
+
+    Returns:
+        True if the row is empty or whitespace-only, False otherwise.
+
+    Example:
+        >>> is_empty_row("   ")
+        True
+        >>> is_empty_row("http://example.com")
+        False
+    """
     return not row.strip()
 
 
 def is_url_row(row: str) -> bool:
+    """Check if a row contains a URL (not a header, comment, tag, or empty row).
+
+    Args:
+        row: The string row to check.
+
+    Returns:
+        True if the row appears to be a URL, False otherwise.
+
+    Example:
+        >>> is_url_row("http://example.com/stream.m3u8")
+        True
+        >>> is_url_row("#EXTINF:-1,Channel")
+        False
+    """
     return not is_m3u_header_row(row) and not is_comment_or_tag_row(row) and not is_empty_row(row)
 
 

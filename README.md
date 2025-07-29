@@ -338,12 +338,99 @@ pl.update_channel(1, new_channel)
 old_channel = pl.remove_channel(0)
 ```
 
-There are also two methods that allow to add list of channels (instead of single
+There are also two methods that allow to add a list of channels (instead of single
 channels):
 
 ```python
 pl.append_channels([])
 pl.insert_channels([])
+```
+
+### Searching for channels
+
+The `search()` method allows you to find channels matching specific criteria using regular
+expressions. This is powerful for filtering channels based on names, attributes, or other
+properties.
+
+#### Basic search syntax
+
+The `search()` method accepts a regular expression pattern and returns a new `M3UPlaylist` object
+containing the channels that match the pattern. The regular expression is matched against the 
+entire string (e.g. the "Rai" regex will not match "Rai 1" or "Rai 2" unless the pattern is
+"Rai.*").
+
+For example, to find all channels whose name begins with "Rai" (in a case-insensitive fashion) 
+followed by a number, you can use:
+```python
+from ipytv import playlist
+
+url = "https://iptv-org.github.io/iptv/index.m3u"
+pl = playlist.loadu(url)
+regex = r"^rai\s*\d+.*"
+new_pl = pl.search(regex, where="name", case_sensitive=False)
+for ch in new_pl:
+    print(f'channel: {ch.name}')
+```
+
+The signature of the `search()` method is the following:
+
+```python
+search(what, where, case_sensitive=True)
+```
+
+With:
+- `what`: the regular expression to match against the channel properties.
+- `where`: the properties to search in. It can be a single string, a list of strings or None 
+  (which is the default and it means search anywhere in the channel properties). These are the 
+  available options:
+  - `"name"`: search in the channel name.
+  - `"url"`: search in the channel URL.
+  - `"duration"`: search in the channel duration (as a string).
+  - `"attributes.<attr>"`: search in the channel attribute <attr> (e.g. `attributes.tvg-id`, 
+    `attributes.tvg-name`, `attributes.group-title`).
+  - `"extras"`: search in the channel extras (i.e. the list of strings that are not parsed by
+    the library, but are kept as-is).
+- `case_sensitive`: whether the search should be case-sensitive or not (default is `True`).
+
+#### Examples
+To find all the channels belonging to the "Music" group:
+
+```python
+from ipytv import playlist
+
+url = "https://iptv-org.github.io/iptv/index.m3u"
+pl = playlist.loadu(url)
+regex = r"Music"
+new_pl = pl.search(regex, where="attributes.group-title")
+for ch in new_pl:
+    print(f'group: {ch.attributes["group-title"]}, channel: {ch.name}')
+```
+
+To find all the channels with the "TV" word in the name or in the group name, you can use:
+
+```python
+from ipytv import playlist
+
+url = "https://iptv-org.github.io/iptv/index.m3u"
+pl = playlist.loadu(url)
+regex = r".*\bTV\b.*"
+new_pl = pl.search(regex, where=["name", "attributes.group-title"], case_sensitive=False)
+for ch in new_pl:
+    print(f'group: {ch.attributes["group-title"]}, channel: {ch.name}')
+```
+
+To find all the channels with the "NEWS" word (case insensitively) anywhere in the channel 
+properties, you can use:
+
+```python
+from ipytv import playlist
+
+url = "https://iptv-org.github.io/iptv/index.m3u"
+pl = playlist.loadu(url)
+regex = r".*\bNEWS\b.*"
+new_pl = pl.search(regex, case_sensitive=False)
+for ch in new_pl:
+    print(f'group: {ch.attributes["group-title"]}, channel: {ch.name}')
 ```
 
 ### Accessing the properties of a channel

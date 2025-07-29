@@ -5,8 +5,9 @@ from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.exceptions import MalformedExtinfException
 
 
-class TestParseM3UPlusExtinfString(unittest.TestCase):
-    def runTest(self):
+class TestIPTVChannel(unittest.TestCase):
+
+    def test_parse_m3u_plus_extinf_string(self):
         extinf_string = '''#EXTINF:-1 tvg-id="Rai1.it" tvg-name="Rai 1 SuperHD" tvg-logo="https://static.epg.best/it/RaiUno.it.png" group-title="SuperHD",Rai 1 SuperHD'''
         expected_attributes = {
             IPTVAttr.TVG_ID.value: "Rai1.it",
@@ -24,9 +25,7 @@ class TestParseM3UPlusExtinfString(unittest.TestCase):
         ch.parse_extinf_string(extinf_string)
         self.assertEqual(expected, ch, "the two channels are not equal")
 
-
-class TestParseM3UPlusExtinfStringWithCommas(unittest.TestCase):
-    def runTest(self):
+    def test_parse_m3u_plus_extinf_string_with_commas(self):
         extinf_string = '''#EXTINF:-1 tvg-id="" tvg-name="Io, Leonardo (2019)" tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/6DfpPu4iGrBswsyLdJlCwiLCudw.jpg" group-title="Recenti e Oggi al Cinema",Io, Leonardo (2019)'''
         expected_attributes = {
             IPTVAttr.TVG_ID.value: "",
@@ -44,9 +43,7 @@ class TestParseM3UPlusExtinfStringWithCommas(unittest.TestCase):
         ch.parse_extinf_string(extinf_string)
         self.assertEqual(expected, ch, "the two channels are not equal")
 
-
-class TestParseBadM3UPlusExtinfStrings(unittest.TestCase):
-    def runTest(self):
+    def test_parse_bad_m3u_plus_extinf_strings(self):
         extinf_strings = [
             ''' #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="",Off The Map''',
             '''#EXTINF :-1 tvg-id="" tvg-name="" tvg-logo="" group-title="",Off The Map''',
@@ -60,9 +57,7 @@ class TestParseBadM3UPlusExtinfStrings(unittest.TestCase):
             with self.assertRaises(MalformedExtinfException, msg=extinf_string):
                 ch.parse_extinf_string(extinf_string)
 
-
-class TestParseM3UExtinfString(unittest.TestCase):
-    def runTest(self):
+    def test_parse_m3u_extinf_string(self):
         extinf_string = '''#EXTINF:-1,SANTUÁRIO DE FÁTIMA'''
         expected_attributes = {}
         expected = IPTVChannel(
@@ -75,9 +70,7 @@ class TestParseM3UExtinfString(unittest.TestCase):
         ch.parse_extinf_string(extinf_string)
         self.assertEqual(expected, ch, "the two channels are not equal")
 
-
-class TestCopy(unittest.TestCase):
-    def runTest(self):
+    def test_copy(self):
         original_attributes = {
             IPTVAttr.TVG_ID.value: "Rai1.it",
             IPTVAttr.TVG_NAME.value: "Rai 1 SuperHD",
@@ -109,9 +102,7 @@ class TestCopy(unittest.TestCase):
         self.assertNotEqual(original.extras, clone.extras)
         self.assertNotEqual(original, clone)
 
-
-class TestToString(unittest.TestCase):
-    def runTest(self):
+    def test_to_string(self):
         original_attributes = {
             IPTVAttr.TVG_ID.value: "Rai1.it",
             IPTVAttr.TVG_NAME.value: "Rai 1 SuperHD",
@@ -128,9 +119,7 @@ class TestToString(unittest.TestCase):
         real_output = str(original)
         self.assertEqual(expected_output, real_output)
 
-
-class TestToDict(unittest.TestCase):
-    def runTest(self):
+    def test_to_dict(self):
         original_attributes = {
             IPTVAttr.TVG_ID.value: "Rai1.it",
             IPTVAttr.TVG_NAME.value: "Rai 1 SuperHD",
@@ -166,9 +155,7 @@ class TestToDict(unittest.TestCase):
         real_output = original.to_dict()
         self.assertEqual(expected_output, real_output)
 
-
-class TestToJson(unittest.TestCase):
-    def runTest(self):
+    def test_to_json(self):
         original_attributes = {
             IPTVAttr.TVG_ID.value: "Rai1.it",
             IPTVAttr.TVG_NAME.value: "Rai 1 SuperHD",

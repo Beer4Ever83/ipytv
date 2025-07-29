@@ -1,13 +1,14 @@
-"""
-Create and handle IPTV channels
+"""Create and handle IPTV channels.
+
+This module provides classes for representing IPTV channels and playlist entries,
+along with utilities for parsing EXTINF rows and converting between formats.
 
 Classes:
-    M3UEntry
-    IPTVAttr
-    IPTVChannel
+    IPTVAttr: Enum of common IPTV attributes
+    IPTVChannel: Extended M3U entry with IPTV-specific features
 
 Functions:
-    from_playlist_entry
+    from_playlist_entry: Create an IPTVChannel from playlist rows
 """
 import json
 import logging
@@ -22,56 +23,8 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 
-class M3UEntry:
-    """
-    The base channel entity that models the standard #EXTINF and url rows in
-    plain M3U playlists.
-
-    Attributes
-    ----------
-    url: str
-        The url where the medium can be found (can be a local file or a network
-        resource)
-    name: str
-        The name of the channel or entry (the part after the last colon in an
-        #EXTINF row)
-    duration: str
-        The duration of the channel or entry as a string formatted as a float or
-        as an integer (with or without sign)
-    """
-    def __init__(self, url: str, name: str = "", duration: str = "-1"):
-        """
-        Parameters
-        ----------
-        url: str
-            The url where the medium can be found (can be a local file or a network
-            resource)
-        name: str
-            The name of the channel or entry (the part after the last colon in an
-            #EXTINF row)
-        duration: str
-            The duration of the channel or entry as a string formatted as a float or
-            as an integer (with sign or not)
-        """
-        self.url = url
-        self.name = name
-        self.duration = str(duration)
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, M3UEntry) \
-               and self.url == other.url \
-               and self.name == other.name \
-               and self.duration == other.duration
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
-
 class IPTVAttr(Enum):
-    """
-    An Enum class with a list of attributes commonly found in IPTV playlists
-    (as part of the #EXTINF row)
-    """
+    """Enum of attributes commonly found in IPTV playlists as part of #EXTINF rows."""
     TVG_ID = "tvg-id"
     TVG_NAME = "tvg-name"
     TVG_LANGUAGE = "tvg-language"
@@ -89,52 +42,32 @@ class IPTVAttr(Enum):
     TVG_URL = "tvg-url"
 
 
-class IPTVChannel(M3UEntry):
-    """
-    A class that represents a channel in an IPTV playlist
+class IPTVChannel:
+    """A channel in an IPTV playlist with attributes and metadata.
 
-    Attributes
-    ----------
-    url: str
-        The url where the medium can be found (can be a local file or a network
-        resource)
-    name: str
-        The name of the channel or entry (the part after the last colon in an
-        #EXTINF row)
-    duration: str
-        The duration of the channel or entry as a string formatted as a float or
-        as an integer (with sign or not)
-    attributes: Dict[str, str]
-        A dictionary with all the attributes as found in an #EXTINF string
-    extras: List[str]
-        A list of strings, containing all tags that are found between an #EXTINF
-        row and its related url row (they are not parsed)
-
-    Methods
-    ----------
-    copy() -> IPTVChannel
-        Returns a copy of the object it's invoked on
-    parse_extinf_string(extinf_string: str)
-        Populates the channel with the information taken from the #EXTINF string
-        passed as parameter. This method tries to parse well-formed strings as
-        well as broken ones (i.e. #EXTINF rows with messed-up quotes)
-    to_m3u_plus_playlist_entry() -> str
-        Returns a string representation of this channel, as it was an entry of
-        an IPTV playlist (in m3u_plus format)
-    to_m3u8_playlist_entry() -> str
-        Returns a string representation of this channel, as it was an entry of
-        a standard m3u8 playlist
+    Attributes:
+        url: The URL where the medium can be found.
+        name: The name of the channel.
+        duration: The duration as a string.
+        attributes: Dictionary of all attributes found in the #EXTINF string.
+        extras: List of tags found between #EXTINF row and its related URL row.
     """
+
     def __init__(self, url: str = "", name: str = "",
                  duration: str = "-1", attributes: Optional[Dict[str, str]] = None,
                  extras: Optional[List[str]] = None):
-        super().__init__(url, name, duration)
+        """Initialize an IPTV channel."""
+        self.url = url
+        self.name = name
+        self.duration = str(duration)
         self.attributes: Dict[str, str] = attributes if attributes is not None else {}
         self.extras: List[str] = extras if extras is not None else []
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, IPTVChannel) \
-            and super().__eq__(other) \
+            and self.url == other.url \
+            and self.name == other.name \
+            and self.duration == other.duration \
             and self.attributes == other.attributes \
             and self.extras == other.extras
 
@@ -142,11 +75,10 @@ class IPTVChannel(M3UEntry):
         return not self.__eq__(other)
 
     def copy(self) -> 'IPTVChannel':
-        """
-        .. py:method:: Returns a copy of the object it's invoked on
+        """Create a copy of this IPTVChannel object.
 
-        :return: a copy of this IPTVChannel object
-        :rtype: IPTVChannel
+        Returns:
+            A new IPTVChannel instance with copied values.
         """
         return IPTVChannel(
             url=self.url,
@@ -157,13 +89,21 @@ class IPTVChannel(M3UEntry):
         )
 
     def parse_extinf_string(self, extinf_string: str) -> None:
-        """
-        .. py:method:: parse_extinf_string(extinf_string)
+        """Parse an #EXTINF string and populate the channel's fields.
 
-        Populates an IPTVChannel's fields with the attributes from an #EXTINF row
+        Handles both well-formed and malformed #EXTINF rows with quoting issues.
 
-        :param str extinf_string:   The whole #EXTINF string as found in an IPTV
-                                    playlist
+        Args:
+            extinf_string: The complete #EXTINF string from an IPTV playlist.
+
+        Raises:
+            MalformedExtinfException: If the EXTINF string cannot be parsed.
+
+        Example:
+            >>> channel = IPTVChannel()
+            >>> channel.parse_extinf_string('#EXTINF:-1 tvg-id="1",Channel Name')
+            >>> channel.name
+            'Channel Name'
         """
         match = m3u.match_m3u_plus_extinf_row(extinf_string)
         if match is not None:
@@ -234,25 +174,25 @@ class IPTVChannel(M3UEntry):
         )
 
     def _build_extras_entry(self) -> str:
-        out = ''
-        for extra in self.extras:
-            out += f'{extra}\n'
-        return out
+        if not self.extras:
+            return ''
+        return '\n'.join(self.extras) + '\n'
 
     def _build_url_entry(self) -> str:
         return f"{self.url}\n"
 
     def to_m3u_plus_playlist_entry(self) -> str:
-        """
-        .. py:method:: to_m3u_plus_playlist_entry
+        """Convert the channel to M3U Plus playlist format.
 
-        Converts the current object into a string suitable for an IPTV playlist
-        in the m3u_plus format. Please note that the string may contain multiple
-        newline-separated rows.
+        Returns:
+            A string with one or more newline-separated rows describing this
+            channel in M3U Plus format.
 
-        :return:    a string with one or more rows describing this channel in
-                    m3u_plus format.
-        :rtype:     str
+        Example:
+            >>> channel = IPTVChannel(url="http://example.com", name="Test")
+            >>> entry = channel.to_m3u_plus_playlist_entry()
+            >>> "#EXTINF:" in entry
+            True
         """
         extinf_row = self._build_m3u_plus_extinf_entry()
         extras_rows = self._build_extras_entry()
@@ -260,29 +200,33 @@ class IPTVChannel(M3UEntry):
         return f'{extinf_row}{extras_rows}{url_row}'
 
     def to_m3u8_playlist_entry(self) -> str:
-        """
-        .. py:method:: to_m3u8_playlist_entry
+        """Convert the channel to standard M3U8 playlist format.
 
-        Converts the current object into a string suitable for a regular M3U
-        playlist in the m3u8 format. Please note that the string may contain
-        up to 2 newline-separated rows.
+        Returns:
+            A string with one or more newline-separated rows describing this
+            channel in M3U8 format (without extended attributes).
 
-        :return:    a string with one or more rows describing this channel in
-                    m3u8 format.
-        :rtype:     str
+        Example:
+            >>> channel = IPTVChannel(url="http://example.com", name="Test")
+            >>> entry = channel.to_m3u8_playlist_entry()
+            >>> "tvg-" not in entry
+            True
         """
         extinf_row = self._build_m3u8_extinf_entry()
         url_row = self._build_url_entry()
         return f'{extinf_row}{url_row}'
 
-    def to_dict(self)   -> Dict[str, Any]:
-        """
-        .. py:method:: to_dict
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize the channel to a dictionary.
 
-        Serializes the current object into a dictionary.
+        Returns:
+            A dictionary containing all channel fields.
 
-        :return:    a dictionary with the channel's fields
-        :rtype:     dict[str, str|Dict[str, str]|List[str]]
+        Example:
+            >>> channel = IPTVChannel(name="Test", url="http://example.com")
+            >>> data = channel.to_dict()
+            >>> data['name']
+            'Test'
         """
         return {
             "name": self.name,
@@ -293,34 +237,37 @@ class IPTVChannel(M3UEntry):
         }
 
     def to_json(self) -> str:
-        """
-        .. py:method:: to_json
+        """Serialize the channel to JSON format.
 
-        Serializes the current object into a json structure.
+        Returns:
+            A JSON string representation of the channel's fields.
 
-        :return:    a string with the json representation of the channel's fields
-        :rtype:     str
+        Example:
+            >>> channel = IPTVChannel(name="Test")
+            >>> json_str = channel.to_json()
+            >>> '"name": "Test"' in json_str
+            True
         """
         return json.dumps(self.to_dict())
 
 
 def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
-    """
-    .. py:function:: from_playlist_entry(entry)
+    """Build an IPTVChannel object from playlist rows.
 
-    Builds an IPTVChannel object from one or more rows from a playlist.
-    A playlist entry can be composed of one or more rows. In its simplest form,
-    only the url row is present, but the most common case has two rows: the
-    #EXTINF and the url row. In all other cases, all the tags included between
-    an #EXTINF row and the related url row are considered as part of a channel.
+    A playlist entry can contain multiple rows: #EXTINF row, additional tags,
+    and the URL row. All tags between #EXTINF and URL are stored as extras.
 
-    :param  entry:  One or more rows belonging to the same channel, in the
-                    format found in IPTV playlists.
-    :type   entry:  list[str]
+    Args:
+        entry: One or more rows belonging to the same channel from an IPTV playlist.
 
-    :return:    An IPTVChannel object whose fields are populated with info from
-                the playlist rows.
-    :rtype:     IPTVChannel
+    Returns:
+        An IPTVChannel object with fields populated from the playlist rows.
+
+    Example:
+        >>> rows = ['#EXTINF:-1,Test Channel', 'http://example.com/stream']
+        >>> channel = from_playlist_entry(rows)
+        >>> channel.name
+        'Test Channel'
     """
     channel = IPTVChannel()
     for row in entry:

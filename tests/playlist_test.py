@@ -57,8 +57,9 @@ def count_extras(pl: M3UPlaylist) -> int:
     return amount
 
 
-class TestChunkBody0(unittest.TestCase):
-    def runTest(self):
+class TestM3UPlaylist(unittest.TestCase):
+
+    def test_chunk_body_0(self):
         body = produce_singles(5)   # total 05 rows
         body += produce_doubles(4)  # total 13 rows
         body += produce_triples(5)  # total 28 rows
@@ -67,9 +68,7 @@ class TestChunkBody0(unittest.TestCase):
         self.assertEqual({"beginning": 0, "end": 15}, chunks[0])
         self.assertEqual({"beginning": 16, "end": 27}, chunks[1])
 
-
-class TestChunkBody1(unittest.TestCase):
-    def runTest(self):
+    def test_chunk_body_1(self):
         body = produce_singles(5)   # total 05 rows
         body += produce_doubles(4)  # total 13 rows
         body += produce_triples(5)  # total 28 rows
@@ -79,9 +78,7 @@ class TestChunkBody1(unittest.TestCase):
         self.assertEqual({"beginning": 11, "end": 21}, chunks[1])
         self.assertEqual({"beginning": 22, "end": 27}, chunks[2])
 
-
-class TestChunkBody2(unittest.TestCase):
-    def runTest(self):
+    def test_chunk_body_2(self):
         body = produce_singles(50)  # total 50 rows
         chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
         self.assertEqual(5, len(chunks))
@@ -91,9 +88,7 @@ class TestChunkBody2(unittest.TestCase):
         self.assertEqual({"beginning": 30, "end": 39}, chunks[3])
         self.assertEqual({"beginning": 40, "end": 49}, chunks[4])
 
-
-class TestChunkBody3(unittest.TestCase):
-    def runTest(self):
+    def test_chunk_body_3(self):
         body = produce_singles(5)   # total 5 rows
         chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
         self.assertEqual(5, len(chunks))
@@ -103,9 +98,7 @@ class TestChunkBody3(unittest.TestCase):
         self.assertEqual({"beginning": 3, "end": 3}, chunks[3])
         self.assertEqual({"beginning": 4, "end": 4}, chunks[4])
 
-
-class TestChunkBody4(unittest.TestCase):
-    def runTest(self):
+    def test_chunk_body_4(self):
         body = produce_singles(5)   # total 5 rows
         body += produce_triples(1)  # total 8 rows
         body += produce_singles(5)  # total 13 rows
@@ -114,9 +107,7 @@ class TestChunkBody4(unittest.TestCase):
         self.assertEqual({"beginning": 0, "end": 7}, chunks[0])
         self.assertEqual({"beginning": 8, "end": 12}, chunks[1])
 
-
-class TestChunkBody5(unittest.TestCase):
-    def runTest(self):
+    def test_chunk_body_5(self):
         body = produce_doubles(3)   # total 6 rows
         body += produce_triples(1)  # total 9 rows
         body += produce_doubles(3)  # total 15 rows
@@ -127,9 +118,7 @@ class TestChunkBody5(unittest.TestCase):
         self.assertEqual({"beginning": 9, "end": 12}, chunks[2])
         self.assertEqual({"beginning": 13, "end": 14}, chunks[3])
 
-
-class TestLoadlM3UPlusHuge(unittest.TestCase):
-    def runTest(self):
+    def test_loadl_m3u_plus_huge(self):
         filename = "tests/resources/m3u_plus.m3u"
         # factor is the amount of copies of the content of the file we want to parse
         factor = 100000
@@ -144,15 +133,11 @@ class TestLoadlM3UPlusHuge(unittest.TestCase):
         pl = playlist.loadl(new_buffer)
         self.assertEqual(expected_length, pl.length(), "The size of the playlist is not the expected one")
 
-
-class TestLoadlM3UPlusEmptyPlaylist(unittest.TestCase):
-    def runTest(self):
+    def test_loadl_m3u_plus_empty_playlist(self):
         pl = playlist.loadl(["#EXTM3U", ""])
         self.assertEqual(0, pl.length(), "The size of the playlist is not the expected one")
 
-
-class TestLoadlM3UPlusWithExtras(unittest.TestCase):
-    def runTest(self):
+    def test_loadl_m3u_plus_with_extras(self):
         checks: List[Dict[str, List[str]]] = [
             {
                 "input_rows": [
@@ -229,21 +214,15 @@ class TestLoadlM3UPlusWithExtras(unittest.TestCase):
             self.assertEqual(expected_channels, pl.length(), "The size of the playlist is not the expected one")
             self.assertEqual(expected_extras, count_extras(pl), "The size of the extras is not the expected one")
 
-
-class TestLoadfM3UPlus(unittest.TestCase):
-    def runTest(self):
+    def test_loadf_m3u_plus(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         self.assertEqual(test_data.expected_m3u_plus, pl, "The two playlists are not equal")
 
-
-class TestLoadfM3U8(unittest.TestCase):
-    def runTest(self):
+    def test_loadf_m3u8(self):
         pl = playlist.loadf("tests/resources/m3u8.m3u")
         self.assertEqual(test_data.expected_m3u8, pl, "The two playlists are not equal")
 
-
-class TestLoaduM3UPlus(unittest.TestCase):
-    def runTest(self):
+    def test_loadu_m3u_plus(self):
         url = "http://myown.link:80/luke/playlist.m3u"
         with open("tests/resources/m3u_plus.m3u", encoding='utf-8') as content:
             body = "".join(content.readlines())
@@ -260,9 +239,7 @@ class TestLoaduM3UPlus(unittest.TestCase):
         httpretty.reset()
         self.assertEqual(test_data.expected_m3u_plus, pl, "The two playlists are not equal")
 
-
-class TestLoaduM3UPlusWithEmptyPlaylist(unittest.TestCase):
-    def runTest(self):
+    def test_loadu_m3u_plus_with_empty_playlist(self):
         url = "http://myown.link:80/luke/playlist.m3u"
         body = "#EXTM3U\n"
         with httpretty.enabled():
@@ -278,9 +255,7 @@ class TestLoaduM3UPlusWithEmptyPlaylist(unittest.TestCase):
         httpretty.reset()
         self.assertEqual(0, pl.length(), "Expected an empty playlist")
 
-
-class TestLoaduM3U8(unittest.TestCase):
-    def runTest(self):
+    def test_loadu_m3u8(self):
         url = "http://myown.link:80/luke/playlist.m3u"
         with open("tests/resources/m3u8.m3u", encoding="utf-8") as content:
             body = "".join(content.readlines())
@@ -297,9 +272,7 @@ class TestLoaduM3U8(unittest.TestCase):
         httpretty.reset()
         self.assertEqual(test_data.expected_m3u8, pl, "The two playlists are not equal")
 
-
-class TestLoaduErrors(unittest.TestCase):
-    def runTest(self):
+    def test_loadu_errors(self):
         # For some reason the error 421 is not recognized by httpretty so it has been removed from the list
         error_codes = ["400", "401", "402", "403", "404", "405", "406", "407", "408", "409",
                        "410", "411", "412", "413", "414", "415", "416", "417", "418",
@@ -317,52 +290,40 @@ class TestLoaduErrors(unittest.TestCase):
         httpretty.disable()
         httpretty.reset()
 
-
-class TestLoadjstr(unittest.TestCase):
-    def runTest(self):
+    def test_loadjstr(self):
         expected_pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         with open("tests/resources/m3u_plus.json") as json_file:
             json_str = "\n".join(json_file.readlines())
         pl = playlist.loadjstr(json_str)
         self.assertEqual(expected_pl, pl, "The two playlists are not equal")
 
-
-class TestLoadjstrWithUnsupportedJson(unittest.TestCase):
-    def runTest(self):
+    def test_loadjstr_with_unsupported_json(self):
         with open("tests/resources/unsupported.json") as json_file:
             json_str = json_file.read()
         self.assertRaises(WrongTypeException, playlist.loadjstr, json_str)
 
-
-class TestToM3UPlusPlaylist(unittest.TestCase):
-    def runTest(self):
+    def test_to_m3u_plus_playlist(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         with open("tests/resources/m3u_plus.m3u") as file:
             expected_content = "".join(strip_blank_lines(file.readlines()))
             content = pl.to_m3u_plus_playlist()
             self.assertEqual(expected_content, content, "The two playlists are not equal")
 
-
-class TestToM3U8Playlist(unittest.TestCase):
-    def runTest(self):
+    def test_to_m3u8_playlist(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl_string = pl.to_m3u8_playlist()
         pl_m3u8 = m3u8.loads(pl_string)
         pl_m3u8_string = pl_m3u8.dumps()
         self.assertEqual(pl_string, pl_m3u8_string)
 
-
-class TestToJson(unittest.TestCase):
-    def runTest(self):
+    def test_to_json(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl_json = pl.to_json_playlist()
         with open("tests/resources/m3u_plus.json") as json_file:
             expected_json = json.load(json_file)
             self.assertEqual(expected_json, json.loads(pl_json))
 
-
-class TestClone(unittest.TestCase):
-    def runTest(self):
+    def test_clone(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
 
         new_pl = pl.copy()
@@ -378,17 +339,13 @@ class TestClone(unittest.TestCase):
         new_pl.get_attributes()["x-tvg-url"] = "newvalue"
         self.assertNotEqual(pl, new_pl)
 
-
-class TestGroupByAttribute(unittest.TestCase):
-    def runTest(self):
+    def test_group_by_attribute(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_group_title, ignore_order=True)
         self.assertEqual(0, len(diff))
 
-
-class TestGroupByAttributeWithNoGroupEnabled(unittest.TestCase):
-    def runTest(self):
+    def test_group_by_attribute_with_no_group_enabled(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         empty_group_channel = IPTVChannel(
             url="http://emptygroup.channel/mychannel",
@@ -410,9 +367,7 @@ class TestGroupByAttributeWithNoGroupEnabled(unittest.TestCase):
         diff = DeepDiff(groups, expected_groups, ignore_order=True)
         self.assertEqual(0, len(diff))
 
-
-class TestGroupByAttributeWithNoGroupDisabled(unittest.TestCase):
-    def runTest(self):
+    def test_group_by_attribute_with_no_group_disabled(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         empty_group_channel = IPTVChannel(
             url="http://emptygroup.channel/mychannel",
@@ -432,17 +387,13 @@ class TestGroupByAttributeWithNoGroupDisabled(unittest.TestCase):
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_group_title, ignore_order=True)
         self.assertEqual(0, len(diff))
 
-
-class TestGroupByUrlWithNoGroupDisabled(unittest.TestCase):
-    def runTest(self):
+    def test_group_by_url_with_no_group_disabled(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         groups = pl.group_by_url(include_no_group=False)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_url, ignore_order=True)
         self.assertEqual(0, len(diff))
 
-
-class TestGroupByUrlWithNoGroupEnabled(unittest.TestCase):
-    def runTest(self):
+    def test_group_by_url_with_no_group_enabled(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         first_empty_url_channel = IPTVChannel(
             url="",
@@ -464,9 +415,7 @@ class TestGroupByUrlWithNoGroupEnabled(unittest.TestCase):
         diff = DeepDiff(groups, expected_groups, ignore_order=True)
         self.assertEqual(0, len(diff))
 
-
-class TestMatchSingle(unittest.TestCase):
-    def runTest(self):
+    def test_match_single(self):
         ch = test_data.m3u_plus_channel_0
         result = M3UPlaylist._match_single(ch, ".*Rai.*", where="attributes.tvg-name")
         self.assertTrue(result)
@@ -485,9 +434,7 @@ class TestMatchSingle(unittest.TestCase):
         result = M3UPlaylist._match_single(ch, ".*luke.*", where="non-existent.tvg-name")
         self.assertFalse(result)
 
-
-class TestMatchAll(unittest.TestCase):
-    def runTest(self):
+    def test_match_all(self):
         ch = test_data.m3u_plus_channel_0
         result = M3UPlaylist._match_all(ch, ".*RAI.*")
         self.assertTrue(result)
@@ -500,9 +447,7 @@ class TestMatchAll(unittest.TestCase):
         result = M3UPlaylist._match_all(ch, ".*luke.*")
         self.assertTrue(result)
 
-
-class TestSearch(unittest.TestCase):
-    def runTest(self):
+    def test_search(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         results = pl.search(".*luke.*")
         self.assertEqual(4, len(results))
@@ -525,9 +470,7 @@ class TestSearch(unittest.TestCase):
         results = pl.search(".*RAI.*", where=["attributes.tvg-id", "attributes.tvg-name", "attributes.tvg-logo", "attributes.group-title", "name"], case_sensitive=False)
         self.assertEqual(1, len(results))
 
-
-class TestParseHeader(unittest.TestCase):
-    def runTest(self):
+    def test_parse_header(self):
         # Case of a header with no attributes
         header = '#EXTM3U'
         attributes = playlist._parse_header(header)
@@ -539,25 +482,19 @@ class TestParseHeader(unittest.TestCase):
         self.assertEqual(attributes['x-tvg-url'], 'https://elcinema.com.epg.xml')
         self.assertEqual(attributes['tvg-shift'], '1')
 
-
-class TestBuildHeader(unittest.TestCase):
-    def runTest(self):
+    def test_build_header(self):
         expected_header = '#EXTM3U x-tvg-url="https://elcinema.com.epg.xml" tvg-shift="1"'
         pl = M3UPlaylist()
         pl.add_attributes(playlist._parse_header(expected_header))
         self.assertEqual(expected_header, pl._build_header())
 
-
-class TestIterator(unittest.TestCase):
-    def runTest(self):
+    def test_iterator(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         for i, ch in enumerate(pl):
             self.assertEqual(test_data.expected_m3u_plus.get_channel(i), ch)
         self.assertEqual(i+1, test_data.expected_m3u_plus.length())
 
-
-class TestGetChannel(unittest.TestCase):
-    def runTest(self):
+    def test_get_channel(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         ch = pl.get_channel(2)
         # Success case
@@ -565,9 +502,7 @@ class TestGetChannel(unittest.TestCase):
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl.get_channel, pl.length())
 
-
-class TestAppendChannel(unittest.TestCase):
-    def runTest(self):
+    def test_append_channel(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
         self.assertEqual(pl1, pl2)
@@ -581,9 +516,7 @@ class TestAppendChannel(unittest.TestCase):
         self.assertNotEqual(pl1, pl2)
         self.assertEqual(pl1.length()+1, pl2.length())
 
-
-class TestAppendChannels(unittest.TestCase):
-    def runTest(self):
+    def test_append_channels(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
         self.assertEqual(pl1, pl2)
@@ -594,9 +527,7 @@ class TestAppendChannels(unittest.TestCase):
         self.assertEqual(pl1.get_channels(), pl2.get_channels()[:pl1.length()])
         self.assertEqual(pl1.get_channels(), pl2.get_channels()[pl1.length():])
 
-
-class TestInsertChannel(unittest.TestCase):
-    def runTest(self):
+    def test_insert_channel(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
         self.assertEqual(pl1, pl2)
@@ -615,24 +546,20 @@ class TestInsertChannel(unittest.TestCase):
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, pl2.length(), new_channel)
 
-
-class TestInsertChannels(unittest.TestCase):
-    def runTest(self):
+    def test_insert_channels(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
         self.assertEqual(pl1, pl2)
-        # Let's append the same channels twice
-        pl2.append_channels(pl1.get_channels())
+        # Let's insert pl1 channels at a specific offset in pl2
+        offset = 2
+        pl2.insert_channels(offset, pl1.get_channels())
         self.assertNotEqual(pl1, pl2)
-        self.assertEqual(pl1.length()*2, pl2.length())
-        self.assertEqual(pl1.get_channels(), pl2.get_channels()[:pl1.length()])
-        self.assertEqual(pl1.get_channels(), pl2.get_channels()[pl1.length():])
+        for i in range(pl1.length()):
+            self.assertEqual(pl1.get_channel(i), pl2.get_channel(offset+i))
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl2.insert_channels, pl2.length(), pl1.get_channels())
 
-
-class TestUpdateChannel(unittest.TestCase):
-    def runTest(self):
+    def test_update_channel(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
         self.assertEqual(pl1, pl2)
@@ -657,9 +584,7 @@ class TestUpdateChannel(unittest.TestCase):
             new_channel
         )
 
-
-class TestRemoveChannel(unittest.TestCase):
-    def runTest(self):
+    def test_remove_channel(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         expected_length = test_data.expected_m3u_plus.length()
         removed_index = 0
@@ -670,17 +595,13 @@ class TestRemoveChannel(unittest.TestCase):
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl.remove_channel, pl.length())
 
-
-class TestGetAttribute(unittest.TestCase):
-    def runTest(self):
+    def test_get_attribute(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         name = "x-tvg-url"
         value = pl.get_attribute(name)
         self.assertEqual(test_data.expected_m3u_plus.get_attributes()[name], value)
 
-
-class TestAddAttribute(unittest.TestCase):
-    def runTest(self):
+    def test_add_attribute(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
         name = 'test-attribute'
@@ -700,9 +621,7 @@ class TestAddAttribute(unittest.TestCase):
             value
         )
 
-
-class TestAddAttributes(unittest.TestCase):
-    def runTest(self):
+    def test_add_attributes(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
         new_attributes = {
@@ -724,9 +643,7 @@ class TestAddAttributes(unittest.TestCase):
             "value_2"
         )
 
-
-class TestUpdateAttribute(unittest.TestCase):
-    def runTest(self):
+    def test_update_attribute(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
         self.assertEqual(pl1, pl2)
@@ -743,9 +660,7 @@ class TestUpdateAttribute(unittest.TestCase):
             "value"
         )
 
-
-class TestRemoveAttribute(unittest.TestCase):
-    def runTest(self):
+    def test_remove_attribute(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         expected_length = len(test_data.expected_m3u_plus.get_attributes())
         self.assertEqual(expected_length, len(pl.get_attributes()))

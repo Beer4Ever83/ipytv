@@ -25,8 +25,8 @@ here = pathlib.Path(__file__).parent.resolve()
 pkgdata = get_pkgdata()
 print(pkgdata)
 
-# Get the long description from the README file
-long_description = (here / 'README.md').read_text(encoding='utf-8')
+# Get the long description from the README_pypi.md file
+long_description = (here / 'README_pypi.md').read_text(encoding='utf-8')
 package_name = pkgdata["package.name"]
 package_version = pkgdata["package.version"]
 
