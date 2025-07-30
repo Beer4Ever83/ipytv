@@ -728,8 +728,6 @@ class M3UPlaylist:
         return next_chan
 
 
-# ... rest of the functions remain unchanged ...
-
 def loadl(rows: List[str]) -> 'M3UPlaylist':
     """Load a playlist from a list of strings.
 
