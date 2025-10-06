@@ -383,7 +383,7 @@ class M3UPlaylist:
             out += f' {k}="{v}"'
         return out
 
-    def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE.value,
+    def group_by_attribute(self, attribute: str = IPTVAttr.GROUP_TITLE,
                            include_no_group: bool = True) -> Dict[str, List[int]]:
         """Group channels by a specific attribute value.
 

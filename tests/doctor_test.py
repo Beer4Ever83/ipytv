@@ -40,10 +40,10 @@ class TestM3UDoctor(unittest.TestCase):
                         """tvg-logo="https://some.image.com/images/V1_UX182_CR0,0,182,268_AL_.jpg" """ \
                         """group-title="",My channel"""
         expected_attributes = {
-            IPTVAttr.TVG_ID.value: "",
-            IPTVAttr.TVG_NAME.value: "",
-            IPTVAttr.TVG_LOGO.value: "https://some.image.com/images/V1_UX182_CR0%2C0%2C182%2C268_AL_.jpg",
-            IPTVAttr.GROUP_TITLE.value: ""
+            IPTVAttr.TVG_ID: "",
+            IPTVAttr.TVG_NAME: "",
+            IPTVAttr.TVG_LOGO: "https://some.image.com/images/V1_UX182_CR0%2C0%2C182%2C268_AL_.jpg",
+            IPTVAttr.GROUP_TITLE: ""
         }
         expected = IPTVChannel(
             url="",
@@ -53,19 +53,19 @@ class TestM3UDoctor(unittest.TestCase):
         )
         ch = IPTVChannel()
         ch.parse_extinf_string(extinf_string)
-        IPTVChannelDoctor._urlencode_value(ch, IPTVAttr.TVG_LOGO.value)
+        IPTVChannelDoctor._urlencode_value(ch, IPTVAttr.TVG_LOGO)
         self.assertEqual(expected, ch, "the two channels are not equal")
 
     def test_url_encode_logo_no_change(self) -> None:
         extinf_string = """#EXTINF:-1 tvg-id="" tvg-name="" tvg-language="Hindi" tvg-logo="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTZNoM8_ZqOG-8Lksy07YD-ltPehSFnfWcmxTU1LxlwbC58_8jcfJ987g" tvg-country="IN" tvg-url="" group-title="News",ABP Asmita"""
         expected_attributes = {
-            IPTVAttr.TVG_ID.value: "",
-            IPTVAttr.TVG_NAME.value: "",
-            IPTVAttr.TVG_LANGUAGE.value: "Hindi",
-            IPTVAttr.TVG_LOGO.value: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTZNoM8_ZqOG-8Lksy07YD-ltPehSFnfWcmxTU1LxlwbC58_8jcfJ987g",
-            IPTVAttr.TVG_COUNTRY.value: "IN",
-            IPTVAttr.TVG_URL.value: "",
-            IPTVAttr.GROUP_TITLE.value: "News"
+            IPTVAttr.TVG_ID: "",
+            IPTVAttr.TVG_NAME: "",
+            IPTVAttr.TVG_LANGUAGE: "Hindi",
+            IPTVAttr.TVG_LOGO: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcTZNoM8_ZqOG-8Lksy07YD-ltPehSFnfWcmxTU1LxlwbC58_8jcfJ987g",
+            IPTVAttr.TVG_COUNTRY: "IN",
+            IPTVAttr.TVG_URL: "",
+            IPTVAttr.GROUP_TITLE: "News"
         }
         expected = IPTVChannel(
             url="",
@@ -75,17 +75,17 @@ class TestM3UDoctor(unittest.TestCase):
         )
         ch = IPTVChannel()
         ch.parse_extinf_string(extinf_string)
-        IPTVChannelDoctor._urlencode_value(ch, IPTVAttr.TVG_LOGO.value)
+        IPTVChannelDoctor._urlencode_value(ch, IPTVAttr.TVG_LOGO)
         self.assertEqual(expected, ch, "the two channels are not equal")
 
     def test_sanitize_attributes(self) -> None:
         extinf_string = """#EXTINF:-1 tvg-ID="a" Tvg-name="contains, some,,commas" """ \
                 """tvG-Logo="c" GROUP-TITLE="d",My channel"""
         expected_attributes = {
-            IPTVAttr.TVG_ID.value: "a",
-            IPTVAttr.TVG_NAME.value: "contains_ some__commas",
-            IPTVAttr.TVG_LOGO.value: "c",
-            IPTVAttr.GROUP_TITLE.value: "d"
+            IPTVAttr.TVG_ID: "a",
+            IPTVAttr.TVG_NAME: "contains_ some__commas",
+            IPTVAttr.TVG_LOGO: "c",
+            IPTVAttr.GROUP_TITLE: "d"
         }
         expected = IPTVChannel(
             url="",
@@ -118,13 +118,13 @@ class TestM3UDoctor(unittest.TestCase):
 
         expected = M3UPlaylist()
         expected.append_channel(
-            IPTVChannel(attributes={IPTVAttr.TVG_ID.value: "a"})
+            IPTVChannel(attributes={IPTVAttr.TVG_ID: "a"})
         )
         expected.append_channel(
-            IPTVChannel(attributes={IPTVAttr.TVG_LOGO.value: "b"})
+            IPTVChannel(attributes={IPTVAttr.TVG_LOGO: "b"})
         )
         expected.append_channel(
-            IPTVChannel(attributes={IPTVAttr.GROUP_TITLE.value: "c_d__e"})
+            IPTVChannel(attributes={IPTVAttr.GROUP_TITLE: "c_d__e"})
         )
         self.assertNotEqual(expected, pl)
         fixed_pl = M3UPlaylistDoctor.sanitize(pl)

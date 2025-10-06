@@ -13,7 +13,7 @@ Functions:
 import json
 import logging
 import shlex
-from enum import Enum
+from enum import StrEnum
 from typing import Dict, List, Optional, Any
 
 from ipytv import m3u
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 
-class IPTVAttr(Enum):
+class IPTVAttr(StrEnum):
     """Enum of attributes commonly found in IPTV playlists as part of #EXTINF rows."""
     TVG_ID = "tvg-id"
     TVG_NAME = "tvg-name"

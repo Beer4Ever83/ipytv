@@ -9,10 +9,10 @@ m3u_plus_channel_0 = IPTVChannel(
     name="Rai 1",
     duration="-1",
     attributes={
-        IPTVAttr.TVG_ID.value: "Rai 1",
-        IPTVAttr.TVG_NAME.value: "Rai 1",
-        IPTVAttr.TVG_LOGO.value: "https://static.epg.best/it/RaiUno.it.png",
-        IPTVAttr.GROUP_TITLE.value: "RAI"
+        IPTVAttr.TVG_ID: "Rai 1",
+        IPTVAttr.TVG_NAME: "Rai 1",
+        IPTVAttr.TVG_LOGO: "https://static.epg.best/it/RaiUno.it.png",
+        IPTVAttr.GROUP_TITLE: "RAI"
     }
 )
 m3u_plus_channel_1 = IPTVChannel(
@@ -20,10 +20,10 @@ m3u_plus_channel_1 = IPTVChannel(
     name="Cielo",
     duration="-1",
     attributes={
-        IPTVAttr.TVG_ID.value: "",
-        IPTVAttr.TVG_NAME.value: "Cielo",
-        IPTVAttr.TVG_LOGO.value: "",
-        IPTVAttr.GROUP_TITLE.value: "Italia"
+        IPTVAttr.TVG_ID: "",
+        IPTVAttr.TVG_NAME: "Cielo",
+        IPTVAttr.TVG_LOGO: "",
+        IPTVAttr.GROUP_TITLE: "Italia"
     },
     extras=[
         "#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0"
@@ -34,11 +34,11 @@ m3u_plus_channel_2 = IPTVChannel(
     name="TEMATICO MASSIMO TROISI",
     duration="-1",
     attributes={
-        IPTVAttr.TVG_ID.value: "",
-        IPTVAttr.TVG_NAME.value: "TEMATICO MASSIMO TROISI",
-        IPTVAttr.TVG_LOGO.value: "",
-        IPTVAttr.GROUP_TITLE.value: "Italia",
-        IPTVAttr.TVG_SHIFT.value: "-0.5"
+        IPTVAttr.TVG_ID: "",
+        IPTVAttr.TVG_NAME: "TEMATICO MASSIMO TROISI",
+        IPTVAttr.TVG_LOGO: "",
+        IPTVAttr.GROUP_TITLE: "Italia",
+        IPTVAttr.TVG_SHIFT: "-0.5"
     }
 )
 m3u_plus_channel_3 = IPTVChannel(
@@ -46,10 +46,10 @@ m3u_plus_channel_3 = IPTVChannel(
     name="----I N T R A T T E N I M E N T O----",
     duration="-1",
     attributes={
-        IPTVAttr.TVG_ID.value: "-10.5",
-        IPTVAttr.TVG_NAME.value: "----I N T R A T T E N I M E N T O----",
-        IPTVAttr.TVG_LOGO.value: "",
-        IPTVAttr.GROUP_TITLE.value: "Intrattenimento"
+        IPTVAttr.TVG_ID: "-10.5",
+        IPTVAttr.TVG_NAME: "----I N T R A T T E N I M E N T O----",
+        IPTVAttr.TVG_LOGO: "",
+        IPTVAttr.GROUP_TITLE: "Intrattenimento"
     }
 )
 expected_m3u_plus = M3UPlaylist()

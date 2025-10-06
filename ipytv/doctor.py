@@ -193,7 +193,7 @@ class IPTVChannelDoctor:
             IPTVAttr(attribute_name)
         except ValueError:
             try:
-                key = IPTVAttr(attribute_name.lower()).value
+                key = IPTVAttr(attribute_name.lower())
                 value = chan.attributes[attribute_name]
                 del chan.attributes[attribute_name]
                 chan.attributes[key] = value
@@ -216,7 +216,7 @@ class IPTVChannelDoctor:
         Example:
             Changes group-title="News, Sports" to group-title="News_ Sports"
         """
-        if attribute_name == IPTVAttr.TVG_LOGO.value:
+        if attribute_name == IPTVAttr.TVG_LOGO:
             return
         value: str = chan.attributes[attribute_name]
         if "," in value:
@@ -246,7 +246,7 @@ class IPTVChannelDoctor:
         """
         attr: str
         new_chan = chan.copy()
-        IPTVChannelDoctor._urlencode_value(new_chan, IPTVAttr.TVG_LOGO.value)
+        IPTVChannelDoctor._urlencode_value(new_chan, IPTVAttr.TVG_LOGO)
         for attr in chan.attributes.keys():
             IPTVChannelDoctor._convert_commas(new_chan, attr)
             IPTVChannelDoctor._normalize_attributes_name(new_chan, attr)
