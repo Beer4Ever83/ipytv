@@ -30,6 +30,32 @@ class TestM3U(unittest.TestCase):
         for name, value in test_data.expected_attributes_broken_extinf_row.items():
             self.assertEqual(value, attributes[name])
 
+    def test_parse_header_attributes(self):
+        # No attributes
+        self.assertEqual({}, m3u.parse_header_attributes('#EXTM3U'))
+        # Values containing spaces and "=" must be preserved
+        header = '#EXTM3U url-tvg="a b c" x-tvg-url="http://e.com/g.xml?a=1&b=2" tvg-shift="0"'
+        expected = {
+            'url-tvg': 'a b c',
+            'x-tvg-url': 'http://e.com/g.xml?a=1&b=2',
+            'tvg-shift': '0',
+        }
+        self.assertEqual(expected, m3u.parse_header_attributes(header))
+
+    def test_parse_attributes(self):
+        # Empty input
+        self.assertEqual({}, m3u.parse_attributes(''))
+        # Empty values, spaces, commas, "=" and "&" inside values
+        attributes = ' tvg-id="" tvg-name="Io, Leonardo (2019)" ' \
+                     'tvg-logo="http://e.com/i.jpg?a=1&b=2" group-title="News Sports"'
+        expected = {
+            'tvg-id': '',
+            'tvg-name': 'Io, Leonardo (2019)',
+            'tvg-logo': 'http://e.com/i.jpg?a=1&b=2',
+            'group-title': 'News Sports',
+        }
+        self.assertEqual(expected, m3u.parse_attributes(attributes))
+
 
 if __name__ == '__main__':
     unittest.main()

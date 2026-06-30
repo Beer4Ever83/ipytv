@@ -43,6 +43,27 @@ class TestIPTVChannel(unittest.TestCase):
         ch.parse_extinf_string(extinf_string)
         self.assertEqual(expected, ch, "the two channels are not equal")
 
+    def test_parse_m3u_plus_extinf_string_with_special_chars(self):
+        # A well-formed row whose values contain "=", "&" and spaces. These
+        # must be preserved verbatim now that parsing is quote-delimited.
+        extinf_string = '#EXTINF:-1 tvg-id="Rai 1" ' \
+                        'tvg-logo="http://e.com/logo.png?w=600&h=900" ' \
+                        'group-title="News & Sports",Rai 1'
+        expected_attributes = {
+            IPTVAttr.TVG_ID.value: "Rai 1",
+            IPTVAttr.TVG_LOGO.value: "http://e.com/logo.png?w=600&h=900",
+            IPTVAttr.GROUP_TITLE.value: "News & Sports",
+        }
+        expected = IPTVChannel(
+            url="",
+            name="Rai 1",
+            duration="-1",
+            attributes=expected_attributes
+        )
+        ch = IPTVChannel()
+        ch.parse_extinf_string(extinf_string)
+        self.assertEqual(expected, ch, "the two channels are not equal")
+
     def test_parse_bad_m3u_plus_extinf_strings(self):
         extinf_strings = [
             ''' #EXTINF:-1 tvg-id="" tvg-name="" tvg-logo="" group-title="",Off The Map''',

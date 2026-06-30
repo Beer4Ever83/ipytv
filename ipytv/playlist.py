@@ -992,15 +992,7 @@ def _parse_header(header: str) -> Dict[str, str]:
     Returns:
         Dictionary of parsed attribute name-value pairs.
     """
-    attrs = header.replace(f'{M3U_HEADER_TAG}', '').lstrip()
-    attributes = {}
-    for attr in attrs.split():
-        entry = attr.split("=")
-        if len(entry) == 2:
-            name = entry[0].replace('"', '')
-            value = entry[1].replace('"', '')
-            attributes[name] = value
-    return attributes
+    return m3u.parse_header_attributes(header)
 
 
 def _build_chunk(beginning: int, end: int) -> Dict[str, int]:

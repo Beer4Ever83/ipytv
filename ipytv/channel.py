@@ -12,7 +12,6 @@ Functions:
 """
 import json
 import logging
-import shlex
 from enum import Enum
 from typing import Dict, List, Optional, Any
 
@@ -112,11 +111,7 @@ class IPTVChannel:
             self.duration = match.group("duration_g")
             log.info("duration: %s", self.duration)
             attributes = match.group("attributes_g")
-            for entry in shlex.split(attributes):
-                pair = entry.split("=", 1)
-                key = pair[0]
-                value = pair[1]
-                self.attributes[key] = value
+            self.attributes = m3u.parse_attributes(attributes)
             log.info("attributes: %s", self.attributes)
             self.name = match.group("name_g")
             log.info("name: %s", self.name)

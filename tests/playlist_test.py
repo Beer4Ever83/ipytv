@@ -508,6 +508,15 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(attributes['x-tvg-url'], 'https://elcinema.com.epg.xml')
         self.assertEqual(attributes['tvg-shift'], '1')
 
+    def test_parse_header_with_special_values(self):
+        # Attribute values may contain spaces and "=" characters and must
+        # not be truncated.
+        header = '#EXTM3U url-tvg="a b c" x-tvg-url="http://e.com/g.xml?a=1&b=2" tvg-shift="0"'
+        attributes = playlist._parse_header(header)
+        self.assertEqual(attributes['url-tvg'], 'a b c')
+        self.assertEqual(attributes['x-tvg-url'], 'http://e.com/g.xml?a=1&b=2')
+        self.assertEqual(attributes['tvg-shift'], '0')
+
     def test_build_header(self):
         expected_header = '#EXTM3U x-tvg-url="https://elcinema.com.epg.xml" tvg-shift="1"'
         pl = M3UPlaylist()

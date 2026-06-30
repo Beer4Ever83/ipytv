@@ -25,6 +25,8 @@ _M3U_PLUS_BROKEN_EXTINF_PARSE_PATTERN = re.compile(
     r'(?P<name_g>.*)'
 )
 _M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_PATTERN = re.compile(r'(?:\s+)[\w-]+="')
+# Matches a single quoted attribute, e.g. name="value which may contain spaces"
+_M3U_QUOTED_ATTRIBUTE_PATTERN = re.compile(r'(?P<name_g>[\w-]+)="(?P<value_g>[^"]*)"')
 
 
 def is_m3u_header_row(row: str) -> bool:
@@ -156,6 +158,45 @@ def match_m3u_plus_extinf_row(row: str) -> Optional[re.Match]:
         'Channel'
     """
     return _M3U_PLUS_EXTINF_PARSE_PATTERN.match(row)
+
+
+def parse_attributes(attributes: str) -> Dict[str, str]:
+    """Parse a space-separated list of quoted `name="value"` attributes.
+
+    This is the shared grammar used by both the #EXTM3U header row and the
+    attributes section of a well-formed #EXTINF row. Values may contain
+    spaces and "=" characters, as they are delimited by double quotes.
+
+    Args:
+        attributes: A string containing zero or more `name="value"` pairs.
+
+    Returns:
+        A dictionary mapping attribute names to their values.
+
+    Example:
+        >>> parse_attributes('url-tvg="http://e.com/g.xml?a=1&b=2"')
+        {'url-tvg': 'http://e.com/g.xml?a=1&b=2'}
+    """
+    return {
+        match.group("name_g"): match.group("value_g")
+        for match in _M3U_QUOTED_ATTRIBUTE_PATTERN.finditer(attributes)
+    }
+
+
+def parse_header_attributes(header: str) -> Dict[str, str]:
+    """Parse the quoted attributes of an #EXTM3U header row.
+
+    Args:
+        header: The #EXTM3U header row.
+
+    Returns:
+        A dictionary mapping attribute names to their values.
+
+    Example:
+        >>> parse_header_attributes('#EXTM3U url-tvg="http://e.com/g.xml?a=1&b=2"')
+        {'url-tvg': 'http://e.com/g.xml?a=1&b=2'}
+    """
+    return parse_attributes(header)
 
 
 def is_extinf_row(row: str) -> bool:
