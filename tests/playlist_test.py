@@ -1,5 +1,7 @@
 import itertools
 import json
+import os
+import tempfile
 import unittest
 from typing import List, Dict
 
@@ -301,6 +303,30 @@ class TestM3UPlaylist(unittest.TestCase):
         with open("tests/resources/unsupported.json") as json_file:
             json_str = json_file.read()
         self.assertRaises(WrongTypeException, playlist.loadjstr, json_str)
+
+    def test_loadjstr_from_different_cwd(self):
+        # The schema is bundled with the package, so loadjstr must work
+        # regardless of the current working directory.
+        json_str = json.dumps({
+            "attributes": {"x-tvg-url": "http://example.com/guide.xml"},
+            "channels": [
+                {
+                    "name": "Channel 1",
+                    "duration": "-1",
+                    "url": "http://example.com/stream1",
+                    "attributes": {},
+                    "extras": []
+                }
+            ]
+        })
+        original_cwd = os.getcwd()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            os.chdir(tmp_dir)
+            try:
+                pl = playlist.loadjstr(json_str)
+            finally:
+                os.chdir(original_cwd)
+        self.assertEqual(1, pl.length())
 
     def test_to_m3u_plus_playlist(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")

@@ -21,6 +21,7 @@ import math
 import multiprocessing as mp
 import re
 import typing
+from importlib import resources
 from multiprocessing.pool import AsyncResult
 from typing import List, Dict, Tuple, Optional, Union, Any
 
@@ -44,6 +45,25 @@ __MIN_CHUNK_SIZE = 100
 
 # Cache for compiled regex patterns to avoid recompilation
 _regex_cache: Dict[Tuple[str, bool], re.Pattern] = {}
+
+# Cache for the bundled JSON schema to avoid re-reading and re-parsing it
+_json_schema: Optional[Dict[str, Any]] = None
+
+
+def _get_json_schema() -> Dict[str, Any]:
+    """Load and cache the bundled JSON schema used to validate playlists.
+
+    The schema is read from the package's resources, so it can be located
+    regardless of the current working directory.
+
+    Returns:
+        The parsed JSON schema as a dictionary.
+    """
+    global _json_schema
+    if _json_schema is None:
+        schema_text = resources.files("ipytv").joinpath("resources").joinpath("schema.json").read_text(encoding="utf-8")
+        _json_schema = json.loads(schema_text)
+    return _json_schema
 
 
 def _get_compiled_regex(pattern: str, case_sensitive: bool) -> re.Pattern:
@@ -911,12 +931,11 @@ def loadj(json_dict: typing.Dict[str, Any]) -> 'M3UPlaylist':
     if not isinstance(json_dict, dict):
         log.error("expected %s, got %s", dict, type(json_dict))
         raise WrongTypeException("Wrong type: json dict expected")
-    with open("ipytv/resources/schema.json", "r", encoding="utf-8") as schema_file:
-        schema = json.load(schema_file)
-        try:
-            jsonschema.validate(json_dict, schema=schema)
-        except jsonschema.exceptions.ValidationError as e:
-            raise WrongTypeException(f"The input JSON string does not match the expected schema: {e.message}") from e
+    schema = _get_json_schema()
+    try:
+        jsonschema.validate(json_dict, schema=schema)
+    except jsonschema.exceptions.ValidationError as e:
+        raise WrongTypeException(f"The input JSON string does not match the expected schema: {e.message}") from e
     pl = M3UPlaylist()
     if "attributes" in json_dict:
         pl.add_attributes(json_dict["attributes"])
