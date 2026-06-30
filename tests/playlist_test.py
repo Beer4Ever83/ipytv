@@ -520,6 +520,12 @@ class TestM3UPlaylist(unittest.TestCase):
             self.assertEqual(test_data.expected_m3u_plus.get_channel(i), ch)
         self.assertEqual(i+1, test_data.expected_m3u_plus.length())
 
+    def test_nested_iteration(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        length = pl.length()
+        pairs = [(outer, inner) for outer in pl for inner in pl]
+        self.assertEqual(length * length, len(pairs))
+
     def test_get_channel(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         ch = pl.get_channel(2)

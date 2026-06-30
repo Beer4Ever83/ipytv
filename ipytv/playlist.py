@@ -101,7 +101,6 @@ class M3UPlaylist:
         """Initialize an empty M3U playlist."""
         self._channels: List[IPTVChannel] = []
         self._attributes: Dict[str, str] = {}
-        self._iter_index: int = -1
 
     def length(self) -> int:
         """Get the number of channels in the playlist.
@@ -723,29 +722,16 @@ class M3UPlaylist:
         """
         return self.to_m3u_plus_playlist()
 
-    def __iter__(self) -> 'M3UPlaylist':
-        """Initialize iteration over channels.
+    def __iter__(self) -> typing.Iterator[IPTVChannel]:
+        """Return an independent iterator over the playlist's channels.
+
+        A fresh iterator is returned on each call, so the playlist can be
+        iterated multiple times, including in nested loops.
 
         Returns:
-            Self for iteration protocol.
+            An iterator over the channels in the playlist.
         """
-        self._iter_index = 0
-        return self
-
-    def __next__(self) -> IPTVChannel:
-        """Get next channel in iteration.
-
-        Returns:
-            The next IPTVChannel in the playlist.
-
-        Raises:
-            StopIteration: When no more channels are available.
-        """
-        if self._iter_index >= self.length():
-            raise StopIteration
-        next_chan = self.get_channel(self._iter_index)
-        self._iter_index += 1
-        return next_chan
+        return iter(self.get_channels())
 
 
 def loadl(rows: List[str]) -> 'M3UPlaylist':
