@@ -21,6 +21,7 @@ import math
 import multiprocessing as mp
 import re
 import typing
+from functools import lru_cache
 from importlib import resources
 from multiprocessing.pool import AsyncResult
 from typing import List, Dict, Tuple, Optional, Union, Any
@@ -46,24 +47,19 @@ __MIN_CHUNK_SIZE = 100
 # Cache for compiled regex patterns to avoid recompilation
 _regex_cache: Dict[Tuple[str, bool], re.Pattern] = {}
 
-# Cache for the bundled JSON schema to avoid re-reading and re-parsing it
-_json_schema: Optional[Dict[str, Any]] = None
 
-
+@lru_cache(maxsize=1)
 def _get_json_schema() -> Dict[str, Any]:
     """Load and cache the bundled JSON schema used to validate playlists.
 
     The schema is read from the package's resources, so it can be located
-    regardless of the current working directory.
+    regardless of the current working directory. It is parsed once and cached.
 
     Returns:
         The parsed JSON schema as a dictionary.
     """
-    global _json_schema
-    if _json_schema is None:
-        schema_text = resources.files("ipytv").joinpath("resources").joinpath("schema.json").read_text(encoding="utf-8")
-        _json_schema = json.loads(schema_text)
-    return _json_schema
+    schema_text = resources.files("ipytv").joinpath("resources").joinpath("schema.json").read_text(encoding="utf-8")
+    return json.loads(schema_text)
 
 
 def _get_compiled_regex(pattern: str, case_sensitive: bool) -> re.Pattern:
