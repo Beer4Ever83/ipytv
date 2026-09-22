@@ -21,7 +21,7 @@ import math
 import multiprocessing as mp
 import re
 import typing
-from functools import lru_cache
+from functools import cache
 from importlib import resources
 from multiprocessing.pool import AsyncResult
 from typing import List, Dict, Tuple, Optional, Union, Any
@@ -48,7 +48,7 @@ __MIN_CHUNK_SIZE = 100
 _regex_cache: Dict[Tuple[str, bool], re.Pattern] = {}
 
 
-@lru_cache(maxsize=1)
+@cache
 def _get_json_schema() -> Dict[str, Any]:
     """Load and cache the bundled JSON schema used to validate playlists.
 
