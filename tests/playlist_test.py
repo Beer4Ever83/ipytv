@@ -1,5 +1,7 @@
 import itertools
 import json
+import os
+import tempfile
 import unittest
 from typing import List, Dict
 
@@ -302,6 +304,30 @@ class TestM3UPlaylist(unittest.TestCase):
             json_str = json_file.read()
         self.assertRaises(WrongTypeException, playlist.loadjstr, json_str)
 
+    def test_loadjstr_from_different_cwd(self):
+        # The schema is bundled with the package, so loadjstr must work
+        # regardless of the current working directory.
+        json_str = json.dumps({
+            "attributes": {"x-tvg-url": "http://example.com/guide.xml"},
+            "channels": [
+                {
+                    "name": "Channel 1",
+                    "duration": "-1",
+                    "url": "http://example.com/stream1",
+                    "attributes": {},
+                    "extras": []
+                }
+            ]
+        })
+        original_cwd = os.getcwd()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            os.chdir(tmp_dir)
+            try:
+                pl = playlist.loadjstr(json_str)
+            finally:
+                os.chdir(original_cwd)
+        self.assertEqual(1, pl.length())
+
     def test_to_m3u_plus_playlist(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         with open("tests/resources/m3u_plus.m3u") as file:
@@ -482,6 +508,15 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(attributes['x-tvg-url'], 'https://elcinema.com.epg.xml')
         self.assertEqual(attributes['tvg-shift'], '1')
 
+    def test_parse_header_with_special_values(self):
+        # Attribute values may contain spaces and "=" characters and must
+        # not be truncated.
+        header = '#EXTM3U url-tvg="a b c" x-tvg-url="http://e.com/g.xml?a=1&b=2" tvg-shift="0"'
+        attributes = playlist._parse_header(header)
+        self.assertEqual(attributes['url-tvg'], 'a b c')
+        self.assertEqual(attributes['x-tvg-url'], 'http://e.com/g.xml?a=1&b=2')
+        self.assertEqual(attributes['tvg-shift'], '0')
+
     def test_build_header(self):
         expected_header = '#EXTM3U x-tvg-url="https://elcinema.com.epg.xml" tvg-shift="1"'
         pl = M3UPlaylist()
@@ -493,6 +528,12 @@ class TestM3UPlaylist(unittest.TestCase):
         for i, ch in enumerate(pl):
             self.assertEqual(test_data.expected_m3u_plus.get_channel(i), ch)
         self.assertEqual(i+1, test_data.expected_m3u_plus.length())
+
+    def test_nested_iteration(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        length = pl.length()
+        pairs = [(outer, inner) for outer in pl for inner in pl]
+        self.assertEqual(length * length, len(pairs))
 
     def test_get_channel(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")

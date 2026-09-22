@@ -29,6 +29,12 @@ function installation_test() {
     # shellcheck disable=SC2155
     local SHOW_OUTPUT=$(pip show "${APP_NAME}")
     echo "$SHOW_OUTPUT" | grep -q "Version: ${PACKAGE_VERSION}" || abort "Package is not installed"
+    # Verify that the command-line tools were actually deployed, with read and
+    # execute permissions, at their expected install location. This catches a
+    # missing/misnamed entry point even though "pip show" above still succeeds.
+    local BIN_DIR="${VIRTUAL_ENV}/bin"
+    [[ -r "${BIN_DIR}/iptv2json" && -x "${BIN_DIR}/iptv2json" ]] || abort "The iptv2json CLI was not deployed correctly"
+    [[ -r "${BIN_DIR}/json2iptv" && -x "${BIN_DIR}/json2iptv" ]] || abort "The json2iptv CLI was not deployed correctly"
     deactivate
     rm -rf "${TEMP_DIR}"
 }

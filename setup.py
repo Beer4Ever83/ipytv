@@ -54,11 +54,11 @@ setup(
     packages=find_packages(where='.', exclude=['tests*']),
     entry_points={
         'console_scripts': [
-            'iptv2json = ipytv.cli.iptv2json:main',
-            'json2iptv = ipytv.cli.json2iptv:main',
+            'iptv2json = ipytv.cli.iptv2json:iptv2json',
+            'json2iptv = ipytv.cli.json2iptv:json2iptv',
         ]
     },
-    python_requires='>=3.6, <4',
+    python_requires='>=3.9, <4',
     install_requires=parse_requirements("requirements.txt"),
     extras_require={},
     include_package_data=True,

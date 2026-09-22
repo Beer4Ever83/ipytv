@@ -21,6 +21,8 @@ import math
 import multiprocessing as mp
 import re
 import typing
+from functools import cache
+from importlib import resources
 from multiprocessing.pool import AsyncResult
 from typing import List, Dict, Tuple, Optional, Union, Any
 
@@ -44,6 +46,20 @@ __MIN_CHUNK_SIZE = 100
 
 # Cache for compiled regex patterns to avoid recompilation
 _regex_cache: Dict[Tuple[str, bool], re.Pattern] = {}
+
+
+@cache
+def _get_json_schema() -> Dict[str, Any]:
+    """Load and cache the bundled JSON schema used to validate playlists.
+
+    The schema is read from the package's resources, so it can be located
+    regardless of the current working directory. It is parsed once and cached.
+
+    Returns:
+        The parsed JSON schema as a dictionary.
+    """
+    schema_text = resources.files("ipytv").joinpath("resources").joinpath("schema.json").read_text(encoding="utf-8")
+    return json.loads(schema_text)
 
 
 def _get_compiled_regex(pattern: str, case_sensitive: bool) -> re.Pattern:
@@ -81,7 +97,6 @@ class M3UPlaylist:
         """Initialize an empty M3U playlist."""
         self._channels: List[IPTVChannel] = []
         self._attributes: Dict[str, str] = {}
-        self._iter_index: int = -1
 
     def length(self) -> int:
         """Get the number of channels in the playlist.
@@ -703,29 +718,16 @@ class M3UPlaylist:
         """
         return self.to_m3u_plus_playlist()
 
-    def __iter__(self) -> 'M3UPlaylist':
-        """Initialize iteration over channels.
+    def __iter__(self) -> typing.Iterator[IPTVChannel]:
+        """Return an independent iterator over the playlist's channels.
+
+        A fresh iterator is returned on each call, so the playlist can be
+        iterated multiple times, including in nested loops.
 
         Returns:
-            Self for iteration protocol.
+            An iterator over the channels in the playlist.
         """
-        self._iter_index = 0
-        return self
-
-    def __next__(self) -> IPTVChannel:
-        """Get next channel in iteration.
-
-        Returns:
-            The next IPTVChannel in the playlist.
-
-        Raises:
-            StopIteration: When no more channels are available.
-        """
-        if self._iter_index >= self.length():
-            raise StopIteration
-        next_chan = self.get_channel(self._iter_index)
-        self._iter_index += 1
-        return next_chan
+        return iter(self.get_channels())
 
 
 def loadl(rows: List[str]) -> 'M3UPlaylist':
@@ -911,12 +913,11 @@ def loadj(json_dict: typing.Dict[str, Any]) -> 'M3UPlaylist':
     if not isinstance(json_dict, dict):
         log.error("expected %s, got %s", dict, type(json_dict))
         raise WrongTypeException("Wrong type: json dict expected")
-    with open("ipytv/resources/schema.json", "r", encoding="utf-8") as schema_file:
-        schema = json.load(schema_file)
-        try:
-            jsonschema.validate(json_dict, schema=schema)
-        except jsonschema.exceptions.ValidationError as e:
-            raise WrongTypeException(f"The input JSON string does not match the expected schema: {e.message}") from e
+    schema = _get_json_schema()
+    try:
+        jsonschema.validate(json_dict, schema=schema)
+    except jsonschema.exceptions.ValidationError as e:
+        raise WrongTypeException(f"The input JSON string does not match the expected schema: {e.message}") from e
     pl = M3UPlaylist()
     if "attributes" in json_dict:
         pl.add_attributes(json_dict["attributes"])
@@ -987,15 +988,7 @@ def _parse_header(header: str) -> Dict[str, str]:
     Returns:
         Dictionary of parsed attribute name-value pairs.
     """
-    attrs = header.replace(f'{M3U_HEADER_TAG}', '').lstrip()
-    attributes = {}
-    for attr in attrs.split():
-        entry = attr.split("=")
-        if len(entry) == 2:
-            name = entry[0].replace('"', '')
-            value = entry[1].replace('"', '')
-            attributes[name] = value
-    return attributes
+    return m3u.parse_header_attributes(header)
 
 
 def _build_chunk(beginning: int, end: int) -> Dict[str, int]:
