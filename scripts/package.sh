@@ -24,11 +24,17 @@ function installation_test() {
     python -m venv "${TEMP_DIR}/.testvenv" || abort "Failure while creating virtual environment (.testvenv)"
     source "${TEMP_DIR}/.testvenv/bin/activate" || abort "Failure while activating the test virtual environment"
     pip install --upgrade pip || abort "Failure while upgrading pip"
-    pip install -r requirements-deploy.txt || abort "Failure while installing deploy requirements"
-    pip install "${DIST_DIR}/${PACKAGE_PREFIX}-${PACKAGE_VERSION}.tar.gz" || abort "Failure while installing the package"
+    # The version is derived from git tags at build time, so match the wheel by
+    # glob rather than constructing an exact filename.
+    # shellcheck disable=SC2155
+    local WHEEL=$(ls "${DIST_DIR}/${PACKAGE_PREFIX}"-*.whl)
+    [[ -r "${WHEEL}" ]] || abort "No wheel found in ${DIST_DIR}"
+    pip install "${WHEEL}" || abort "Failure while installing the package"
+    # Capture first, then match: piping pip directly into "grep -q" trips
+    # "set -o pipefail" because grep closes the pipe early (SIGPIPE on pip).
     # shellcheck disable=SC2155
     local SHOW_OUTPUT=$(pip show "${APP_NAME}")
-    echo "$SHOW_OUTPUT" | grep -q "Version: ${PACKAGE_VERSION}" || abort "Package is not installed"
+    [[ "${SHOW_OUTPUT}" == *"Version:"* ]] || abort "Package is not installed"
     # Verify that the command-line tools were actually deployed, with read and
     # execute permissions, at their expected install location. This catches a
     # missing/misnamed entry point even though "pip show" above still succeeds.
@@ -39,27 +45,11 @@ function installation_test() {
     rm -rf "${TEMP_DIR}"
 }
 
-function build_pkgdata() {
-    if [[ -z "${APP_NAME}" || -z "${PACKAGE_VERSION}" ]]; then
-        abort "Missing one or more mandatory variables"
-    fi
-    cat >"${PKGDATA_FILE}" << HEREDOC
-# Auto-generated file. Do not edit.
-package.name=${PACKAGE_PREFIX}
-package.version=${PACKAGE_VERSION}
-HEREDOC
-}
-
 REPO_DIR=$(realpath "${my_dir}/..")
-export PACKAGE_VERSION=${VERSION}
-if [[ $1 == '--test' ]]; then
-    export PACKAGE_VERSION=${TEST_VERSION}
-fi
 pushd "${REPO_DIR}" >/dev/null || abort
 cleanup
-build_pkgdata
-python -m build --no-isolation --sdist || abort "Failure while building the package"
-twine check "${DIST_DIR}/*" || abort "twine reported an error"
+uv build || abort "Failure while building the package"
+uvx twine check "${DIST_DIR}"/* || abort "twine reported an error"
 installation_test
 popd >/dev/null || abort
 

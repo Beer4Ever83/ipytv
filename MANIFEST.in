@@ -1,4 +1,0 @@
-include requirements.txt
-include pkgdata.txt
-include ipytv/resources/*
-include README_pypi.md
