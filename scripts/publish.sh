@@ -14,14 +14,9 @@ REPO_DIR=$(realpath "${my_dir}/..")
 
 pushd "${REPO_DIR}" >/dev/null || abort
 if [[ $1 == '--test' ]]; then
-    # --check-url makes the upload idempotent: dev versions are only unique per
-    # commit-count-since-tag (no "+g<hash>" local segment, which PyPI rejects),
-    # so a re-run of the same commit reuses a filename. Skip what's already there
-    # instead of failing with "File already exists".
     uv publish \
         --trusted-publishing always \
         --publish-url https://test.pypi.org/legacy/ \
-        --check-url https://test.pypi.org/simple/ \
         "${DIST_DIR}"/* || abort "Failure while uploading the package to TestPyPI"
 else
     uv publish --trusted-publishing always "${DIST_DIR}"/* \

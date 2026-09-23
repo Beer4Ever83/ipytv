@@ -54,9 +54,6 @@ jobs:
 
   deploy-test:
     needs: [test-lint, docker]
-    # Only from main pushes: dev versions increase monotonically there, so they
-    # don't collide on TestPyPI the way per-branch/PR pushes would.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: testpypi
     permissions:

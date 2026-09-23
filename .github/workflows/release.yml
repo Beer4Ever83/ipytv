@@ -21,7 +21,5 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-      - name: Package
-        run: scripts/package.sh
-      - name: Publish to PyPI
-        run: scripts/publish.sh
+      - name: Deploy to PyPI
+        run: scripts/deploy.sh
