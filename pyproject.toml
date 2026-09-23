@@ -1,0 +1,76 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "m3u-ipytv"
+dynamic = ["version"]
+description = "A library for handling M3U playlists for IPTV (AKA m3u_plus)"
+readme = "README_pypi.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE.txt" }
+authors = [{ name = "Francesco Rainone", email = "beer4evah@gmail.com" }]
+keywords = ["m3u", "m3u_plus", "iptv", "playlist"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Multimedia :: Video",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "requests>=2.31.0",
+    "click>=8.1.7",
+    "jsonschema>=4.23.0",
+]
+
+[project.urls]
+"Bug Reports" = "https://github.com/Beer4Ever83/ipytv/issues"
+"Funding" = "https://www.buymeacoffee.com/beer4ever83"
+"Source" = "https://github.com/Beer4Ever83/ipytv"
+
+[project.scripts]
+iptv2json = "ipytv.cli.iptv2json:iptv2json"
+json2iptv = "ipytv.cli.json2iptv:json2iptv"
+
+[dependency-groups]
+test = ["pytest>=8.3.2", "m3u8>=0.9.0", "httpretty>=1.1.3", "deepdiff>=5.5.0", "mmh3>=3.0.0"]
+lint = ["ruff>=0.14.0", "mypy>=1.11.0", "types-jsonschema", "types-requests"]
+dev = [{ include-group = "test" }, { include-group = "lint" }]
+
+[tool.hatch.version]
+source = "vcs"
+# Drop the "+g<hash>" local segment so dev builds (untagged commits) are
+# accepted by PyPI/TestPyPI, which reject local version segments.
+raw-options = { local_scheme = "no-local-version" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["ipytv"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# Conservative starting set: correctness (pyflakes) + basic style. The code
+# already satisfies these. Stricter families (I import-sort, UP pyupgrade,
+# B bugbear, SIM simplify) and `ruff format` enforcement are enabled in the
+# dedicated code-modernization PR, together with the source changes they need.
+select = ["E", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test fixtures embed real m3u playlist lines that must not be wrapped.
+"tests/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+python_files = "*_test.py"
+testpaths = ["tests"]
