@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0  # hatch-vcs needs the tag to derive the version
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
       - name: Deploy to PyPI
