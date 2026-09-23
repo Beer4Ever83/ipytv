@@ -55,6 +55,9 @@ jobs:
   deploy-test:
     needs: [test-lint, docker]
     runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write  # required for TestPyPI Trusted Publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,6 +66,4 @@ jobs:
         with:
           enable-cache: true
       - name: Deploy to TestPyPI
-        env:
-          PYPI_TEST_TOKEN: ${{ secrets.PYPI_TEST_TOKEN }}
         run: scripts/deploy.sh --test
