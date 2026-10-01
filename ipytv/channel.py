@@ -13,6 +13,7 @@ Functions:
 
 import json
 import logging
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import Any, Self
 
@@ -43,6 +44,7 @@ class IPTVAttr(StrEnum):
     TVG_URL = "tvg-url"
 
 
+@dataclass(slots=True)
 class IPTVChannel:
     """A channel in an IPTV playlist with attributes and metadata.
 
@@ -54,30 +56,19 @@ class IPTVChannel:
         extras: List of tags found between #EXTINF row and its related URL row.
     """
 
-    def __init__(
-        self,
-        url: str = "",
-        name: str = "",
-        duration: str = "-1",
-        attributes: dict[str, str] | None = None,
-        extras: list[str] | None = None,
-    ):
-        """Initialize an IPTV channel."""
-        self.url = url
-        self.name = name
-        self.duration = str(duration)
-        self.attributes: dict[str, str] = attributes if attributes is not None else {}
-        self.extras: list[str] = extras if extras is not None else []
+    url: str = ""
+    name: str = ""
+    duration: str = "-1"
+    attributes: dict[str, str] = field(default_factory=dict)
+    extras: list[str] = field(default_factory=list)
 
-    def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, IPTVChannel)
-            and self.url == other.url
-            and self.name == other.name
-            and self.duration == other.duration
-            and self.attributes == other.attributes
-            and self.extras == other.extras
-        )
+    def __post_init__(self) -> None:
+        # Backwards compatibility: accept non-string durations and explicit None collections.
+        self.duration = str(self.duration)
+        if self.attributes is None:
+            self.attributes = {}
+        if self.extras is None:
+            self.extras = []
 
     def copy(self) -> Self:
         """Create a copy of this IPTVChannel object.
@@ -85,13 +76,8 @@ class IPTVChannel:
         Returns:
             A new IPTVChannel instance with copied values.
         """
-        return type(self)(
-            url=self.url,
-            name=self.name,
-            duration=self.duration,
-            attributes=self.attributes.copy(),  # shallow copy is ok, as we're dealing with primitive types
-            extras=self.extras.copy(),  # shallow copy is ok, as we're dealing with primitive types
-        )
+        # Shallow copies are enough, as the collections only hold strings.
+        return replace(self, attributes=self.attributes.copy(), extras=self.extras.copy())
 
     def parse_extinf_string(self, extinf_string: str) -> None:
         """Parse an #EXTINF string and populate the channel's fields.

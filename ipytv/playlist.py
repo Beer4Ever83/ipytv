@@ -22,6 +22,7 @@ import math
 import multiprocessing as mp
 import re
 from collections.abc import Iterator
+from dataclasses import fields
 from functools import cache, lru_cache
 from importlib import resources
 from multiprocessing.pool import AsyncResult
@@ -49,6 +50,8 @@ log.addHandler(logging.NullHandler())
 
 # The value of __MIN_CHUNK_SIZE cannot be smaller than 2
 __MIN_CHUNK_SIZE = 100
+
+_CHANNEL_FIELDS = tuple(f.name for f in fields(IPTVChannel))
 
 
 @cache
@@ -473,7 +476,8 @@ class M3UPlaylist:
             List of all searchable field specifications.
         """
         out: list[str] = []
-        for main, value in vars(ch).items():
+        for main in _CHANNEL_FIELDS:
+            value = getattr(ch, main)
             match value:
                 case list():
                     out.extend(f"{main}.{index}" for index in range(len(value)))
@@ -528,7 +532,7 @@ class M3UPlaylist:
             True if the field matches, False otherwise.
         """
         main, sub = M3UPlaylist._decode_where(where)
-        if main not in vars(ch):
+        if main not in _CHANNEL_FIELDS:
             return False
         value = getattr(ch, main)
         match value:
