@@ -11,8 +11,8 @@ from ipytv import doctor, playlist
 
 
 @click.command()
-@click.option('--no-sanitize', help='Skip sanitization of the playlist', is_flag=True)
-@click.argument('input_m3u_file', type=click.Path(exists=True))
+@click.option("--no-sanitize", help="Skip sanitization of the playlist", is_flag=True)
+@click.argument("input_m3u_file", type=click.Path(exists=True))
 def iptv2json(input_m3u_file: str, no_sanitize: bool) -> None:
     """Convert M3U playlist to JSON format.
 
@@ -27,11 +27,10 @@ def iptv2json(input_m3u_file: str, no_sanitize: bool) -> None:
         click.Abort: If an error occurs during playlist loading or processing
     """
     sanitize = not no_sanitize
-    with open(input_m3u_file, "r", encoding='UTF-8') as in_file:
-        if sanitize:
-            content = doctor.M3UDoctor.sanitize(in_file.readlines())
-        else:
-            content = in_file.readlines()
+    with open(input_m3u_file, encoding="UTF-8") as in_file:
+        content = in_file.readlines()
+    if sanitize:
+        content = doctor.M3UDoctor.sanitize(content)
     try:
         pl = playlist.loadl(content)
         if sanitize:
@@ -46,6 +45,6 @@ def iptv2json(input_m3u_file: str, no_sanitize: bool) -> None:
         click.Abort()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # pylint: disable=no-value-for-parameter
     iptv2json()

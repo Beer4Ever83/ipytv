@@ -8,8 +8,7 @@ REPO_DIR=$(realpath "${my_dir}/..")
 
 pushd "${REPO_DIR}" >/dev/null || abort
 uv run ruff check . || abort "ruff reported linting errors"
-# NOTE: `ruff format --check` is intentionally not enforced yet. It is enabled in
-# the dedicated code-modernization PR, together with the one-off reformat.
+uv run ruff format --check . || abort "ruff reported formatting errors"
 popd >/dev/null || abort
 
 exit "${TRUE}"

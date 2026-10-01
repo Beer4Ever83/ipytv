@@ -28,6 +28,7 @@ class IPyTVException(Exception):
         ... except IPyTVException as e:
         ...     # Handle any ipytv-specific error
     """
+
     def __init__(self, message: str = "An unexpected error occurred") -> None:
         """Initialize the exception with an optional message.
 
@@ -48,6 +49,7 @@ class MalformedExtinfException(IPyTVException):
         >>> # Raised for: #EXTINF:-1 tvg-id="unclosed quote,Channel
         >>> raise MalformedExtinfException("Invalid EXTINF syntax")
     """
+
     def __init__(self, message: str = "Malformed EXTINF row cannot be parsed") -> None:
         """Initialize the exception with an optional message.
 
@@ -68,6 +70,7 @@ class MalformedPlaylistException(IPyTVException):
         >>> # Raised when M3U file lacks #EXTM3U header
         >>> raise MalformedPlaylistException("Missing M3U header")
     """
+
     def __init__(self, message: str = "Playlist structure is invalid") -> None:
         """Initialize the exception with an optional message.
 
@@ -88,6 +91,7 @@ class URLException(IPyTVException):
         >>> # Raised for invalid URLs or network failures
         >>> raise URLException("Cannot access playlist URL")
     """
+
     def __init__(self, message: str = "URL operation failed") -> None:
         """Initialize the exception with an optional message.
 
@@ -108,6 +112,7 @@ class WrongTypeException(IPyTVException):
         >>> # Raised when string expected but integer provided
         >>> raise WrongTypeException("Expected string, got int")
     """
+
     def __init__(self, message: str = "Incorrect type provided") -> None:
         """Initialize the exception with an optional message.
 
@@ -128,6 +133,7 @@ class IndexOutOfBoundsException(IPyTVException):
         >>> # Raised when accessing playlist[100] on 10-item playlist
         >>> raise IndexOutOfBoundsException("Index 100 out of range")
     """
+
     def __init__(self, message: str = "Index out of bounds") -> None:
         """Initialize the exception with an optional message.
 
@@ -148,6 +154,7 @@ class AttributeAlreadyPresentException(IPyTVException):
         >>> # Raised when adding "tvg-id" twice to same channel
         >>> raise AttributeAlreadyPresentException("tvg-id already exists")
     """
+
     def __init__(self, message: str = "Attribute already exists") -> None:
         """Initialize the exception with an optional message.
 
@@ -168,6 +175,7 @@ class AttributeNotFoundException(IPyTVException):
         >>> # Raised when accessing missing "group-title" attribute
         >>> raise AttributeNotFoundException("group-title not found")
     """
+
     def __init__(self, message: str = "Attribute not found") -> None:
         """Initialize the exception with an optional message.
 

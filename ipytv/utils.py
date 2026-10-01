@@ -15,23 +15,23 @@ Functions:
     is_episode_from_series: Check if a channel name looks like a series episode
     extract_show_name: Extract show name by removing episode information
 """
+
 import re
-from typing import Dict, Tuple, Optional
 
 from ipytv.playlist import M3UPlaylist
 
-NO_SERIES_KEY = '_NO_SERIES_'
+NO_SERIES_KEY = "_NO_SERIES_"
 
 # Pre-compiled regular expression patterns to match season and episode numbers.
 # This should match "S05E10" or "s:01 e:13"
-_SEASON_AND_EPISODE_PATTERN_1 = re.compile(r'\s+(S[:=]?\d+)?\s*(E[:=]?\d+).*', re.IGNORECASE)
+_SEASON_AND_EPISODE_PATTERN_1 = re.compile(r"\s+(S[:=]?\d+)?\s*(E[:=]?\d+).*", re.IGNORECASE)
 # This should match " 01x05" or " 05.13" but not " 1920x1024"
-_SEASON_AND_EPISODE_PATTERN_2 = re.compile(r'\s+(\d{1,2})[x.](\d+)(?:\s+|$).*', re.IGNORECASE)
+_SEASON_AND_EPISODE_PATTERN_2 = re.compile(r"\s+(\d{1,2})[x.](\d+)(?:\s+|$).*", re.IGNORECASE)
 # This should match "Something.2" but not "25.10.2024"
-_SEASON_AND_EPISODE_PATTERN_3 = re.compile(r'(?<![0-9])\.(\d+)$', re.IGNORECASE)
+_SEASON_AND_EPISODE_PATTERN_3 = re.compile(r"(?<![0-9])\.(\d+)$", re.IGNORECASE)
 
 
-def _find_episode_pattern(channel_name: str) -> Optional[re.Pattern]:
+def _find_episode_pattern(channel_name: str) -> re.Pattern | None:
     """Find which episode pattern matches the channel name.
 
     Args:
@@ -49,7 +49,7 @@ def _find_episode_pattern(channel_name: str) -> Optional[re.Pattern]:
     return None
 
 
-def extract_series(playlist: M3UPlaylist, exclude_single: bool = False) -> Tuple[Dict[str, M3UPlaylist], M3UPlaylist]:
+def extract_series(playlist: M3UPlaylist, exclude_single: bool = False) -> tuple[dict[str, M3UPlaylist], M3UPlaylist]:
     """Create multiple playlists from a single playlist by grouping episodes from the same series together.
 
     Analyzes channel names to detect TV series episodes using common naming patterns,
@@ -76,7 +76,7 @@ def extract_series(playlist: M3UPlaylist, exclude_single: bool = False) -> Tuple
         >>> non_series.length()  # channels that don't look like series
         5
     """
-    title_playlist_map: Dict[str, M3UPlaylist] = {}
+    title_playlist_map: dict[str, M3UPlaylist] = {}
     not_series_playlist = M3UPlaylist()
     not_series_playlist.add_attributes(playlist.get_attributes())
 

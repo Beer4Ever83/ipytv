@@ -1,9 +1,7 @@
-from ipytv.channel import IPTVChannel, IPTVAttr
+from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.playlist import M3UPlaylist
 
-m3u_plus_attributes = {
-    "x-tvg-url": "http://myown.link:80/luke/220311/22311"
-}
+m3u_plus_attributes = {"x-tvg-url": "http://myown.link:80/luke/220311/22311"}
 m3u_plus_channel_0 = IPTVChannel(
     url="http://myown.link:80/luke/210274/78482",
     name="Rai 1",
@@ -12,8 +10,8 @@ m3u_plus_channel_0 = IPTVChannel(
         IPTVAttr.TVG_ID.value: "Rai 1",
         IPTVAttr.TVG_NAME.value: "Rai 1",
         IPTVAttr.TVG_LOGO.value: "https://static.epg.best/it/RaiUno.it.png",
-        IPTVAttr.GROUP_TITLE.value: "RAI"
-    }
+        IPTVAttr.GROUP_TITLE.value: "RAI",
+    },
 )
 m3u_plus_channel_1 = IPTVChannel(
     url="http://myown.link:80/luke/210274/89844",
@@ -23,11 +21,11 @@ m3u_plus_channel_1 = IPTVChannel(
         IPTVAttr.TVG_ID.value: "",
         IPTVAttr.TVG_NAME.value: "Cielo",
         IPTVAttr.TVG_LOGO.value: "",
-        IPTVAttr.GROUP_TITLE.value: "Italia"
+        IPTVAttr.GROUP_TITLE.value: "Italia",
     },
     extras=[
         "#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.0"
-    ]
+    ],
 )
 m3u_plus_channel_2 = IPTVChannel(
     url="http://myown.link:80/luke/109163/89800",
@@ -38,8 +36,8 @@ m3u_plus_channel_2 = IPTVChannel(
         IPTVAttr.TVG_NAME.value: "TEMATICO MASSIMO TROISI",
         IPTVAttr.TVG_LOGO.value: "",
         IPTVAttr.GROUP_TITLE.value: "Italia",
-        IPTVAttr.TVG_SHIFT.value: "-0.5"
-    }
+        IPTVAttr.TVG_SHIFT.value: "-0.5",
+    },
 )
 m3u_plus_channel_3 = IPTVChannel(
     url="http://myown.link:80/luke/109163/78282",
@@ -49,28 +47,19 @@ m3u_plus_channel_3 = IPTVChannel(
         IPTVAttr.TVG_ID.value: "-10.5",
         IPTVAttr.TVG_NAME.value: "----I N T R A T T E N I M E N T O----",
         IPTVAttr.TVG_LOGO.value: "",
-        IPTVAttr.GROUP_TITLE.value: "Intrattenimento"
-    }
+        IPTVAttr.GROUP_TITLE.value: "Intrattenimento",
+    },
 )
 expected_m3u_plus = M3UPlaylist()
 expected_m3u_plus._attributes = m3u_plus_attributes
-expected_m3u_plus._channels = [
-    m3u_plus_channel_0,
-    m3u_plus_channel_1,
-    m3u_plus_channel_2,
-    m3u_plus_channel_3
-]
+expected_m3u_plus._channels = [m3u_plus_channel_0, m3u_plus_channel_1, m3u_plus_channel_2, m3u_plus_channel_3]
 
-expected_m3u_plus_group_by_group_title = {
-    "RAI": [0],
-    "Italia": [1, 2],
-    "Intrattenimento": [3]
-}
+expected_m3u_plus_group_by_group_title = {"RAI": [0], "Italia": [1, 2], "Intrattenimento": [3]}
 expected_m3u_plus_group_by_url = {
     "http://myown.link:80/luke/210274/78482": [0],
     "http://myown.link:80/luke/210274/89844": [1],
     "http://myown.link:80/luke/109163/89800": [2],
-    "http://myown.link:80/luke/109163/78282": [3]
+    "http://myown.link:80/luke/109163/78282": [3],
 }
 
 expected_m3u8_list = [
@@ -93,7 +82,7 @@ expected_m3u8_list = [
         url="http://myown.link.com:8000/localchannels/jack53ls83j/601",
         name="SANTUÁRIO DE FÁTIMA",
         duration="-1",
-    )
+    ),
 ]
 expected_m3u8 = M3UPlaylist()
 expected_m3u8._channels = expected_m3u8_list
@@ -128,36 +117,38 @@ expected_urlencoded_list = [
         url="http://myown.link:80/luke/109163/78281",
         name="Vacanze 83",
         duration="-1",
-        attributes={"tvg-logo": "https://some.image.service.com/images/V1_UY268_CR4%2C0%2C182%2C268_AL_.jpg"}
+        attributes={"tvg-logo": "https://some.image.service.com/images/V1_UY268_CR4%2C0%2C182%2C268_AL_.jpg"},
     ),
     IPTVChannel(
         url="http://myown.link:80/luke/109163/78282",
         name="Vacanze 90",
         duration="-1",
-        attributes={"tvg-logo": "https://some.image.service.com/images/%2C%2C%2C%2C%2C.png"}
+        attributes={"tvg-logo": "https://some.image.service.com/images/%2C%2C%2C%2C%2C.png"},
     ),
     IPTVChannel(
         url="http://myown.link:80/luke/109163/78283",
         name="Vacanze 91",
         duration="-1",
-        attributes={"tvg-logo": "https://some.image.service.com/images/vacanze.jpg"}
+        attributes={"tvg-logo": "https://some.image.service.com/images/vacanze.jpg"},
     ),
     IPTVChannel(
         url="http://myown.link:80/luke/109163/78284",
         name="Vacanze 95",
         duration="-1",
-        attributes={"tvg-logo": "https://some.image.service.com/images/M/MV5BOTVkOWExNmYtZDdjMy00ODlhLTlhMTYtMjRmYzRhMmMwZWRlXkEyXkFqcGdeQXVyMzU0NzkwMDg%40._V1_UY268_CR2%2C0%2C182%2C268_AL_.jpg"}
-    )
+        attributes={
+            "tvg-logo": "https://some.image.service.com/images/M/MV5BOTVkOWExNmYtZDdjMy00ODlhLTlhMTYtMjRmYzRhMmMwZWRlXkEyXkFqcGdeQXVyMzU0NzkwMDg%40._V1_UY268_CR2%2C0%2C182%2C268_AL_.jpg"
+        },
+    ),
 ]
 expected_urlencoded = M3UPlaylist()
 expected_urlencoded._channels = expected_urlencoded_list
 
 broken_extinf_row = """#EXTINF:-1 tvg-id="" tvg-name=""AR || Wonderful! || "RR" tvg-logo="https://img.mysite.net/5425.jpg" group-title="free, stream","AR || Wonderful! || "RR"""
 expected_attributes_broken_extinf_row = {
-    'tvg-id': '',
-    'tvg-name': '_AR || Wonderful! || _RR',
-    'tvg-logo': 'https://img.mysite.net/5425.jpg',
-    'group-title': 'free, stream'
+    "tvg-id": "",
+    "tvg-name": "_AR || Wonderful! || _RR",
+    "tvg-logo": "https://img.mysite.net/5425.jpg",
+    "group-title": "free, stream",
 }
 
 space_before_comma = """#EXTM3U url-tvg="http://epg.51zmt.top:8000/e.xml" catchup="append" catchup-source="?playseek=${(b)yyyyMMddHHmmss}-${(e)yyyyMMddHHmmss}"

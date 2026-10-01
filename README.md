@@ -138,9 +138,9 @@ Use the `playlist.loadl(rows)` function:
 from ipytv import playlist
 
 rows = [
-    '#EXTM3U',
+    "#EXTM3U",
     '#EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1',
-    'http://myown.link:80/luke/210274/78482'
+    "http://myown.link:80/luke/210274/78482",
 ]
 pl = playlist.loadl(rows)
 print(pl.length())
@@ -251,7 +251,7 @@ methods:
 from ipytv.playlist import M3UPlaylist
 
 pl = M3UPlaylist()
-attribute_name = 'tvg-shift'
+attribute_name = "tvg-shift"
 # Add the 'tvg-shift' attribute and set it to 1
 pl.add_attribute(attribute_name, "1")
 # Update the 'tvg-shift' attribute to -2
@@ -284,7 +284,7 @@ url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = playlist.loadu(url)
 # Let's retrieve the first channel in the list
 channel = pl.get_channel(0)
-print(f'channel \"{channel.name}\": {channel.url}')
+print(f'channel "{channel.name}": {channel.url}')
 # The next line will throw IndexOutOfBoundsException
 channel = pl.get_channel(-1)
 ```
@@ -299,7 +299,7 @@ from ipytv import playlist
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = playlist.loadu(url)
 for channel in pl:
-    print(f'channel \"{channel.name}\": {channel.url}')
+    print(f'channel "{channel.name}": {channel.url}')
 ```
 
 #### Low level
@@ -313,7 +313,7 @@ from ipytv import playlist
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = playlist.loadu(url)
 chan_list = pl.get_channels()
-ten_channels = chan_list[:10] 
+ten_channels = chan_list[:10]
 ```
 
 The channels can also be added, modified and removed by using the following
@@ -369,7 +369,7 @@ pl = playlist.loadu(url)
 regex = r"^rai\s*\d+.*"
 new_pl = pl.search(regex, where="name", case_sensitive=False)
 for ch in new_pl:
-    print(f'channel: {ch.name}')
+    print(f"channel: {ch.name}")
 ```
 
 The signature of the `search()` method is the following:
@@ -403,7 +403,7 @@ pl = playlist.loadu(url)
 regex = r"Music"
 new_pl = pl.search(regex, where="attributes.group-title")
 for ch in new_pl:
-    print(f'group: {ch.attributes["group-title"]}, channel: {ch.name}')
+    print(f"group: {ch.attributes['group-title']}, channel: {ch.name}")
 ```
 
 To find all the channels with the "TV" word in the name or in the group name, you can use:
@@ -416,7 +416,7 @@ pl = playlist.loadu(url)
 regex = r".*\bTV\b.*"
 new_pl = pl.search(regex, where=["name", "attributes.group-title"], case_sensitive=False)
 for ch in new_pl:
-    print(f'group: {ch.attributes["group-title"]}, channel: {ch.name}')
+    print(f"group: {ch.attributes['group-title']}, channel: {ch.name}")
 ```
 
 To find all the channels with the "NEWS" word (case insensitively) anywhere in the channel 
@@ -430,7 +430,7 @@ pl = playlist.loadu(url)
 regex = r".*\bNEWS\b.*"
 new_pl = pl.search(regex, case_sensitive=False)
 for ch in new_pl:
-    print(f'group: {ch.attributes["group-title"]}, channel: {ch.name}')
+    print(f"group: {ch.attributes['group-title']}, channel: {ch.name}")
 ```
 
 ### Accessing the properties of a channel
@@ -455,9 +455,9 @@ channel = IPTVChannel(
         IPTVAttr.TVG_ID.value: "Rai 1",
         IPTVAttr.TVG_NAME.value: "Rai 1",
         IPTVAttr.TVG_LOGO.value: "https://static.epg.best/it/RaiUno.it.png",
-        IPTVAttr.GROUP_TITLE.value: "RAI"
+        IPTVAttr.GROUP_TITLE.value: "RAI",
     },
-    extras=['#EXTVLCOPT:http-user-agent=Lavf53.32.100']
+    extras=["#EXTVLCOPT:http-user-agent=Lavf53.32.100"],
 )
 print(channel.name)
 print(channel.attributes[IPTVAttr.GROUP_TITLE.value])
@@ -491,12 +491,12 @@ in charge of applying all different fixes. It can be used as follows:
 from ipytv.doctor import M3UDoctor, M3UPlaylistDoctor
 from ipytv import playlist
 
-with open('my-broken-playlist.m3u', encoding='utf-8') as in_file:
+with open("my-broken-playlist.m3u", encoding="utf-8") as in_file:
     content = in_file.readlines()
     fixed_content = M3UDoctor.sanitize(content)
     pl = playlist.loadl(fixed_content)
     fixed_pl = M3UPlaylistDoctor.sanitize(pl)
-    with open('my-fixed-playlist.m3u', 'w', encoding='utf-8') as out_file:
+    with open("my-fixed-playlist.m3u", "w", encoding="utf-8") as out_file:
         content = fixed_pl.to_m3u_plus_playlist()
         out_file.write(content)
 ```
@@ -513,6 +513,7 @@ A function that, given a channel name, checks whether the channel might be from 
 Example:
 ```python
 from ipytv.utils import is_episode_from_series
+
 channel_name = "The Talking Dead S01 E07"
 if is_episode_from_series(channel_name):
     print("This channel looks like an episode from a series")
@@ -526,6 +527,7 @@ episode numbers (if any) and every other string following these numbers (if any)
 Example:
 ```python
 from ipytv.utils import is_episode_from_series, extract_show_name
+
 channel_name = "The Talking Dead S01 E07"
 if is_episode_from_series(channel_name):
     show_name = extract_show_name(channel_name)
@@ -547,6 +549,7 @@ Example:
 import os
 from ipytv.playlist import loadu
 from ipytv.utils import extract_series
+
 pl = loadu("https://mametchikitty.github.io/Listas-IPTV/dibujos-animados.m3u")
 series_map, not_series_pl = extract_series(pl, exclude_single=True)
 out_dir = "./series"
