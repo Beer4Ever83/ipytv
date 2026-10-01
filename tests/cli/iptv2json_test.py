@@ -53,6 +53,14 @@ class TestIptv2Json(unittest.TestCase):
         result = self.runner.invoke(iptv2json, [])
         self.assertNotEqual(0, result.exit_code)
 
+    def test_bad_m3u_file(self) -> None:
+        """Test that an unparsable playlist exits with an error on stderr."""
+        result = self.runner.invoke(iptv2json, ["tests/resources/m3u_plus.json"])
+        self.assertEqual(1, result.exit_code, result.output)
+        self.assertIsInstance(result.exception, SystemExit)
+        self.assertEqual("", result.stdout)
+        self.assertIn("Error:", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
