@@ -1,12 +1,15 @@
 import itertools
 import json
+import logging
 import os
 import re
 import tempfile
 import unittest
+from unittest import mock
 
 import httpretty
 import m3u8
+import requests
 from deepdiff import DeepDiff
 
 import ipytv.playlist as playlist
@@ -16,6 +19,7 @@ from ipytv.exceptions import (
     AttributeAlreadyPresentException,
     AttributeNotFoundException,
     IndexOutOfBoundsException,
+    MalformedPlaylistException,
     URLException,
     WrongTypeException,
 )
@@ -139,6 +143,31 @@ class TestM3UPlaylist(unittest.TestCase):
         pl = playlist.loadl(new_buffer)
         self.assertEqual(expected_length, pl.length(), "The size of the playlist is not the expected one")
 
+    def test_loaders_reject_wrong_types(self):
+        loaders = [playlist.loadl, playlist.loads, playlist.loadf, playlist.loadu, playlist.loadj, playlist.loadjstr]
+        for loader in loaders:
+            with self.subTest(loader=loader.__name__), self.assertRaises(WrongTypeException):
+                loader(42)  # type: ignore[arg-type]
+
+    def test_loadl_without_rows(self):
+        for rows in ([], ["", "   "]):
+            with self.subTest(rows=rows), self.assertRaises(MalformedPlaylistException):
+                playlist.loadl(rows)
+
+    def test_loadl_without_header(self):
+        with self.assertRaises(MalformedPlaylistException):
+            playlist.loadl(['#EXTINF:-1 tvg-id="a",Channel', "http://a"])
+
+    def test_loadl_with_adjacent_extinf_rows(self):
+        pl = playlist.loadl(["#EXTM3U", '#EXTINF:-1 tvg-id="a",No URL', '#EXTINF:-1 tvg-id="b",With URL', "http://b"])
+        self.assertEqual(
+            [
+                IPTVChannel(name="No URL", attributes={"tvg-id": "a"}),
+                IPTVChannel(url="http://b", name="With URL", attributes={"tvg-id": "b"}),
+            ],
+            pl.get_channels(),
+        )
+
     def test_loadl_m3u_plus_empty_playlist(self):
         pl = playlist.loadl(["#EXTM3U", ""])
         self.assertEqual(0, pl.length(), "The size of the playlist is not the expected one")
@@ -223,6 +252,47 @@ class TestM3UPlaylist(unittest.TestCase):
     def test_loadf_m3u_plus(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         self.assertEqual(test_data.expected_m3u_plus, pl, "The two playlists are not equal")
+
+    def test_loadf_logs_from_worker_processes(self):
+        with self.assertLogs("ipytv", level="DEBUG") as captured:
+            playlist.loadf("tests/resources/m3u_plus.m3u")
+        worker_records = [r for r in captured.records if r.getMessage().startswith("populating playlist with rows")]
+        self.assertTrue(worker_records, "no log records were forwarded from the worker processes")
+        self.assertEqual("ipytv.playlist", worker_records[0].name)
+
+    def test_loadl_forwards_all_worker_log_records(self):
+        # More records than a multiprocessing queue can hold on macOS (32767): none must be lost.
+        factor = 40000
+        # Each copy logs one "adjacent #EXTINF rows" warning.
+        rows = ["#EXTM3U"] + ["#EXTINF:-1,a", "#EXTINF:-1,b", "http://example.com/stream"] * factor
+        with self.assertLogs("ipytv", level="WARNING") as captured:
+            playlist.loadl(rows)
+        self.assertEqual(factor, len(captured.records))
+
+    def test_loadf_with_extra_tags_logs_no_warnings(self):
+        with self.assertNoLogs("ipytv", level="WARNING"):
+            pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        self.assertTrue(any(ch.extras for ch in pl), "the test playlist should contain extra tags")
+
+    def test_handling_threshold(self):
+        def isolated_logger(level: int, *handlers: logging.Handler) -> logging.Logger:
+            logger = logging.Logger("isolated", level)
+            for handler in handlers:
+                logger.addHandler(handler)
+            return logger
+
+        info_handler = logging.StreamHandler()
+        info_handler.setLevel(logging.INFO)
+        nothing_handled = logging.CRITICAL + 1
+        cases = [
+            ("only null handlers", isolated_logger(logging.DEBUG, logging.NullHandler()), nothing_handled),
+            ("no handlers falls back to lastResort", isolated_logger(logging.DEBUG), logging.WARNING),
+            ("handler level wins", isolated_logger(logging.DEBUG, info_handler), logging.INFO),
+            ("logger level wins", isolated_logger(logging.ERROR, logging.StreamHandler()), logging.ERROR),
+        ]
+        for description, logger, expected in cases:
+            with self.subTest(description):
+                self.assertEqual(expected, playlist._handling_threshold(logger))
 
     def test_loadf_m3u8(self):
         pl = playlist.loadf("tests/resources/m3u8.m3u")
@@ -323,6 +393,17 @@ class TestM3UPlaylist(unittest.TestCase):
             json_str = "\n".join(json_file.readlines())
         pl = playlist.loadjstr(json_str)
         self.assertEqual(expected_pl, pl, "The two playlists are not equal")
+
+    def test_loadjstr_with_invalid_json(self):
+        with self.assertRaises(WrongTypeException):
+            playlist.loadjstr("{not json")
+
+    def test_loadu_connection_error(self):
+        with (
+            mock.patch("ipytv.playlist.requests.get", side_effect=requests.ConnectionError("unreachable")),
+            self.assertRaises(URLException),
+        ):
+            playlist.loadu("http://myown.link:80/luke/playlist.m3u")
 
     def test_loadjstr_with_unsupported_json(self):
         with open("tests/resources/unsupported.json") as json_file:
@@ -473,6 +554,14 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertTrue(result)
         result = M3UPlaylist._match_all(ch, re.compile(".*luke.*"))
         self.assertTrue(result)
+
+    def test_search_by_list_index(self):
+        pl = M3UPlaylist()
+        pl.append_channels(
+            [IPTVChannel(name="a", extras=["#EXTVLCOPT:x=1"]), IPTVChannel(name="b", extras=["#EXTGRP:news"])]
+        )
+        results = pl.search("#EXTGRP:.*", where="extras.0")
+        self.assertEqual(["b"], [ch.name for ch in results])
 
     def test_search(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")

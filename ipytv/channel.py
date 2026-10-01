@@ -249,14 +249,9 @@ def from_playlist_entry(entry: list[str]) -> IPTVChannel:
                 log.warning("Skipping the following entry as it contains a malformed #EXTINF row:\n%s", entry)
             log.info("#EXTINF row found")
         elif m3u.is_comment_or_tag_row(row):
-            # a comment or a non-supported tag, we add it to extras
             channel.extras.append(row)
-            log.warning("commented row or unsupported tag found:\n%s", row)
+            log.debug("comment or extra tag row added to the channel's extras:\n%s", row)
         elif m3u.is_url_row(row):
             channel.url = row
             log.info("URL row found")
     return channel
-
-
-if __name__ == "__main__":
-    pass

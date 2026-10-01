@@ -152,7 +152,3 @@ def extract_show_name(channel_name: str) -> str:
     if pattern:
         return pattern.sub("", channel_name).strip()
     return channel_name.strip()
-
-
-if __name__ == "__main__":
-    pass

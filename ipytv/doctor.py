@@ -287,7 +287,3 @@ class M3UPlaylistDoctor:
         for chan in playlist:
             new_playlist.append_channel(IPTVChannelDoctor.sanitize(chan))
         return new_playlist
-
-
-if __name__ == "__main__":
-    pass

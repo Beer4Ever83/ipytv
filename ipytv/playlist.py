@@ -68,6 +68,55 @@ def _get_json_schema() -> dict[str, Any]:
     return json.loads(schema_text)
 
 
+_PACKAGE_LOGGER_NAME = __name__.split(".")[0]
+
+
+class _RecordCollector(logging.Handler):
+    """Collect log records in memory, in a picklable form, so they can be shipped to another process."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.records: list[logging.LogRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        # Same preparation as QueueHandler: args and exc_info may not be picklable.
+        record.msg = record.getMessage()
+        record.args = None
+        record.exc_info = None
+        self.records.append(record)
+
+
+def _handling_threshold(logger: logging.Logger) -> int:
+    """Return the lowest level at which a record from this logger reaches a real (non-null) handler."""
+    handlers: list[logging.Handler] = []
+    current: logging.Logger | None = logger
+    while current is not None:
+        handlers += current.handlers
+        current = current.parent if current.propagate else None
+    if not handlers and logging.lastResort is not None:
+        handlers = [logging.lastResort]
+    levels = [h.level for h in handlers if not isinstance(h, logging.NullHandler)]
+    return max(logger.getEffectiveLevel(), min(levels)) if levels else logging.CRITICAL + 1
+
+
+def _worker_log_level() -> int:
+    """Return the level workers should log at so that only records that would be handled are shipped back."""
+    loggers = [
+        logger
+        for name, logger in logging.root.manager.loggerDict.items()
+        if isinstance(logger, logging.Logger) and name.split(".")[0] == _PACKAGE_LOGGER_NAME
+    ]
+    return min((_handling_threshold(logger) for logger in loggers), default=logging.CRITICAL + 1)
+
+
+def _replay_log_records(records: list[logging.LogRecord]) -> None:
+    """Dispatch records from a worker to the local logger of the same name, honoring the caller's config."""
+    for record in records:
+        local_logger = logging.getLogger(record.name)
+        if local_logger.isEnabledFor(record.levelno):
+            local_logger.handle(record)
+
+
 class M3UPlaylist:
     """Represents an IPTV playlist in M3U Plus format.
 
@@ -710,12 +759,13 @@ def loadl(rows: list[str]) -> M3UPlaylist:
     chunks = _chunk_body(body, cores)
     results: list[AsyncResult] = []
     log.debug("spawning a pool of processes (one per core) to parse the playlist")
+    log_level = _worker_log_level()
     with mp.Pool(processes=cores) as pool:
         for chunk in chunks:
             beginning = chunk["beginning"]
             end = chunk["end"]
             log.debug('assigning a "populate" task (beginning: %s, end: %s) to a process in the pool', beginning, end)
-            result = pool.apply_async(_populate, (body, beginning, end))
+            result = pool.apply_async(_populate_in_worker, (body, beginning, end, log_level))
             results.append(result)
         log.debug("closing workers")
         pool.close()
@@ -724,7 +774,8 @@ def loadl(rows: list[str]) -> M3UPlaylist:
         pool.join()
         log.debug("workers terminated")
         for result in results:
-            p_list = result.get()
+            p_list, records = result.get()
+            _replay_log_records(records)
             out_pl.append_channels(p_list.get_channels())
     return out_pl
 
@@ -996,6 +1047,23 @@ def _chunk_body(rows: list[str], chunk_count: int, enforce_min_size: bool = True
     return chunk_list
 
 
+def _populate_in_worker(
+    rows: list[str], beginning: int, end: int, log_level: int
+) -> tuple[M3UPlaylist, list[logging.LogRecord]]:
+    """Run _populate in a pool worker, returning its log records along with the result.
+
+    Records are batched rather than streamed through a multiprocessing queue: parsing can log one
+    record per row, which overwhelms a queue (bounded to 32767 items on macOS).
+    """
+    collector = _RecordCollector()
+    package_logger = logging.getLogger(_PACKAGE_LOGGER_NAME)
+    package_logger.handlers = [collector]
+    package_logger.setLevel(log_level)
+    # Don't also emit through handlers inherited from the parent (with the "fork" start method).
+    package_logger.propagate = False
+    return _populate(rows, beginning, end), collector.records
+
+
 def _populate(rows: list[str], beginning: int = 0, end: int = -1) -> M3UPlaylist:
     """Populate a playlist from a subset of rows.
 
@@ -1032,7 +1100,7 @@ def _populate(rows: list[str], beginning: int = 0, end: int = -1) -> M3UPlaylist
             entry.append(row)
         elif m3u.is_comment_or_tag_row(row):
             entry.append(row)
-            log.warning("commented row or unsupported tag found:\n%s", row)
+            log.debug("comment or extra tag row added to the current entry:\n%s", row)
         elif m3u.is_url_row(row):
             entry.append(row)
             log.debug("adding entry to the playlist: %s", entry)
@@ -1051,7 +1119,3 @@ def _append_entry(entry: list[str], pl: M3UPlaylist) -> None:
     """
     channel = ipytv.channel.from_playlist_entry(entry)
     pl.append_channel(channel)
-
-
-if __name__ == "__main__":
-    pass

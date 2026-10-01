@@ -183,7 +183,3 @@ class AttributeNotFoundException(IPyTVException):
             message: The error message describing the missing attribute.
         """
         super().__init__(message)
-
-
-if __name__ == "__main__":
-    pass
