@@ -452,20 +452,21 @@ channel = IPTVChannel(
     name="Rai 1",
     duration="-1",
     attributes={
-        IPTVAttr.TVG_ID.value: "Rai 1",
-        IPTVAttr.TVG_NAME.value: "Rai 1",
-        IPTVAttr.TVG_LOGO.value: "https://static.epg.best/it/RaiUno.it.png",
-        IPTVAttr.GROUP_TITLE.value: "RAI",
+        IPTVAttr.TVG_ID: "Rai 1",
+        IPTVAttr.TVG_NAME: "Rai 1",
+        IPTVAttr.TVG_LOGO: "https://static.epg.best/it/RaiUno.it.png",
+        IPTVAttr.GROUP_TITLE: "RAI",
     },
     extras=["#EXTVLCOPT:http-user-agent=Lavf53.32.100"],
 )
 print(channel.name)
-print(channel.attributes[IPTVAttr.GROUP_TITLE.value])
+print(channel.attributes[IPTVAttr.GROUP_TITLE])
 print(channel.extras[0])
 ```
 
 The `IPTVAttr` enum class contains attribute names that are commonly found in
-IPTV Playlists.
+IPTV Playlists. It's a `StrEnum`, so its members can be used directly wherever
+a string is expected (e.g. `IPTVAttr.TVG_ID == "tvg-id"`).
 
 ### The `doctor` module
 

@@ -393,21 +393,19 @@ class TestM3UPlaylist(unittest.TestCase):
 
     def test_group_by_attribute(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
-        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value)
+        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_group_title, ignore_order=True)
         self.assertEqual(0, len(diff))
 
     def test_group_by_attribute_with_no_group_enabled(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         empty_group_channel = IPTVChannel(
-            url="http://emptygroup.channel/mychannel", attributes={IPTVAttr.GROUP_TITLE.value: ""}
+            url="http://emptygroup.channel/mychannel", attributes={IPTVAttr.GROUP_TITLE: ""}
         )
-        no_group_channel = IPTVChannel(
-            url="http://nogroup.channel/mychannel", attributes={IPTVAttr.TVG_ID.value: "someid"}
-        )
+        no_group_channel = IPTVChannel(url="http://nogroup.channel/mychannel", attributes={IPTVAttr.TVG_ID: "someid"})
         pl.append_channel(empty_group_channel)
         pl.append_channel(no_group_channel)
-        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value)
+        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE)
         expected_groups = test_data.expected_m3u_plus_group_by_group_title.copy()
         expected_groups[M3UPlaylist.NO_GROUP_KEY] = [4, 5]
         diff = DeepDiff(groups, expected_groups, ignore_order=True)
@@ -416,14 +414,12 @@ class TestM3UPlaylist(unittest.TestCase):
     def test_group_by_attribute_with_no_group_disabled(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         empty_group_channel = IPTVChannel(
-            url="http://emptygroup.channel/mychannel", attributes={IPTVAttr.GROUP_TITLE.value: ""}
+            url="http://emptygroup.channel/mychannel", attributes={IPTVAttr.GROUP_TITLE: ""}
         )
-        no_group_channel = IPTVChannel(
-            url="http://nogroup.channel/mychannel", attributes={IPTVAttr.TVG_ID.value: "someid"}
-        )
+        no_group_channel = IPTVChannel(url="http://nogroup.channel/mychannel", attributes={IPTVAttr.TVG_ID: "someid"})
         pl.append_channel(empty_group_channel)
         pl.append_channel(no_group_channel)
-        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value, include_no_group=False)
+        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE, include_no_group=False)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_group_title, ignore_order=True)
         self.assertEqual(0, len(diff))
 
@@ -435,8 +431,8 @@ class TestM3UPlaylist(unittest.TestCase):
 
     def test_group_by_url_with_no_group_enabled(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
-        first_empty_url_channel = IPTVChannel(url="", attributes={IPTVAttr.GROUP_TITLE.value: "first"})
-        second_empty_url_channel = IPTVChannel(url="", attributes={IPTVAttr.GROUP_TITLE.value: "second"})
+        first_empty_url_channel = IPTVChannel(url="", attributes={IPTVAttr.GROUP_TITLE: "first"})
+        second_empty_url_channel = IPTVChannel(url="", attributes={IPTVAttr.GROUP_TITLE: "second"})
         pl.append_channel(first_empty_url_channel)
         pl.append_channel(second_empty_url_channel)
         groups = pl.group_by_url(include_no_group=True)

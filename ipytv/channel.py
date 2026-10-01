@@ -13,8 +13,8 @@ Functions:
 
 import json
 import logging
-from enum import Enum
-from typing import Any
+from enum import StrEnum
+from typing import Any, Self
 
 from ipytv import m3u
 from ipytv.exceptions import MalformedExtinfException
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 
-class IPTVAttr(Enum):
+class IPTVAttr(StrEnum):
     """Enum of attributes commonly found in IPTV playlists as part of #EXTINF rows."""
 
     TVG_ID = "tvg-id"
@@ -79,16 +79,13 @@ class IPTVChannel:
             and self.extras == other.extras
         )
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
-    def copy(self) -> "IPTVChannel":
+    def copy(self) -> Self:
         """Create a copy of this IPTVChannel object.
 
         Returns:
             A new IPTVChannel instance with copied values.
         """
-        return IPTVChannel(
+        return type(self)(
             url=self.url,
             name=self.name,
             duration=self.duration,
@@ -143,23 +140,12 @@ class IPTVChannel:
         raise MalformedExtinfException(f"Malformed #EXTINF string:\n{extinf_string}")
 
     def __str__(self) -> str:
-        attr_str = ""
-        if len(self.attributes) > 0:
-            for name, value in self.attributes.items():
-                attr_str += f'{name}: "{value}", '
-        if attr_str.endswith(", "):
-            attr_str = attr_str[:-2]
-        extras_str = ""
-        if len(self.extras) > 0:
-            for extra in self.extras:
-                extras_str += f"{extra}, "
-        if extras_str.endswith(", "):
-            extras_str = extras_str[:-2]
-        out = (
+        attr_str = ", ".join(f'{name}: "{value}"' for name, value in self.attributes.items())
+        extras_str = ", ".join(self.extras)
+        return (
             f'{{name: "{self.name}", duration: "{self.duration}", '
             f'url: "{self.url}", attributes: {{{attr_str}}}, extras: [{extras_str}]}}'
         )
-        return out
 
     def _build_m3u_plus_extinf_entry(self) -> str:
         extinf_pattern = "#EXTINF:{}{},{}\n"
@@ -250,7 +236,7 @@ class IPTVChannel:
         return json.dumps(self.to_dict())
 
 
-def from_playlist_entry(entry: list[str]) -> "IPTVChannel":
+def from_playlist_entry(entry: list[str]) -> IPTVChannel:
     """Build an IPTVChannel object from playlist rows.
 
     A playlist entry can contain multiple rows: #EXTINF row, additional tags,

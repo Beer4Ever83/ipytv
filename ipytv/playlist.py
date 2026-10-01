@@ -21,11 +21,11 @@ import logging
 import math
 import multiprocessing as mp
 import re
-import typing
-from functools import cache
+from collections.abc import Iterator
+from functools import cache, lru_cache
 from importlib import resources
 from multiprocessing.pool import AsyncResult
-from typing import Any
+from typing import Any, Self
 
 import jsonschema
 import requests
@@ -50,9 +50,6 @@ log.addHandler(logging.NullHandler())
 # The value of __MIN_CHUNK_SIZE cannot be smaller than 2
 __MIN_CHUNK_SIZE = 100
 
-# Cache for compiled regex patterns to avoid recompilation
-_regex_cache: dict[tuple[str, bool], re.Pattern] = {}
-
 
 @cache
 def _get_json_schema() -> dict[str, Any]:
@@ -68,8 +65,9 @@ def _get_json_schema() -> dict[str, Any]:
     return json.loads(schema_text)
 
 
-def _get_compiled_regex(pattern: str, case_sensitive: bool) -> re.Pattern:
-    """Get a compiled regex pattern from cache or compile and cache it.
+@lru_cache(maxsize=256)
+def _get_compiled_regex(pattern: str, case_sensitive: bool) -> re.Pattern[str]:
+    """Get a compiled regex pattern, caching the most recently used ones.
 
     Args:
         pattern: The regex pattern string.
@@ -78,11 +76,8 @@ def _get_compiled_regex(pattern: str, case_sensitive: bool) -> re.Pattern:
     Returns:
         Compiled regex pattern.
     """
-    cache_key = (pattern, case_sensitive)
-    if cache_key not in _regex_cache:
-        flags = re.RegexFlag(0) if case_sensitive else re.IGNORECASE
-        _regex_cache[cache_key] = re.compile(pattern, flags)
-    return _regex_cache[cache_key]
+    flags = re.RegexFlag(0) if case_sensitive else re.IGNORECASE
+    return re.compile(pattern, flags)
 
 
 class M3UPlaylist:
@@ -398,7 +393,7 @@ class M3UPlaylist:
         return out
 
     def group_by_attribute(
-        self, attribute: str = IPTVAttr.GROUP_TITLE.value, include_no_group: bool = True
+        self, attribute: str = IPTVAttr.GROUP_TITLE, include_no_group: bool = True
     ) -> dict[str, list[int]]:
         """Group channels by a specific attribute value.
 
@@ -477,18 +472,15 @@ class M3UPlaylist:
         Returns:
             List of all searchable field specifications.
         """
-        out = []
-        mains = list(vars(ch))
-        for main in mains:
-            value = getattr(ch, main)
-            if isinstance(value, list):
-                for key, _ in enumerate(value):
-                    out.append(f"{main}.{key}")
-            elif isinstance(value, dict):
-                for key, _ in value.items():
-                    out.append(f"{main}.{key}")
-            else:
-                out.append(main)
+        out: list[str] = []
+        for main, value in vars(ch).items():
+            match value:
+                case list():
+                    out.extend(f"{main}.{index}" for index in range(len(value)))
+                case dict():
+                    out.extend(f"{main}.{key}" for key in value)
+                case _:
+                    out.append(main)
         return out
 
     @staticmethod
@@ -524,7 +516,7 @@ class M3UPlaylist:
         return M3UPlaylist._match_single_compiled(ch, compiled_regex, where)
 
     @staticmethod
-    def _match_single_compiled(ch: IPTVChannel, compiled_regex: re.Pattern, where: str) -> bool:
+    def _match_single_compiled(ch: IPTVChannel, compiled_regex: re.Pattern[str], where: str) -> bool:
         """Check if a specific field in a channel matches the compiled regex.
 
         Args:
@@ -539,10 +531,10 @@ class M3UPlaylist:
         if main not in vars(ch):
             return False
         value = getattr(ch, main)
-        if sub is not None:
-            if isinstance(value, list):
+        match value:
+            case list() if sub is not None:
                 value = value[int(sub)]
-            elif isinstance(value, dict):
+            case dict() if sub is not None:
                 if sub not in value:
                     return False
                 value = value[sub]
@@ -651,7 +643,7 @@ class M3UPlaylist:
         """
         return json.dumps(self.__to_dict())
 
-    def copy(self) -> "M3UPlaylist":
+    def copy(self) -> Self:
         """Create a deep copy of the playlist.
 
         Returns:
@@ -662,7 +654,7 @@ class M3UPlaylist:
             >>> playlist_copy.length() == playlist.length()
             True
         """
-        new_pl = M3UPlaylist()
+        new_pl = type(self)()
         for channel in self.get_channels():
             new_pl.append_channel(channel.copy())
         new_pl.add_attributes(
@@ -686,17 +678,6 @@ class M3UPlaylist:
             return False
         return all(other.get_channel(i) == ch for i, ch in enumerate(self))
 
-    def __ne__(self, other: object) -> bool:
-        """Check inequality with another playlist.
-
-        Args:
-            other: Object to compare with.
-
-        Returns:
-            True if playlists are not equal, False otherwise.
-        """
-        return not self == other
-
     def __str__(self) -> str:
         """Get string representation of the playlist.
 
@@ -705,7 +686,7 @@ class M3UPlaylist:
         """
         return self.to_m3u_plus_playlist()
 
-    def __iter__(self) -> typing.Iterator[IPTVChannel]:
+    def __iter__(self) -> Iterator[IPTVChannel]:
         """Return an independent iterator over the playlist's channels.
 
         A fresh iterator is returned on each call, so the playlist can be
@@ -717,7 +698,7 @@ class M3UPlaylist:
         return iter(self.get_channels())
 
 
-def loadl(rows: list[str]) -> "M3UPlaylist":
+def loadl(rows: list[str]) -> M3UPlaylist:
     """Load a playlist from a list of strings.
 
     Parses M3U playlist content from a list of strings, using multiprocessing
@@ -781,7 +762,7 @@ def loadl(rows: list[str]) -> "M3UPlaylist":
     return out_pl
 
 
-def loads(string: str) -> "M3UPlaylist":
+def loads(string: str) -> M3UPlaylist:
     """Load a playlist from a string.
 
     Args:
@@ -805,7 +786,7 @@ def loads(string: str) -> "M3UPlaylist":
     raise WrongTypeException("Wrong type: string expected")
 
 
-def loadf(filename: str) -> "M3UPlaylist":
+def loadf(filename: str) -> M3UPlaylist:
     """Load a playlist from a file.
 
     Args:
@@ -832,7 +813,7 @@ def loadf(filename: str) -> "M3UPlaylist":
         return loadl(buffer)
 
 
-def loadu(url: str) -> "M3UPlaylist":
+def loadu(url: str) -> M3UPlaylist:
     """Load a playlist from a URL.
 
     Args:
@@ -863,7 +844,7 @@ def loadu(url: str) -> "M3UPlaylist":
         raise URLException(f"Failure while opening {url}.\nError: {exception}") from exception
 
 
-def loadj(json_dict: dict[str, Any]) -> "M3UPlaylist":
+def loadj(json_dict: dict[str, Any]) -> M3UPlaylist:
     """Load a playlist from a JSON dictionary.
 
     Args:
@@ -905,7 +886,7 @@ def loadj(json_dict: dict[str, Any]) -> "M3UPlaylist":
     return pl
 
 
-def loadjstr(json_str: str) -> "M3UPlaylist":
+def loadjstr(json_str: str) -> M3UPlaylist:
     """Load a playlist from a JSON string.
 
     Args:
@@ -1048,7 +1029,7 @@ def _chunk_body(rows: list[str], chunk_count: int, enforce_min_size: bool = True
     return chunk_list
 
 
-def _populate(rows: list[str], beginning: int = 0, end: int = -1) -> "M3UPlaylist":
+def _populate(rows: list[str], beginning: int = 0, end: int = -1) -> M3UPlaylist:
     """Populate a playlist from a subset of rows.
 
     Args:
