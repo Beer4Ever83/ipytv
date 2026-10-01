@@ -10,10 +10,12 @@ Classes:
 Functions:
     from_playlist_entry: Create an IPTVChannel from playlist rows
 """
+
 import json
 import logging
-from enum import Enum
-from typing import Dict, List, Optional, Any
+from dataclasses import dataclass, field, replace
+from enum import StrEnum
+from typing import Any, Self
 
 from ipytv import m3u
 from ipytv.exceptions import MalformedExtinfException
@@ -22,8 +24,9 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 
-class IPTVAttr(Enum):
+class IPTVAttr(StrEnum):
     """Enum of attributes commonly found in IPTV playlists as part of #EXTINF rows."""
+
     TVG_ID = "tvg-id"
     TVG_NAME = "tvg-name"
     TVG_LANGUAGE = "tvg-language"
@@ -41,6 +44,7 @@ class IPTVAttr(Enum):
     TVG_URL = "tvg-url"
 
 
+@dataclass(slots=True)
 class IPTVChannel:
     """A channel in an IPTV playlist with attributes and metadata.
 
@@ -52,40 +56,28 @@ class IPTVChannel:
         extras: List of tags found between #EXTINF row and its related URL row.
     """
 
-    def __init__(self, url: str = "", name: str = "",
-                 duration: str = "-1", attributes: Optional[Dict[str, str]] = None,
-                 extras: Optional[List[str]] = None):
-        """Initialize an IPTV channel."""
-        self.url = url
-        self.name = name
-        self.duration = str(duration)
-        self.attributes: Dict[str, str] = attributes if attributes is not None else {}
-        self.extras: List[str] = extras if extras is not None else []
+    url: str = ""
+    name: str = ""
+    duration: str = "-1"
+    attributes: dict[str, str] = field(default_factory=dict)
+    extras: list[str] = field(default_factory=list)
 
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, IPTVChannel) \
-            and self.url == other.url \
-            and self.name == other.name \
-            and self.duration == other.duration \
-            and self.attributes == other.attributes \
-            and self.extras == other.extras
+    def __post_init__(self) -> None:
+        # Backwards compatibility: accept non-string durations and explicit None collections.
+        self.duration = str(self.duration)
+        if self.attributes is None:
+            self.attributes = {}
+        if self.extras is None:
+            self.extras = []
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
-    def copy(self) -> 'IPTVChannel':
+    def copy(self) -> Self:
         """Create a copy of this IPTVChannel object.
 
         Returns:
             A new IPTVChannel instance with copied values.
         """
-        return IPTVChannel(
-            url=self.url,
-            name=self.name,
-            duration=self.duration,
-            attributes=self.attributes.copy(),  # shallow copy is ok, as we're dealing with primitive types
-            extras=self.extras.copy()           # shallow copy is ok, as we're dealing with primitive types
-        )
+        # Shallow copies are enough, as the collections only hold strings.
+        return replace(self, attributes=self.attributes.copy(), extras=self.extras.copy())
 
     def parse_extinf_string(self, extinf_string: str) -> None:
         """Parse an #EXTINF string and populate the channel's fields.
@@ -134,44 +126,28 @@ class IPTVChannel:
         raise MalformedExtinfException(f"Malformed #EXTINF string:\n{extinf_string}")
 
     def __str__(self) -> str:
-        attr_str = ''
-        if len(self.attributes) > 0:
-            for name, value in self.attributes.items():
-                attr_str += f'{name}: "{value}", '
-        if attr_str.endswith(', '):
-            attr_str = attr_str[:-2]
-        extras_str = ''
-        if len(self.extras) > 0:
-            for extra in self.extras:
-                extras_str += f'{extra}, '
-        if extras_str.endswith(', '):
-            extras_str = extras_str[:-2]
-        out = f'{{name: "{self.name}", duration: "{self.duration}", '\
-              f'url: "{self.url}", attributes: {{{attr_str}}}, extras: [{extras_str}]}}'
-        return out
+        attr_str = ", ".join(f'{name}: "{value}"' for name, value in self.attributes.items())
+        extras_str = ", ".join(self.extras)
+        return (
+            f'{{name: "{self.name}", duration: "{self.duration}", '
+            f'url: "{self.url}", attributes: {{{attr_str}}}, extras: [{extras_str}]}}'
+        )
 
     def _build_m3u_plus_extinf_entry(self) -> str:
-        extinf_pattern = '#EXTINF:{}{},{}\n'
-        attrs = ''
+        extinf_pattern = "#EXTINF:{}{},{}\n"
+        attrs = ""
         for key, value in self.attributes.items():
             attrs += f' {key}="{value}"'
-        return extinf_pattern.format(
-            self.duration,
-            attrs,
-            self.name
-        )
+        return extinf_pattern.format(self.duration, attrs, self.name)
 
     def _build_m3u8_extinf_entry(self) -> str:
-        extinf_pattern = '#EXTINF:{},{}\n'
-        return extinf_pattern.format(
-            self.duration,
-            self.name
-        )
+        extinf_pattern = "#EXTINF:{},{}\n"
+        return extinf_pattern.format(self.duration, self.name)
 
     def _build_extras_entry(self) -> str:
         if not self.extras:
-            return ''
-        return '\n'.join(self.extras) + '\n'
+            return ""
+        return "\n".join(self.extras) + "\n"
 
     def _build_url_entry(self) -> str:
         return f"{self.url}\n"
@@ -192,7 +168,7 @@ class IPTVChannel:
         extinf_row = self._build_m3u_plus_extinf_entry()
         extras_rows = self._build_extras_entry()
         url_row = self._build_url_entry()
-        return f'{extinf_row}{extras_rows}{url_row}'
+        return f"{extinf_row}{extras_rows}{url_row}"
 
     def to_m3u8_playlist_entry(self) -> str:
         """Convert the channel to standard M3U8 playlist format.
@@ -209,9 +185,9 @@ class IPTVChannel:
         """
         extinf_row = self._build_m3u8_extinf_entry()
         url_row = self._build_url_entry()
-        return f'{extinf_row}{url_row}'
+        return f"{extinf_row}{url_row}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize the channel to a dictionary.
 
         Returns:
@@ -228,7 +204,7 @@ class IPTVChannel:
             "duration": self.duration,
             "url": self.url,
             "attributes": self.attributes,
-            "extras": self.extras
+            "extras": self.extras,
         }
 
     def to_json(self) -> str:
@@ -246,7 +222,7 @@ class IPTVChannel:
         return json.dumps(self.to_dict())
 
 
-def from_playlist_entry(entry: List[str]) -> 'IPTVChannel':
+def from_playlist_entry(entry: list[str]) -> IPTVChannel:
     """Build an IPTVChannel object from playlist rows.
 
     A playlist entry can contain multiple rows: #EXTINF row, additional tags,

@@ -11,7 +11,7 @@ from ipytv import playlist
 
 
 @click.command()
-@click.argument('input_json_file', type=click.Path(exists=True))
+@click.argument("input_json_file", type=click.Path(exists=True))
 def json2iptv(input_json_file: str) -> None:
     """Convert JSON playlist to M3U format.
 
@@ -24,7 +24,7 @@ def json2iptv(input_json_file: str) -> None:
     Raises:
         click.Abort: If an error occurs during playlist loading or processing
     """
-    with open(input_json_file, "r", encoding='utf-8') as in_json:
+    with open(input_json_file, encoding="utf-8") as in_json:
         json_content = in_json.read()
         try:
             pl = playlist.loadjstr(json_content)
@@ -37,6 +37,6 @@ def json2iptv(input_json_file: str) -> None:
         click.echo(pl.to_m3u_plus_playlist())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # pylint: disable=no-value-for-parameter
     json2iptv()

@@ -5,35 +5,34 @@ from ipytv.utils import extract_series, extract_show_name, is_episode_from_serie
 
 
 class TestUtils(unittest.TestCase):
-
     def setUp(self) -> None:
         """Set up test data for each test method."""
         pl_list = [
             '#EXTM3U pl-attribute="pl-attributed-value"',
             '#EXTINF:-1 group-title="Unlikely Series",The Talking Dead S01 E01',
-            'https://myserver.com/series/the-talking-dead-s01e01.mp4',
+            "https://myserver.com/series/the-talking-dead-s01e01.mp4",
             '#EXTINF:-1 group-title="Unlikely Series",The Talking Dead S01 E02',
-            'https://myserver.com/series/the-talking-dead-s01e02.mp4',
+            "https://myserver.com/series/the-talking-dead-s01e02.mp4",
             '#EXTINF:-1 group-title="Unlikely Series",The Talking Dead S01 E03',
-            'https://myserver.com/series/the-talking-dead-s01e03.mp4',
+            "https://myserver.com/series/the-talking-dead-s01e03.mp4",
             '#EXTINF:-1 group-title="Unlikely Movies",The Dark Might',
-            'https://myserver.com/series/the-dark-might.mp4',
+            "https://myserver.com/series/the-dark-might.mp4",
             '#EXTINF:-1 group-title="Unlikely Series",Baking Bread s01e01',
-            'https://myserver.com/series/baking-bread-s01e01.mp4',
+            "https://myserver.com/series/baking-bread-s01e01.mp4",
             '#EXTINF:-1 group-title="Unlikely Series",Baking Bread s01e02',
-            'https://myserver.com/series/baking-bread-s01e02.mp4',
+            "https://myserver.com/series/baking-bread-s01e02.mp4",
             '#EXTINF:-1 group-title="Unlikely Series",Baking Bread s01e03',
-            'https://myserver.com/series/baking-bread-s01e03.mp4',
+            "https://myserver.com/series/baking-bread-s01e03.mp4",
             '#EXTINF:-1 group-title="Unlikely Series",Formula 1: Drunk To Survive S01 E01',
-            'https://myserver.com/series/drunk-to-survive-s01e01.mp4',
+            "https://myserver.com/series/drunk-to-survive-s01e01.mp4",
             '#EXTINF:-1 group-title="Unlikely Series",Prey\'s Anatomy S01 E01',
-            'https://myserver.com/series/prey-s-anatomy-s01e01.mp4',
+            "https://myserver.com/series/prey-s-anatomy-s01e01.mp4",
             '#EXTINF:-1 group-title="Unlikely Movies",Schindler\'s Fist',
-            'https://myserver.com/series/schindler-s-fist.mp4',
+            "https://myserver.com/series/schindler-s-fist.mp4",
             '#EXTINF:-1 group-title="Unlikely Series",Crappy Days 02x01 - The Bonz',
-            'https://myserver.com/series/crappy-days-s02e01.mp4',
+            "https://myserver.com/series/crappy-days-s02e01.mp4",
             '#EXTINF:-1 group-title="Unlikely Series",Crappy Days 02x02 - Richie Moves On',
-            'https://myserver.com/series/crappy-days-s02e02.mp4'
+            "https://myserver.com/series/crappy-days-s02e02.mp4",
         ]
         self.pl = playlist.loadl(pl_list)
 
@@ -129,5 +128,6 @@ class TestUtils(unittest.TestCase):
             expected = bool(test["is_series"])
             self.assertTrue(is_episode_from_series(title) is expected, f"Failed for {title}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

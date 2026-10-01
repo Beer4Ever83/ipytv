@@ -57,11 +57,7 @@ line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
-# Conservative starting set: correctness (pyflakes) + basic style. The code
-# already satisfies these. Stricter families (I import-sort, UP pyupgrade,
-# B bugbear, SIM simplify) and `ruff format` enforcement are enabled in the
-# dedicated code-modernization PR, together with the source changes they need.
-select = ["E", "F"]
+select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.per-file-ignores]
 # Test fixtures embed real m3u playlist lines that must not be wrapped.

@@ -3,6 +3,7 @@
 This module contains unit tests for the json2iptv command-line interface,
 testing various scenarios including normal operation and error cases.
 """
+
 import unittest
 
 from click.testing import CliRunner
@@ -39,5 +40,5 @@ class TestJson2Iptv(unittest.TestCase):
         self.assertNotEqual(0, result.exit_code, result.output)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

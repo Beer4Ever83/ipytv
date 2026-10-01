@@ -6,23 +6,23 @@ It handles both well-formed and malformed EXTINF rows with various attribute for
 Constants:
     M3U_HEADER_TAG: The standard M3U header identifier "#EXTM3U"
 """
+
 import re
-from typing import Optional, Dict
 
 M3U_HEADER_TAG = "#EXTM3U"
 
 # Pre-compiled regular expressions for better performance
-_M3U_EXTINF_PATTERN = re.compile(r'^#EXTINF:[-0-9\.]+,.*$')
+_M3U_EXTINF_PATTERN = re.compile(r"^#EXTINF:[-0-9\.]+,.*$")
 _M3U_PLUS_EXTINF_PATTERN = re.compile(r'^#EXTINF:[-0-9\.]+(\s+[\w-]+="[^"]*")+,.*$')
 _M3U_PLUS_EXTINF_PARSE_PATTERN = re.compile(
-    r'^#EXTINF:(?P<duration_g>[-0-9\.]+)'
+    r"^#EXTINF:(?P<duration_g>[-0-9\.]+)"
     r'(?P<attributes_g>(\s+[\w-]+="[^"]*")*),'
-    r'(?P<name_g>.*)'
+    r"(?P<name_g>.*)"
 )
 _M3U_PLUS_BROKEN_EXTINF_PARSE_PATTERN = re.compile(
-    r'^#EXTINF:(?P<duration_g>[-0-9\.]+)'
+    r"^#EXTINF:(?P<duration_g>[-0-9\.]+)"
     r'(?P<attributes_g>(\s+[\w-]+=".*)*),'
-    r'(?P<name_g>.*)'
+    r"(?P<name_g>.*)"
 )
 _M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_PATTERN = re.compile(r'(?:\s+)[\w-]+="')
 # Matches a single quoted attribute, e.g. name="value which may contain spaces"
@@ -83,7 +83,7 @@ def is_m3u_plus_extinf_row(row: str) -> bool:
     return _M3U_PLUS_EXTINF_PATTERN.search(row) is not None
 
 
-def match_m3u_plus_broken_extinf_row(row: str) -> Optional[re.Match]:
+def match_m3u_plus_broken_extinf_row(row: str) -> re.Match | None:
     """Match an M3U Plus EXTINF row that may have malformed attributes.
 
     This function is designed to handle EXTINF rows where attribute values
@@ -104,7 +104,7 @@ def match_m3u_plus_broken_extinf_row(row: str) -> Optional[re.Match]:
     return _M3U_PLUS_BROKEN_EXTINF_PARSE_PATTERN.search(row)
 
 
-def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
+def get_m3u_plus_broken_attributes(row: str) -> dict[str, str]:
     """Extract attributes from a malformed M3U Plus EXTINF row.
 
     Parses EXTINF rows with "broken" attributes where values contain
@@ -129,20 +129,20 @@ def get_m3u_plus_broken_attributes(row: str) -> Dict[str, str]:
     match = match_m3u_plus_broken_extinf_row(row)
     if match is None:
         return {}
-    attributes = match.group("attributes_g").rstrip(',')
+    attributes = match.group("attributes_g").rstrip(",")
     tokens = _M3U_PLUS_BROKEN_ATTRIBUTE_PARSE_PATTERN.findall(attributes)
     attrs = {}
     for i, token in enumerate(tokens):
         name = token.lstrip().rstrip('="')
         right = row.split(token)[1]
-        separator = tokens[i+1] if i < len(tokens)-1 else '",'
+        separator = tokens[i + 1] if i < len(tokens) - 1 else '",'
         left = right.split(separator)[0].rstrip('"')
         # Let's replace misplaced double quotes with underscore
-        attrs[name] = left.replace('"', '_')
+        attrs[name] = left.replace('"', "_")
     return attrs
 
 
-def match_m3u_plus_extinf_row(row: str) -> Optional[re.Match]:
+def match_m3u_plus_extinf_row(row: str) -> re.Match | None:
     """Match a well-formed M3U Plus EXTINF row.
 
     Args:
@@ -160,7 +160,7 @@ def match_m3u_plus_extinf_row(row: str) -> Optional[re.Match]:
     return _M3U_PLUS_EXTINF_PARSE_PATTERN.match(row)
 
 
-def parse_attributes(attributes: str) -> Dict[str, str]:
+def parse_attributes(attributes: str) -> dict[str, str]:
     """Parse a space-separated list of quoted `name="value"` attributes.
 
     This is the shared grammar used by both the #EXTM3U header row and the
@@ -178,12 +178,11 @@ def parse_attributes(attributes: str) -> Dict[str, str]:
         {'url-tvg': 'http://e.com/g.xml?a=1&b=2'}
     """
     return {
-        match.group("name_g"): match.group("value_g")
-        for match in _M3U_QUOTED_ATTRIBUTE_PATTERN.finditer(attributes)
+        match.group("name_g"): match.group("value_g") for match in _M3U_QUOTED_ATTRIBUTE_PATTERN.finditer(attributes)
     }
 
 
-def parse_header_attributes(header: str) -> Dict[str, str]:
+def parse_header_attributes(header: str) -> dict[str, str]:
     """Parse the quoted attributes of an #EXTM3U header row.
 
     Args:
@@ -232,7 +231,7 @@ def is_comment_or_tag_row(row: str) -> bool:
         >>> is_comment_or_tag_row("http://example.com/stream")
         False
     """
-    return row.startswith('#')
+    return row.startswith("#")
 
 
 def is_empty_row(row: str) -> bool:

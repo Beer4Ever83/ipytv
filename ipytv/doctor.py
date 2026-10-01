@@ -9,13 +9,13 @@ Classes:
     IPTVChannelDoctor: Sanitizes individual IPTV channel attributes
     M3UPlaylistDoctor: Applies fixes to entire M3U playlists
 """
+
 import logging
 import re
 import urllib.parse
-from typing import List
 
 from ipytv import m3u
-from ipytv.channel import IPTVChannel, IPTVAttr
+from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.playlist import M3UPlaylist
 
 log = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class M3UDoctor:
     """
 
     @staticmethod
-    def _fix_split_quoted_string(m3u_rows: List) -> List:
+    def _fix_split_quoted_string(m3u_rows: list) -> list:
         """Fix rows with quoted strings split across multiple lines.
 
         Handles cases where quoted attribute values are broken across lines,
@@ -53,19 +53,21 @@ class M3UDoctor:
             Output:
                 ['#EXTINF:-1 tvg-id="Cinema1" tvg-name="Cinema1",...']
         """
-        fixed_m3u_rows: List = []
+        fixed_m3u_rows: list = []
         for current_row in m3u_rows:
             new_row = current_row
-            if _SPLIT_QUOTED_STRING_PATTERN.match(current_row) and \
-                    len(fixed_m3u_rows) > 0 and \
-                    m3u.is_extinf_row(fixed_m3u_rows[-1]):
+            if (
+                _SPLIT_QUOTED_STRING_PATTERN.match(current_row)
+                and len(fixed_m3u_rows) > 0
+                and m3u.is_extinf_row(fixed_m3u_rows[-1])
+            ):
                 previous_row = fixed_m3u_rows.pop()
                 new_row = previous_row.rstrip() + current_row.lstrip()
             fixed_m3u_rows.append(new_row)
         return fixed_m3u_rows
 
     @staticmethod
-    def _fix_unquoted_numeric_attributes(m3u_rows: List[str]) -> List:
+    def _fix_unquoted_numeric_attributes(m3u_rows: list[str]) -> list:
         """Fix unquoted numeric attribute values in EXTM3U and EXTINF rows.
 
         Adds proper double quotes around numeric attribute values that should
@@ -83,7 +85,7 @@ class M3UDoctor:
             Output:
                 '#EXTINF:-1 tvg-shift="-10.5" tvg-id="22",Channel'
         """
-        fixed_m3u_rows: List = []
+        fixed_m3u_rows: list = []
         for current_row in m3u_rows:
             new_row = current_row
             if m3u.is_m3u_header_row(current_row) or m3u.is_extinf_row(current_row):
@@ -91,12 +93,12 @@ class M3UDoctor:
                     attribute = match.group("attribute_g")
                     name = match.group("name_g")
                     value = match.group("value_g")
-                    new_row = new_row.replace(attribute, f" {name}=\"{value}\"")
+                    new_row = new_row.replace(attribute, f' {name}="{value}"')
             fixed_m3u_rows.append(new_row)
         return fixed_m3u_rows
 
     @staticmethod
-    def _fix_space_before_comma(m3u_rows: List[str]) -> List:
+    def _fix_space_before_comma(m3u_rows: list[str]) -> list:
         """Fix EXTINF rows with spaces between duration and comma.
 
         Removes extraneous spaces in EXTINF rows that have no attributes
@@ -114,7 +116,7 @@ class M3UDoctor:
             Output:
                 '#EXTINF:-1,Channel 22'
         """
-        fixed_m3u_rows: List = []
+        fixed_m3u_rows: list = []
         for current_row in m3u_rows:
             new_row = current_row
             if m3u.is_extinf_row(current_row):
@@ -125,7 +127,7 @@ class M3UDoctor:
         return fixed_m3u_rows
 
     @staticmethod
-    def sanitize(m3u_rows: List) -> List:
+    def sanitize(m3u_rows: list) -> list:
         """Apply all M3U file fixes to a list of rows.
 
         Sequentially applies all available fixes to repair common M3U file
@@ -173,7 +175,7 @@ class IPTVChannelDoctor:
         """
         if attribute_name in chan.attributes:
             value = chan.attributes[attribute_name]
-            chan.attributes[attribute_name] = urllib.parse.quote(value, safe=':/%?&=')
+            chan.attributes[attribute_name] = urllib.parse.quote(value, safe=":/%?&=")
 
     @staticmethod
     def _normalize_attributes_name(chan: IPTVChannel, attribute_name: str) -> None:
@@ -216,7 +218,7 @@ class IPTVChannelDoctor:
         Example:
             Changes group-title="News, Sports" to group-title="News_ Sports"
         """
-        if attribute_name == IPTVAttr.TVG_LOGO.value:
+        if attribute_name == IPTVAttr.TVG_LOGO:
             return
         value: str = chan.attributes[attribute_name]
         if "," in value:
@@ -246,8 +248,8 @@ class IPTVChannelDoctor:
         """
         attr: str
         new_chan = chan.copy()
-        IPTVChannelDoctor._urlencode_value(new_chan, IPTVAttr.TVG_LOGO.value)
-        for attr in chan.attributes.keys():
+        IPTVChannelDoctor._urlencode_value(new_chan, IPTVAttr.TVG_LOGO)
+        for attr in chan.attributes:
             IPTVChannelDoctor._convert_commas(new_chan, attr)
             IPTVChannelDoctor._normalize_attributes_name(new_chan, attr)
         return new_chan

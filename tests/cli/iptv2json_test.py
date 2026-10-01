@@ -3,6 +3,7 @@
 This module contains unit tests for the iptv2json command-line interface,
 testing various scenarios including normal operation, options, and error cases.
 """
+
 import json
 import unittest
 
@@ -24,27 +25,27 @@ class TestIptv2Json(unittest.TestCase):
         result = self.runner.invoke(iptv2json, [self.input_playlist])
         self.assertEqual(0, result.exit_code)
         generated_json = json.loads(result.output)
-        with open("tests/resources/m3u_plus.json", "r", encoding='UTF-8') as f:
+        with open("tests/resources/m3u_plus.json", encoding="UTF-8") as f:
             expected_json = json.loads("\n".join(f.readlines()))
         self.assertEqual(expected_json, generated_json)
 
     def test_no_sanitize_option(self) -> None:
         """Test conversion with --no-sanitize option."""
-        result = self.runner.invoke(iptv2json, [self.input_playlist, '--no-sanitize'])
+        result = self.runner.invoke(iptv2json, [self.input_playlist, "--no-sanitize"])
         self.assertEqual(0, result.exit_code)
         generated_json = json.loads(result.output)
-        with open("tests/resources/m3u_plus.json", "r", encoding='UTF-8') as f:
+        with open("tests/resources/m3u_plus.json", encoding="UTF-8") as f:
             expected_json = json.loads("\n".join(f.readlines()))
         self.assertEqual(expected_json, generated_json)
 
     def test_no_input_playlist(self) -> None:
         """Test behavior when no input playlist is provided."""
-        result = self.runner.invoke(iptv2json, ['--no-sanitize'])
+        result = self.runner.invoke(iptv2json, ["--no-sanitize"])
         self.assertNotEqual(0, result.exit_code)
 
     def test_misspelled_option(self) -> None:
         """Test behavior with misspelled command option."""
-        result = self.runner.invoke(iptv2json, [self.input_playlist, '--no-fanitize'])
+        result = self.runner.invoke(iptv2json, [self.input_playlist, "--no-fanitize"])
         self.assertNotEqual(0, result.exit_code)
 
     def test_no_parameters(self) -> None:
@@ -53,5 +54,5 @@ class TestIptv2Json(unittest.TestCase):
         self.assertNotEqual(0, result.exit_code)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

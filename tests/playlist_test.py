@@ -1,9 +1,9 @@
 import itertools
 import json
 import os
+import re
 import tempfile
 import unittest
-from typing import List, Dict
 
 import httpretty
 import m3u8
@@ -12,22 +12,27 @@ from deepdiff import DeepDiff
 import ipytv.playlist as playlist
 from ipytv import m3u
 from ipytv.channel import IPTVAttr, IPTVChannel
-from ipytv.exceptions import IndexOutOfBoundsException, AttributeAlreadyPresentException, AttributeNotFoundException, \
-    WrongTypeException
+from ipytv.exceptions import (
+    AttributeAlreadyPresentException,
+    AttributeNotFoundException,
+    IndexOutOfBoundsException,
+    URLException,
+    WrongTypeException,
+)
 from ipytv.playlist import M3UPlaylist
 from tests import test_data
 
 
-def produce_singles(n: int) -> List[str]:
-    out: List[str] = []
+def produce_singles(n: int) -> list[str]:
+    out: list[str] = []
     for i in range(n):
         row = f"https://www.mywebsite.com/video/myvideo{i}.mp4"
         out.append(row)
     return out
 
 
-def produce_doubles(n: int) -> List[str]:
-    out: List[str] = []
+def produce_doubles(n: int) -> list[str]:
+    out: list[str] = []
     for i in range(n):
         row_1 = f'#EXTINF:-1 tvg-id="id_{i}" tvg-name="name_{i}" tvg-language="Italian" tvg-logo="https://i.imgur.com/{1}.png" tvg-country="IT" tvg-url="" group-title="Group",Channel {i}'
         out.append(row_1)
@@ -36,19 +41,19 @@ def produce_doubles(n: int) -> List[str]:
     return out
 
 
-def produce_triples(n: int) -> List[str]:
-    out: List[str] = []
+def produce_triples(n: int) -> list[str]:
+    out: list[str] = []
     for i in range(n):
         row_1 = f'#EXTINF:-1 tvg-id="id_{i}" tvg-name="name_{i}" tvg-language="Italian" tvg-logo="https://i.imgur.com/{1}.png" tvg-country="IT" tvg-url="" group-title="Group",Channel {i}'
         out.append(row_1)
-        row_2 = f'#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.{i}'
+        row_2 = f"#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.{i}"
         out.append(row_2)
         row_3 = f"https://www.mywebsite.com/video/myvideo{i}.mp4"
         out.append(row_3)
     return out
 
 
-def strip_blank_lines(rows: List) -> List:
+def strip_blank_lines(rows: list) -> list:
     return list(itertools.filterfalse(m3u.is_empty_row, rows))
 
 
@@ -60,9 +65,8 @@ def count_extras(pl: M3UPlaylist) -> int:
 
 
 class TestM3UPlaylist(unittest.TestCase):
-
     def test_chunk_body_0(self):
-        body = produce_singles(5)   # total 05 rows
+        body = produce_singles(5)  # total 05 rows
         body += produce_doubles(4)  # total 13 rows
         body += produce_triples(5)  # total 28 rows
         chunks = playlist._chunk_body(body, 2, enforce_min_size=False)
@@ -71,7 +75,7 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual({"beginning": 16, "end": 27}, chunks[1])
 
     def test_chunk_body_1(self):
-        body = produce_singles(5)   # total 05 rows
+        body = produce_singles(5)  # total 05 rows
         body += produce_doubles(4)  # total 13 rows
         body += produce_triples(5)  # total 28 rows
         chunks = playlist._chunk_body(body, 3, enforce_min_size=False)
@@ -91,7 +95,7 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual({"beginning": 40, "end": 49}, chunks[4])
 
     def test_chunk_body_3(self):
-        body = produce_singles(5)   # total 5 rows
+        body = produce_singles(5)  # total 5 rows
         chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
         self.assertEqual(5, len(chunks))
         self.assertEqual({"beginning": 0, "end": 0}, chunks[0])
@@ -101,7 +105,7 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual({"beginning": 4, "end": 4}, chunks[4])
 
     def test_chunk_body_4(self):
-        body = produce_singles(5)   # total 5 rows
+        body = produce_singles(5)  # total 5 rows
         body += produce_triples(1)  # total 8 rows
         body += produce_singles(5)  # total 13 rows
         chunks = playlist._chunk_body(body, 2, enforce_min_size=False)
@@ -110,7 +114,7 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual({"beginning": 8, "end": 12}, chunks[1])
 
     def test_chunk_body_5(self):
-        body = produce_doubles(3)   # total 6 rows
+        body = produce_doubles(3)  # total 6 rows
         body += produce_triples(1)  # total 9 rows
         body += produce_doubles(3)  # total 15 rows
         chunks = playlist._chunk_body(body, 4, enforce_min_size=False)
@@ -140,73 +144,73 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(0, pl.length(), "The size of the playlist is not the expected one")
 
     def test_loadl_m3u_plus_with_extras(self):
-        checks: List[Dict[str, List[str]]] = [
+        checks: list[dict[str, list[str]]] = [
             {
                 "input_rows": [
-                    '#EXTM3U',
-                    '#EXTRAS0:',
+                    "#EXTM3U",
+                    "#EXTRAS0:",
                     '#EXTINF:-1 tvg-id="MTV" group-title="Music",MTV',
-                    'https://myownurl.com/playlist0.m3u8',
-                    '',
-                    '#EXTRAS1:',
+                    "https://myownurl.com/playlist0.m3u8",
+                    "",
+                    "#EXTRAS1:",
                     '#EXTINF:-1 tvg-id="MTV+1" group-title="Music",MTV+1',
-                    'https://myownurl.com/playlist1.m3u8'
+                    "https://myownurl.com/playlist1.m3u8",
                 ],
                 "expected_channels": 2,
-                "expected_extras": 2
+                "expected_extras": 2,
             },
             {
                 "input_rows": [
-                    '#EXTM3U',
-                    'https://myownurl.com/playlist0.m3u8',
-                    'https://myownurl.com/playlist1.m3u8',
-                    '',
-                    '#EXTRAS0:',
+                    "#EXTM3U",
+                    "https://myownurl.com/playlist0.m3u8",
+                    "https://myownurl.com/playlist1.m3u8",
+                    "",
+                    "#EXTRAS0:",
                     '#EXTINF:-1 tvg-id="MTV+1" group-title="Music",MTV+1',
-                    'https://myownurl.com/playlist2.m3u8'
+                    "https://myownurl.com/playlist2.m3u8",
                 ],
                 "expected_channels": 3,
-                "expected_extras": 1
+                "expected_extras": 1,
             },
             {
                 "input_rows": [
-                    '#EXTM3U',
-                    '',
-                    '#EXTRAS0:',
-                    '#EXTRAS1:',
-                    '#EXTRAS2:',
-                    'https://myownurl.com/playlist0.m3u8',
-                    'https://myownurl.com/playlist1.m3u8',
-                    '',
-                    '#EXTRAS3:',
+                    "#EXTM3U",
+                    "",
+                    "#EXTRAS0:",
+                    "#EXTRAS1:",
+                    "#EXTRAS2:",
+                    "https://myownurl.com/playlist0.m3u8",
+                    "https://myownurl.com/playlist1.m3u8",
+                    "",
+                    "#EXTRAS3:",
                     '#EXTINF:-1 tvg-id="MTV+1" group-title="Music",MTV+1',
-                    'https://myownurl.com/playlist2.m3u8'
+                    "https://myownurl.com/playlist2.m3u8",
                 ],
                 "expected_channels": 3,
-                "expected_extras": 4
+                "expected_extras": 4,
             },
             {
                 "input_rows": [
-                    '#EXTM3U',
-                    '',
-                    '#EXTINF:-1,Name',
-                    '#EXTRAS0:',
-                    '#EXTRAS1:',
-                    '#EXTRAS2:',
-                    'https://myownurl.com/playlist0.m3u8',
-                    '#EXTRAS3:',
-                    '#EXTINF:-1,Name',
-                    'https://myownurl.com/playlist1.m3u8',
-                    '',
-                    '#EXTRAS4:',
+                    "#EXTM3U",
+                    "",
+                    "#EXTINF:-1,Name",
+                    "#EXTRAS0:",
+                    "#EXTRAS1:",
+                    "#EXTRAS2:",
+                    "https://myownurl.com/playlist0.m3u8",
+                    "#EXTRAS3:",
+                    "#EXTINF:-1,Name",
+                    "https://myownurl.com/playlist1.m3u8",
+                    "",
+                    "#EXTRAS4:",
                     '#EXTINF:-1 tvg-id="MTV+1" group-title="Music",MTV+1',
-                    'https://myownurl.com/playlist2.m3u8',
-                    '#EXTINF:-1,Name',
-                    'https://myownurl.com/playlist3.m3u8'
+                    "https://myownurl.com/playlist2.m3u8",
+                    "#EXTINF:-1,Name",
+                    "https://myownurl.com/playlist3.m3u8",
                 ],
                 "expected_channels": 4,
-                "expected_extras": 5
-            }
+                "expected_extras": 5,
+            },
         ]
         for c in checks:
             input_rows = c["input_rows"]
@@ -226,15 +230,11 @@ class TestM3UPlaylist(unittest.TestCase):
 
     def test_loadu_m3u_plus(self):
         url = "http://myown.link:80/luke/playlist.m3u"
-        with open("tests/resources/m3u_plus.m3u", encoding='utf-8') as content:
+        with open("tests/resources/m3u_plus.m3u", encoding="utf-8") as content:
             body = "".join(content.readlines())
         with httpretty.enabled():
             httpretty.register_uri(
-                httpretty.GET,
-                url,
-                adding_headers={"Content-Type": "application/octet-stream"},
-                body=body,
-                status=200
+                httpretty.GET, url, adding_headers={"Content-Type": "application/octet-stream"}, body=body, status=200
             )
             pl = playlist.loadu(url)
         httpretty.disable()
@@ -246,11 +246,7 @@ class TestM3UPlaylist(unittest.TestCase):
         body = "#EXTM3U\n"
         with httpretty.enabled():
             httpretty.register_uri(
-                httpretty.GET,
-                url,
-                adding_headers={"Content-Type": "application/octet-stream"},
-                body=body,
-                status=200
+                httpretty.GET, url, adding_headers={"Content-Type": "application/octet-stream"}, body=body, status=200
             )
             pl = playlist.loadu(url)
         httpretty.disable()
@@ -263,11 +259,7 @@ class TestM3UPlaylist(unittest.TestCase):
             body = "".join(content.readlines())
         with httpretty.enabled():
             httpretty.register_uri(
-                httpretty.GET,
-                url,
-                adding_headers={"Content-Type": "application/octet-stream"},
-                body=body,
-                status=200
+                httpretty.GET, url, adding_headers={"Content-Type": "application/octet-stream"}, body=body, status=200
             )
             pl = playlist.loadu(url)
         httpretty.disable()
@@ -276,19 +268,52 @@ class TestM3UPlaylist(unittest.TestCase):
 
     def test_loadu_errors(self):
         # For some reason the error 421 is not recognized by httpretty so it has been removed from the list
-        error_codes = ["400", "401", "402", "403", "404", "405", "406", "407", "408", "409",
-                       "410", "411", "412", "413", "414", "415", "416", "417", "418",
-                       "422", "423", "424", "425", "426", "428", "429", "431", "451", "500",
-                       "501", "502", "503", "504", "505", "506", "507", "508", "510", "511"]
+        error_codes = [
+            "400",
+            "401",
+            "402",
+            "403",
+            "404",
+            "405",
+            "406",
+            "407",
+            "408",
+            "409",
+            "410",
+            "411",
+            "412",
+            "413",
+            "414",
+            "415",
+            "416",
+            "417",
+            "418",
+            "422",
+            "423",
+            "424",
+            "425",
+            "426",
+            "428",
+            "429",
+            "431",
+            "451",
+            "500",
+            "501",
+            "502",
+            "503",
+            "504",
+            "505",
+            "506",
+            "507",
+            "508",
+            "510",
+            "511",
+        ]
         url = "http://myown.link:80/luke/playlist.m3u"
         with httpretty.enabled():
             for code in error_codes:
-                httpretty.register_uri(
-                    httpretty.GET,
-                    url,
-                    status=code
-                )
-                self.assertRaises(Exception, playlist.loadu, url)
+                httpretty.register_uri(httpretty.GET, url, status=code)
+                self.assertRaises(URLException, playlist.loadu, url)
         httpretty.disable()
         httpretty.reset()
 
@@ -307,18 +332,20 @@ class TestM3UPlaylist(unittest.TestCase):
     def test_loadjstr_from_different_cwd(self):
         # The schema is bundled with the package, so loadjstr must work
         # regardless of the current working directory.
-        json_str = json.dumps({
-            "attributes": {"x-tvg-url": "http://example.com/guide.xml"},
-            "channels": [
-                {
-                    "name": "Channel 1",
-                    "duration": "-1",
-                    "url": "http://example.com/stream1",
-                    "attributes": {},
-                    "extras": []
-                }
-            ]
-        })
+        json_str = json.dumps(
+            {
+                "attributes": {"x-tvg-url": "http://example.com/guide.xml"},
+                "channels": [
+                    {
+                        "name": "Channel 1",
+                        "duration": "-1",
+                        "url": "http://example.com/stream1",
+                        "attributes": {},
+                        "extras": [],
+                    }
+                ],
+            }
+        )
         original_cwd = os.getcwd()
         with tempfile.TemporaryDirectory() as tmp_dir:
             os.chdir(tmp_dir)
@@ -367,27 +394,19 @@ class TestM3UPlaylist(unittest.TestCase):
 
     def test_group_by_attribute(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
-        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value)
+        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_group_title, ignore_order=True)
         self.assertEqual(0, len(diff))
 
     def test_group_by_attribute_with_no_group_enabled(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         empty_group_channel = IPTVChannel(
-            url="http://emptygroup.channel/mychannel",
-            attributes={
-                IPTVAttr.GROUP_TITLE.value: ""
-            }
+            url="http://emptygroup.channel/mychannel", attributes={IPTVAttr.GROUP_TITLE: ""}
         )
-        no_group_channel = IPTVChannel(
-            url="http://nogroup.channel/mychannel",
-            attributes={
-                IPTVAttr.TVG_ID.value: "someid"
-            }
-        )
+        no_group_channel = IPTVChannel(url="http://nogroup.channel/mychannel", attributes={IPTVAttr.TVG_ID: "someid"})
         pl.append_channel(empty_group_channel)
         pl.append_channel(no_group_channel)
-        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value)
+        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE)
         expected_groups = test_data.expected_m3u_plus_group_by_group_title.copy()
         expected_groups[M3UPlaylist.NO_GROUP_KEY] = [4, 5]
         diff = DeepDiff(groups, expected_groups, ignore_order=True)
@@ -396,20 +415,12 @@ class TestM3UPlaylist(unittest.TestCase):
     def test_group_by_attribute_with_no_group_disabled(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         empty_group_channel = IPTVChannel(
-            url="http://emptygroup.channel/mychannel",
-            attributes={
-                IPTVAttr.GROUP_TITLE.value: ""
-            }
+            url="http://emptygroup.channel/mychannel", attributes={IPTVAttr.GROUP_TITLE: ""}
         )
-        no_group_channel = IPTVChannel(
-            url="http://nogroup.channel/mychannel",
-            attributes={
-                IPTVAttr.TVG_ID.value: "someid"
-            }
-        )
+        no_group_channel = IPTVChannel(url="http://nogroup.channel/mychannel", attributes={IPTVAttr.TVG_ID: "someid"})
         pl.append_channel(empty_group_channel)
         pl.append_channel(no_group_channel)
-        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE.value, include_no_group=False)
+        groups = pl.group_by_attribute(IPTVAttr.GROUP_TITLE, include_no_group=False)
         diff = DeepDiff(groups, test_data.expected_m3u_plus_group_by_group_title, ignore_order=True)
         self.assertEqual(0, len(diff))
 
@@ -421,18 +432,8 @@ class TestM3UPlaylist(unittest.TestCase):
 
     def test_group_by_url_with_no_group_enabled(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
-        first_empty_url_channel = IPTVChannel(
-            url="",
-            attributes={
-                IPTVAttr.GROUP_TITLE.value: "first"
-            }
-        )
-        second_empty_url_channel = IPTVChannel(
-            url="",
-            attributes={
-                IPTVAttr.GROUP_TITLE.value: "second"
-            }
-        )
+        first_empty_url_channel = IPTVChannel(url="", attributes={IPTVAttr.GROUP_TITLE: "first"})
+        second_empty_url_channel = IPTVChannel(url="", attributes={IPTVAttr.GROUP_TITLE: "second"})
         pl.append_channel(first_empty_url_channel)
         pl.append_channel(second_empty_url_channel)
         groups = pl.group_by_url(include_no_group=True)
@@ -443,48 +444,48 @@ class TestM3UPlaylist(unittest.TestCase):
 
     def test_match_single(self):
         ch = test_data.m3u_plus_channel_0
-        result = M3UPlaylist._match_single(ch, ".*Rai.*", where="attributes.tvg-name")
+        result = M3UPlaylist._match_single(ch, re.compile(".*Rai.*"), where="attributes.tvg-name")
         self.assertTrue(result)
-        result = M3UPlaylist._match_single(ch, ".*rai.*", where="attributes.tvg-name")
+        result = M3UPlaylist._match_single(ch, re.compile(".*rai.*"), where="attributes.tvg-name")
         self.assertFalse(result)
-        result = M3UPlaylist._match_single(ch, ".*rai.*", where="attributes.tvg-name", case_sensitive=False)
+        result = M3UPlaylist._match_single(ch, re.compile(".*rai.*", re.IGNORECASE), where="attributes.tvg-name")
         self.assertTrue(result)
-        result = M3UPlaylist._match_single(ch, ".*Music.*", where="duration")
+        result = M3UPlaylist._match_single(ch, re.compile(".*Music.*"), where="duration")
         self.assertFalse(result)
-        result = M3UPlaylist._match_single(ch, ".*luke.*", where="url")
+        result = M3UPlaylist._match_single(ch, re.compile(".*luke.*"), where="url")
         self.assertTrue(result)
-        result = M3UPlaylist._match_single(ch, ".*luke.*", where="non-existent")
+        result = M3UPlaylist._match_single(ch, re.compile(".*luke.*"), where="non-existent")
         self.assertFalse(result)
-        result = M3UPlaylist._match_single(ch, ".*luke.*", where="attributes.non-existent")
+        result = M3UPlaylist._match_single(ch, re.compile(".*luke.*"), where="attributes.non-existent")
         self.assertFalse(result)
-        result = M3UPlaylist._match_single(ch, ".*luke.*", where="non-existent.tvg-name")
+        result = M3UPlaylist._match_single(ch, re.compile(".*luke.*"), where="non-existent.tvg-name")
         self.assertFalse(result)
 
     def test_match_all(self):
         ch = test_data.m3u_plus_channel_0
-        result = M3UPlaylist._match_all(ch, ".*RAI.*")
+        result = M3UPlaylist._match_all(ch, re.compile(".*RAI.*"))
         self.assertTrue(result)
-        result = M3UPlaylist._match_all(ch, ".*rai 1.*", case_sensitive=False)
+        result = M3UPlaylist._match_all(ch, re.compile(".*rai 1.*", re.IGNORECASE))
         self.assertTrue(result)
-        result = M3UPlaylist._match_all(ch, ".*music.*", case_sensitive=False)
+        result = M3UPlaylist._match_all(ch, re.compile(".*music.*", re.IGNORECASE))
         self.assertFalse(result)
-        result = M3UPlaylist._match_all(ch, "^-1$")
+        result = M3UPlaylist._match_all(ch, re.compile("^-1$"))
         self.assertTrue(result)
-        result = M3UPlaylist._match_all(ch, ".*luke.*")
+        result = M3UPlaylist._match_all(ch, re.compile(".*luke.*"))
         self.assertTrue(result)
 
     def test_search(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         results = pl.search(".*luke.*")
         self.assertEqual(4, len(results))
-        results = pl.search(".*Italia.*", where='attributes.group-title')
+        results = pl.search(".*Italia.*", where="attributes.group-title")
         self.assertEqual(2, len(results))
-        results = pl.search(".*TROISI.*", where='name')
+        results = pl.search(".*TROISI.*", where="name")
         self.assertEqual(1, len(results))
-        results = pl.search(".*R.*", where='name')
+        results = pl.search(".*R.*", where="name")
         self.assertEqual(3, len(results))
         # Search for empty tvg-id attribute
-        results = pl.search("^$", where='attributes.tvg-id')
+        results = pl.search("^$", where="attributes.tvg-id")
         self.assertEqual(2, len(results))
         # Search for any empty attribute
         results = pl.search("^$")
@@ -493,29 +494,33 @@ class TestM3UPlaylist(unittest.TestCase):
         results = pl.search(".*it.*", where=["attributes.tvg-logo", "attributes.group-title"], case_sensitive=False)
         self.assertEqual(3, len(results))
         # Check that no duplicates are added
-        results = pl.search(".*RAI.*", where=["attributes.tvg-id", "attributes.tvg-name", "attributes.tvg-logo", "attributes.group-title", "name"], case_sensitive=False)
+        results = pl.search(
+            ".*RAI.*",
+            where=["attributes.tvg-id", "attributes.tvg-name", "attributes.tvg-logo", "attributes.group-title", "name"],
+            case_sensitive=False,
+        )
         self.assertEqual(1, len(results))
 
     def test_parse_header(self):
         # Case of a header with no attributes
-        header = '#EXTM3U'
+        header = "#EXTM3U"
         attributes = playlist._parse_header(header)
         self.assertEqual(0, len(attributes))
 
         # Case of a header with attributes
         header = '#EXTM3U x-tvg-url="https://elcinema.com.epg.xml" tvg-shift="1"'
         attributes = playlist._parse_header(header)
-        self.assertEqual(attributes['x-tvg-url'], 'https://elcinema.com.epg.xml')
-        self.assertEqual(attributes['tvg-shift'], '1')
+        self.assertEqual(attributes["x-tvg-url"], "https://elcinema.com.epg.xml")
+        self.assertEqual(attributes["tvg-shift"], "1")
 
     def test_parse_header_with_special_values(self):
         # Attribute values may contain spaces and "=" characters and must
         # not be truncated.
         header = '#EXTM3U url-tvg="a b c" x-tvg-url="http://e.com/g.xml?a=1&b=2" tvg-shift="0"'
         attributes = playlist._parse_header(header)
-        self.assertEqual(attributes['url-tvg'], 'a b c')
-        self.assertEqual(attributes['x-tvg-url'], 'http://e.com/g.xml?a=1&b=2')
-        self.assertEqual(attributes['tvg-shift'], '0')
+        self.assertEqual(attributes["url-tvg"], "a b c")
+        self.assertEqual(attributes["x-tvg-url"], "http://e.com/g.xml?a=1&b=2")
+        self.assertEqual(attributes["tvg-shift"], "0")
 
     def test_build_header(self):
         expected_header = '#EXTM3U x-tvg-url="https://elcinema.com.epg.xml" tvg-shift="1"'
@@ -527,7 +532,7 @@ class TestM3UPlaylist(unittest.TestCase):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         for i, ch in enumerate(pl):
             self.assertEqual(test_data.expected_m3u_plus.get_channel(i), ch)
-        self.assertEqual(i+1, test_data.expected_m3u_plus.length())
+        self.assertEqual(i + 1, test_data.expected_m3u_plus.length())
 
     def test_nested_iteration(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -547,15 +552,11 @@ class TestM3UPlaylist(unittest.TestCase):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
         self.assertEqual(pl1, pl2)
-        new_channel = IPTVChannel(
-            url="http://127.0.0.1",
-            name="new channel",
-            duration="-1"
-        )
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel", duration="-1")
         pl2.append_channel(new_channel)
-        self.assertEqual(new_channel, pl2.get_channel(pl2.length()-1))
+        self.assertEqual(new_channel, pl2.get_channel(pl2.length() - 1))
         self.assertNotEqual(pl1, pl2)
-        self.assertEqual(pl1.length()+1, pl2.length())
+        self.assertEqual(pl1.length() + 1, pl2.length())
 
     def test_append_channels(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -564,26 +565,22 @@ class TestM3UPlaylist(unittest.TestCase):
         # Let's append the same channels twice
         pl2.append_channels(pl1.get_channels())
         self.assertNotEqual(pl1, pl2)
-        self.assertEqual(pl1.length()*2, pl2.length())
-        self.assertEqual(pl1.get_channels(), pl2.get_channels()[:pl1.length()])
-        self.assertEqual(pl1.get_channels(), pl2.get_channels()[pl1.length():])
+        self.assertEqual(pl1.length() * 2, pl2.length())
+        self.assertEqual(pl1.get_channels(), pl2.get_channels()[: pl1.length()])
+        self.assertEqual(pl1.get_channels(), pl2.get_channels()[pl1.length() :])
 
     def test_insert_channel(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
         self.assertEqual(pl1, pl2)
-        new_channel = IPTVChannel(
-            url="http://127.0.0.1",
-            name="new channel",
-            duration="-1"
-        )
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel", duration="-1")
         inserted_index = 2
         pl2.insert_channel(inserted_index, new_channel)
         self.assertEqual(new_channel, pl2.get_channel(inserted_index))
         self.assertNotEqual(pl1, pl2)
-        self.assertEqual(pl1.length()+1, pl2.length())
+        self.assertEqual(pl1.length() + 1, pl2.length())
         self.assertEqual(pl1.get_channels()[:inserted_index], pl2.get_channels()[:inserted_index])
-        self.assertEqual(pl1.get_channels()[inserted_index:], pl2.get_channels()[inserted_index+1:])
+        self.assertEqual(pl1.get_channels()[inserted_index:], pl2.get_channels()[inserted_index + 1 :])
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, pl2.length(), new_channel)
 
@@ -596,7 +593,7 @@ class TestM3UPlaylist(unittest.TestCase):
         pl2.insert_channels(offset, pl1.get_channels())
         self.assertNotEqual(pl1, pl2)
         for i in range(pl1.length()):
-            self.assertEqual(pl1.get_channel(i), pl2.get_channel(offset+i))
+            self.assertEqual(pl1.get_channel(i), pl2.get_channel(offset + i))
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl2.insert_channels, pl2.length(), pl1.get_channels())
 
@@ -605,11 +602,7 @@ class TestM3UPlaylist(unittest.TestCase):
         pl2 = pl1.copy()
         self.assertEqual(pl1, pl2)
         updated_index = 3
-        new_channel = IPTVChannel(
-            url="http://127.0.0.1",
-            name="new channel",
-            duration="-1"
-        )
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel", duration="-1")
         pl2.update_channel(updated_index, new_channel)
         self.assertNotEqual(pl1, pl2)
         for i, ch in enumerate(pl1):
@@ -618,12 +611,7 @@ class TestM3UPlaylist(unittest.TestCase):
             else:
                 self.assertEqual(ch, pl2.get_channel(i))
         # Failure case
-        self.assertRaises(
-            IndexOutOfBoundsException,
-            pl2.update_channel,
-            pl2.length(),
-            new_channel
-        )
+        self.assertRaises(IndexOutOfBoundsException, pl2.update_channel, pl2.length(), new_channel)
 
     def test_remove_channel(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -632,7 +620,7 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(expected_length, pl.length())
         channel = pl.remove_channel(removed_index)
         self.assertEqual(test_data.expected_m3u_plus.get_channel(removed_index), channel)
-        self.assertEqual(expected_length-1, pl.length())
+        self.assertEqual(expected_length - 1, pl.length())
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl.remove_channel, pl.length())
 
@@ -645,44 +633,27 @@ class TestM3UPlaylist(unittest.TestCase):
     def test_add_attribute(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
-        name = 'test-attribute'
-        value = 'test-value'
+        name = "test-attribute"
+        value = "test-value"
         pl2.add_attribute(name, value)
         self.assertNotEqual(pl1, pl2)
         self.assertEqual(pl2.get_attributes()[name], value)
-        self.assertEqual(
-            len(test_data.expected_m3u_plus.get_attributes()) + 1,
-            len(pl2.get_attributes())
-        )
+        self.assertEqual(len(test_data.expected_m3u_plus.get_attributes()) + 1, len(pl2.get_attributes()))
         # Failure case
-        self.assertRaises(
-            AttributeAlreadyPresentException,
-            pl2.add_attribute,
-            name,
-            value
-        )
+        self.assertRaises(AttributeAlreadyPresentException, pl2.add_attribute, name, value)
 
     def test_add_attributes(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
         pl2 = pl1.copy()
-        new_attributes = {
-            "attribute_1": "value_1",
-            "attribute_2": "value_2"
-        }
+        new_attributes = {"attribute_1": "value_1", "attribute_2": "value_2"}
         pl2.add_attributes(new_attributes)
         self.assertNotEqual(pl1, pl2)
         self.assertEqual(pl2.get_attributes()["attribute_2"], "value_2")
         self.assertEqual(
-            len(test_data.expected_m3u_plus.get_attributes()) + len(new_attributes),
-            len(pl2.get_attributes())
+            len(test_data.expected_m3u_plus.get_attributes()) + len(new_attributes), len(pl2.get_attributes())
         )
         # Failure case
-        self.assertRaises(
-            AttributeAlreadyPresentException,
-            pl2.add_attribute,
-            "attribute_2",
-            "value_2"
-        )
+        self.assertRaises(AttributeAlreadyPresentException, pl2.add_attribute, "attribute_2", "value_2")
 
     def test_update_attribute(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -694,12 +665,7 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertNotEqual(pl1, pl2)
         self.assertNotEqual(pl1.get_attribute(updated_attribute), pl2.get_attribute(updated_attribute))
         # Failure case
-        self.assertRaises(
-            AttributeNotFoundException,
-            pl2.update_attribute,
-            "non-existing-attribute",
-            "value"
-        )
+        self.assertRaises(AttributeNotFoundException, pl2.update_attribute, "non-existing-attribute", "value")
 
     def test_remove_attribute(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -710,12 +676,8 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(test_data.expected_m3u_plus.get_attribute(removed_attribute), attribute)
         self.assertEqual(expected_length - 1, len(pl.get_attributes()))
         # Failure case
-        self.assertRaises(
-            AttributeNotFoundException,
-            pl.remove_attribute,
-            "non-existing-attribute"
-        )
+        self.assertRaises(AttributeNotFoundException, pl.remove_attribute, "non-existing-attribute")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
