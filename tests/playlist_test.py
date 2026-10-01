@@ -1,6 +1,7 @@
 import itertools
 import json
 import os
+import re
 import tempfile
 import unittest
 
@@ -443,34 +444,34 @@ class TestM3UPlaylist(unittest.TestCase):
 
     def test_match_single(self):
         ch = test_data.m3u_plus_channel_0
-        result = M3UPlaylist._match_single(ch, ".*Rai.*", where="attributes.tvg-name")
+        result = M3UPlaylist._match_single(ch, re.compile(".*Rai.*"), where="attributes.tvg-name")
         self.assertTrue(result)
-        result = M3UPlaylist._match_single(ch, ".*rai.*", where="attributes.tvg-name")
+        result = M3UPlaylist._match_single(ch, re.compile(".*rai.*"), where="attributes.tvg-name")
         self.assertFalse(result)
-        result = M3UPlaylist._match_single(ch, ".*rai.*", where="attributes.tvg-name", case_sensitive=False)
+        result = M3UPlaylist._match_single(ch, re.compile(".*rai.*", re.IGNORECASE), where="attributes.tvg-name")
         self.assertTrue(result)
-        result = M3UPlaylist._match_single(ch, ".*Music.*", where="duration")
+        result = M3UPlaylist._match_single(ch, re.compile(".*Music.*"), where="duration")
         self.assertFalse(result)
-        result = M3UPlaylist._match_single(ch, ".*luke.*", where="url")
+        result = M3UPlaylist._match_single(ch, re.compile(".*luke.*"), where="url")
         self.assertTrue(result)
-        result = M3UPlaylist._match_single(ch, ".*luke.*", where="non-existent")
+        result = M3UPlaylist._match_single(ch, re.compile(".*luke.*"), where="non-existent")
         self.assertFalse(result)
-        result = M3UPlaylist._match_single(ch, ".*luke.*", where="attributes.non-existent")
+        result = M3UPlaylist._match_single(ch, re.compile(".*luke.*"), where="attributes.non-existent")
         self.assertFalse(result)
-        result = M3UPlaylist._match_single(ch, ".*luke.*", where="non-existent.tvg-name")
+        result = M3UPlaylist._match_single(ch, re.compile(".*luke.*"), where="non-existent.tvg-name")
         self.assertFalse(result)
 
     def test_match_all(self):
         ch = test_data.m3u_plus_channel_0
-        result = M3UPlaylist._match_all(ch, ".*RAI.*")
+        result = M3UPlaylist._match_all(ch, re.compile(".*RAI.*"))
         self.assertTrue(result)
-        result = M3UPlaylist._match_all(ch, ".*rai 1.*", case_sensitive=False)
+        result = M3UPlaylist._match_all(ch, re.compile(".*rai 1.*", re.IGNORECASE))
         self.assertTrue(result)
-        result = M3UPlaylist._match_all(ch, ".*music.*", case_sensitive=False)
+        result = M3UPlaylist._match_all(ch, re.compile(".*music.*", re.IGNORECASE))
         self.assertFalse(result)
-        result = M3UPlaylist._match_all(ch, "^-1$")
+        result = M3UPlaylist._match_all(ch, re.compile("^-1$"))
         self.assertTrue(result)
-        result = M3UPlaylist._match_all(ch, ".*luke.*")
+        result = M3UPlaylist._match_all(ch, re.compile(".*luke.*"))
         self.assertTrue(result)
 
     def test_search(self):

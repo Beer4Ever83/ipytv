@@ -23,7 +23,7 @@ import multiprocessing as mp
 import re
 from collections.abc import Iterator
 from dataclasses import fields
-from functools import cache, lru_cache
+from functools import cache
 from importlib import resources
 from multiprocessing.pool import AsyncResult
 from typing import Any, Self
@@ -66,21 +66,6 @@ def _get_json_schema() -> dict[str, Any]:
     """
     schema_text = resources.files("ipytv").joinpath("resources").joinpath("schema.json").read_text(encoding="utf-8")
     return json.loads(schema_text)
-
-
-@lru_cache(maxsize=256)
-def _get_compiled_regex(pattern: str, case_sensitive: bool) -> re.Pattern[str]:
-    """Get a compiled regex pattern, caching the most recently used ones.
-
-    Args:
-        pattern: The regex pattern string.
-        case_sensitive: Whether the pattern should be case-sensitive.
-
-    Returns:
-        Compiled regex pattern.
-    """
-    flags = re.RegexFlag(0) if case_sensitive else re.IGNORECASE
-    return re.compile(pattern, flags)
 
 
 class M3UPlaylist:
@@ -488,44 +473,25 @@ class M3UPlaylist:
         return out
 
     @staticmethod
-    def _match_all(ch: IPTVChannel, regex: str, case_sensitive: bool = True) -> bool:
+    def _match_all(ch: IPTVChannel, regex: re.Pattern[str]) -> bool:
         """Check if any field in a channel matches the regex.
 
         Args:
             ch: The channel to search in.
-            regex: The regular expression to match.
-            case_sensitive: Whether matching should be case-sensitive.
+            regex: The compiled regular expression to match.
 
         Returns:
             True if any field matches, False otherwise.
         """
-        channel_fields = M3UPlaylist._extract_fields(ch)
-        compiled_regex = _get_compiled_regex(regex, case_sensitive)
-        return any(M3UPlaylist._match_single_compiled(ch, compiled_regex, field) for field in channel_fields)
+        return any(M3UPlaylist._match_single(ch, regex, field) for field in M3UPlaylist._extract_fields(ch))
 
     @staticmethod
-    def _match_single(ch: IPTVChannel, regex: str, where: str, case_sensitive: bool = True) -> bool:
+    def _match_single(ch: IPTVChannel, regex: re.Pattern[str], where: str) -> bool:
         """Check if a specific field in a channel matches the regex.
 
         Args:
             ch: The channel to search in.
-            regex: The regular expression to match.
-            where: The field specification to search in.
-            case_sensitive: Whether matching should be case-sensitive.
-
-        Returns:
-            True if the field matches, False otherwise.
-        """
-        compiled_regex = _get_compiled_regex(regex, case_sensitive)
-        return M3UPlaylist._match_single_compiled(ch, compiled_regex, where)
-
-    @staticmethod
-    def _match_single_compiled(ch: IPTVChannel, compiled_regex: re.Pattern[str], where: str) -> bool:
-        """Check if a specific field in a channel matches the compiled regex.
-
-        Args:
-            ch: The channel to search in.
-            compiled_regex: The compiled regular expression pattern.
+            regex: The compiled regular expression to match.
             where: The field specification to search in.
 
         Returns:
@@ -542,7 +508,7 @@ class M3UPlaylist:
                 if sub not in value:
                     return False
                 value = value[sub]
-        return compiled_regex.fullmatch(value) is not None
+        return regex.fullmatch(value) is not None
 
     def search(
         self, regex: str, where: str | None | list[str] = None, case_sensitive: bool = True
@@ -573,19 +539,16 @@ class M3UPlaylist:
             >>> # Search in multiple fields
             >>> results = playlist.search(r"HD", where=["name", "attributes.group-title"])
         """
+        compiled = re.compile(regex, 0 if case_sensitive else re.IGNORECASE)
+        if where is None:
+            return [ch for ch in self.get_channels() if self._match_all(ch, compiled)]
+        fields_to_check = where if isinstance(where, list) else [where]
         output_list: list[IPTVChannel] = []
         for ch in self.get_channels():
-            if where is None:
-                if self._match_all(ch, regex, case_sensitive):
+            for w in fields_to_check:
+                if self._match_single(ch, compiled, w):
                     output_list.append(ch)
-            else:
-                if not isinstance(where, list):
-                    where = [where]
-                for w in where:
-                    if self._match_single(ch, regex, w, case_sensitive):
-                        output_list.append(ch)
-                        # One match is enough
-                        break
+                    break
         return output_list
 
     def to_m3u_plus_playlist(self) -> str:
