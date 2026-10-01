@@ -70,9 +70,9 @@ check_untyped_defs = true
 [tool.coverage.run]
 source = ["ipytv"]
 branch = true
-# The playlist loader parses in a process pool: without these, nothing that
+# The playlist loader parses in a process pool: without this, nothing that
 # runs in the workers is measured and coverage is under-reported.
-concurrency = ["multiprocessing", "thread"]
+concurrency = ["multiprocessing"]
 parallel = true
 
 [tool.coverage.report]

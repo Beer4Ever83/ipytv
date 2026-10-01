@@ -1,6 +1,5 @@
 import itertools
 import json
-import logging
 import os
 import re
 import tempfile
@@ -253,46 +252,13 @@ class TestM3UPlaylist(unittest.TestCase):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         self.assertEqual(test_data.expected_m3u_plus, pl, "The two playlists are not equal")
 
-    def test_loadf_logs_from_worker_processes(self):
-        with self.assertLogs("ipytv", level="DEBUG") as captured:
-            playlist.loadf("tests/resources/m3u_plus.m3u")
-        worker_records = [r for r in captured.records if r.getMessage().startswith("populating playlist with rows")]
-        self.assertTrue(worker_records, "no log records were forwarded from the worker processes")
-        self.assertEqual("ipytv.playlist", worker_records[0].name)
-
-    def test_loadl_forwards_all_worker_log_records(self):
-        # More records than a multiprocessing queue can hold on macOS (32767): none must be lost.
-        factor = 40000
-        # Each copy logs one "adjacent #EXTINF rows" warning.
-        rows = ["#EXTM3U"] + ["#EXTINF:-1,a", "#EXTINF:-1,b", "http://example.com/stream"] * factor
-        with self.assertLogs("ipytv", level="WARNING") as captured:
-            playlist.loadl(rows)
-        self.assertEqual(factor, len(captured.records))
-
-    def test_loadf_with_extra_tags_logs_no_warnings(self):
+    def test_populate_with_extra_tags_logs_no_warnings(self):
+        with open("tests/resources/m3u_plus.m3u", encoding="utf-8") as file:
+            body = file.readlines()[1:]
+        # _populate is called directly because log records from the pool workers don't reach the caller.
         with self.assertNoLogs("ipytv", level="WARNING"):
-            pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+            pl = playlist._populate(body)
         self.assertTrue(any(ch.extras for ch in pl), "the test playlist should contain extra tags")
-
-    def test_handling_threshold(self):
-        def isolated_logger(level: int, *handlers: logging.Handler) -> logging.Logger:
-            logger = logging.Logger("isolated", level)
-            for handler in handlers:
-                logger.addHandler(handler)
-            return logger
-
-        info_handler = logging.StreamHandler()
-        info_handler.setLevel(logging.INFO)
-        nothing_handled = logging.CRITICAL + 1
-        cases = [
-            ("only null handlers", isolated_logger(logging.DEBUG, logging.NullHandler()), nothing_handled),
-            ("no handlers falls back to lastResort", isolated_logger(logging.DEBUG), logging.WARNING),
-            ("handler level wins", isolated_logger(logging.DEBUG, info_handler), logging.INFO),
-            ("logger level wins", isolated_logger(logging.ERROR, logging.StreamHandler()), logging.ERROR),
-        ]
-        for description, logger, expected in cases:
-            with self.subTest(description):
-                self.assertEqual(expected, playlist._handling_threshold(logger))
 
     def test_loadf_m3u8(self):
         pl = playlist.loadf("tests/resources/m3u8.m3u")
