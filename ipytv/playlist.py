@@ -95,8 +95,8 @@ class M3UPlaylist:
             The number of channels in the playlist.
 
         Example:
-            >>> playlist = M3UPlaylist()
-            >>> playlist.length()
+            >>> pl = M3UPlaylist()
+            >>> pl.length()
             0
         """
         return len(self.get_channels()) if self.get_channels() is not None else 0
@@ -127,8 +127,9 @@ class M3UPlaylist:
             AttributeNotFoundException: If the attribute doesn't exist.
 
         Example:
-            >>> playlist.add_attribute("url-tvg", "http://example.com/guide.xml")
-            >>> playlist.get_attribute("url-tvg")
+            >>> pl = M3UPlaylist()
+            >>> pl.add_attribute("url-tvg", "http://example.com/guide.xml")
+            >>> pl.get_attribute("url-tvg")
             'http://example.com/guide.xml'
         """
         self._check_attribute(name)
@@ -141,7 +142,9 @@ class M3UPlaylist:
             A dictionary containing all playlist attributes.
 
         Example:
-            >>> playlist.get_attributes()
+            >>> pl = M3UPlaylist()
+            >>> pl.add_attribute("url-tvg", "http://example.com/guide.xml")
+            >>> pl.get_attributes()
             {'url-tvg': 'http://example.com/guide.xml'}
         """
         return self._attributes
@@ -157,7 +160,10 @@ class M3UPlaylist:
             AttributeAlreadyPresentException: If the attribute already exists.
 
         Example:
-            >>> playlist.add_attribute("url-tvg", "http://example.com/guide.xml")
+            >>> pl = M3UPlaylist()
+            >>> pl.add_attribute("url-tvg", "http://example.com/guide.xml")
+            >>> pl.get_attributes()
+            {'url-tvg': 'http://example.com/guide.xml'}
         """
         if name not in self.get_attributes():
             self._attributes[str(name)] = str(value)
@@ -178,8 +184,10 @@ class M3UPlaylist:
             AttributeAlreadyPresentException: If any attribute already exists.
 
         Example:
-            >>> attrs = {"url-tvg": "http://example.com", "refresh": "3600"}
-            >>> playlist.add_attributes(attrs)
+            >>> pl = M3UPlaylist()
+            >>> pl.add_attributes({"url-tvg": "http://example.com", "refresh": "3600"})
+            >>> pl.get_attributes()
+            {'url-tvg': 'http://example.com', 'refresh': '3600'}
         """
         for k, v in attributes.items():
             self.add_attribute(k, v)
@@ -195,7 +203,11 @@ class M3UPlaylist:
             AttributeNotFoundException: If the attribute doesn't exist.
 
         Example:
-            >>> playlist.update_attribute("refresh", "7200")
+            >>> pl = M3UPlaylist()
+            >>> pl.add_attribute("refresh", "3600")
+            >>> pl.update_attribute("refresh", "7200")
+            >>> pl.get_attribute("refresh")
+            '7200'
         """
         self._check_attribute(name)
         self._attributes[name] = value
@@ -214,7 +226,12 @@ class M3UPlaylist:
             AttributeNotFoundException: If the attribute doesn't exist.
 
         Example:
-            >>> old_value = playlist.remove_attribute("refresh")
+            >>> pl = M3UPlaylist()
+            >>> pl.add_attribute("refresh", "3600")
+            >>> pl.remove_attribute("refresh")
+            '3600'
+            >>> pl.get_attributes()
+            {}
         """
         self._check_attribute(name)
         attribute = self.get_attribute(name)
@@ -249,7 +266,10 @@ class M3UPlaylist:
             IndexOutOfBoundsException: If the index is out of bounds.
 
         Example:
-            >>> first_channel = playlist.get_channel(0)
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channel(IPTVChannel(name="News", url="http://example.com/news"))
+            >>> pl.get_channel(0).name
+            'News'
         """
         self._check_index(index)
         return self.get_channels()[index]
@@ -261,9 +281,10 @@ class M3UPlaylist:
             A list of all IPTVChannel objects in the playlist.
 
         Example:
-            >>> channels = playlist.get_channels()
-            >>> len(channels)
-            42
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channel(IPTVChannel(name="News", url="http://example.com/news"))
+            >>> [ch.name for ch in pl.get_channels()]
+            ['News']
         """
         return self._channels
 
@@ -278,8 +299,11 @@ class M3UPlaylist:
             IndexOutOfBoundsException: If the index is out of bounds.
 
         Example:
-            >>> new_channel = IPTVChannel(name="News", url="http://example.com")
-            >>> playlist.insert_channel(0, new_channel)
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channel(IPTVChannel(name="Sports", url="http://example.com/sports"))
+            >>> pl.insert_channel(0, IPTVChannel(name="News", url="http://example.com/news"))
+            >>> [ch.name for ch in pl]
+            ['News', 'Sports']
         """
         self._check_index(index)
         self.get_channels().insert(index, channel)
@@ -296,8 +320,11 @@ class M3UPlaylist:
             IndexOutOfBoundsException: If the index is out of bounds.
 
         Example:
-            >>> channels = [channel1, channel2, channel3]
-            >>> playlist.insert_channels(5, channels)
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channel(IPTVChannel(name="Sports", url="http://example.com/sports"))
+            >>> pl.insert_channels(0, [IPTVChannel(name="News"), IPTVChannel(name="Weather")])
+            >>> [ch.name for ch in pl]
+            ['News', 'Weather', 'Sports']
         """
         self._check_index(index)
         for i in range(len(chan_list), 0, -1):
@@ -311,8 +338,10 @@ class M3UPlaylist:
             channel: The IPTVChannel to append.
 
         Example:
-            >>> new_channel = IPTVChannel(name="Sports", url="http://example.com")
-            >>> playlist.append_channel(new_channel)
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channel(IPTVChannel(name="Sports", url="http://example.com/sports"))
+            >>> pl.length()
+            1
         """
         self.get_channels().append(channel)
         log.info("channel added: %s", channel)
@@ -324,8 +353,10 @@ class M3UPlaylist:
             chan_list: List of IPTVChannel objects to append.
 
         Example:
-            >>> channels = [channel1, channel2, channel3]
-            >>> playlist.append_channels(channels)
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channels([IPTVChannel(name="News"), IPTVChannel(name="Sports")])
+            >>> pl.length()
+            2
         """
         self._channels += chan_list
         log.info("%s channels appended to the playlist", len(chan_list))
@@ -341,8 +372,11 @@ class M3UPlaylist:
             IndexOutOfBoundsException: If the index is out of bounds.
 
         Example:
-            >>> updated_channel = IPTVChannel(name="Updated", url="http://new.com")
-            >>> playlist.update_channel(0, updated_channel)
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channel(IPTVChannel(name="Old", url="http://example.com/old"))
+            >>> pl.update_channel(0, IPTVChannel(name="New", url="http://example.com/new"))
+            >>> pl.get_channel(0).name
+            'New'
         """
         self._check_index(index)
         self._channels[index] = channel
@@ -361,7 +395,12 @@ class M3UPlaylist:
             IndexOutOfBoundsException: If the index is out of bounds.
 
         Example:
-            >>> removed_channel = playlist.remove_channel(5)
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channels([IPTVChannel(name="News"), IPTVChannel(name="Sports")])
+            >>> pl.remove_channel(0).name
+            'News'
+            >>> pl.length()
+            1
         """
         self._check_index(index)
         channel = self._channels[index]
@@ -393,9 +432,14 @@ class M3UPlaylist:
             Dictionary mapping attribute values to lists of channel indices.
 
         Example:
-            >>> groups = playlist.group_by_attribute("group-title")
-            >>> groups["Sports"]
-            [0, 5, 12]  # indices of sports channels
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channels([
+            ...     IPTVChannel(name="Match", attributes={"group-title": "Sports"}),
+            ...     IPTVChannel(name="News", attributes={"group-title": "News"}),
+            ...     IPTVChannel(name="Race", attributes={"group-title": "Sports"}),
+            ... ])
+            >>> pl.group_by_attribute("group-title")
+            {'Sports': [0, 2], 'News': [1]}
         """
         groups: dict[str, list[int]] = {}
         for i, chan in enumerate(self.get_channels()):
@@ -418,9 +462,14 @@ class M3UPlaylist:
             Dictionary mapping URLs to lists of channel indices.
 
         Example:
-            >>> url_groups = playlist.group_by_url()
-            >>> url_groups["http://example.com/stream"]
-            [3, 7]  # indices of channels with this URL
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channels([
+            ...     IPTVChannel(name="News", url="http://example.com/stream"),
+            ...     IPTVChannel(name="News HD", url="http://example.com/stream"),
+            ...     IPTVChannel(name="Sports", url="http://example.com/sports"),
+            ... ])
+            >>> pl.group_by_url()
+            {'http://example.com/stream': [0, 1], 'http://example.com/sports': [2]}
         """
         groups: dict[str, list[int]] = {}
         for i, chan in enumerate(self.get_channels()):
@@ -530,14 +579,18 @@ class M3UPlaylist:
             List of IPTVChannel objects matching the search criteria.
 
         Example:
-            >>> # Search for channels with "news" in any field
-            >>> news_channels = playlist.search(r".*news.*", case_sensitive=False)
-            >>>
-            >>> # Search for channels in "Sports" group
-            >>> sports = playlist.search(r"Sports", where="attributes.group-title")
-            >>>
-            >>> # Search in multiple fields
-            >>> results = playlist.search(r"HD", where=["name", "attributes.group-title"])
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channels([
+            ...     IPTVChannel(name="World News", attributes={"group-title": "News"}),
+            ...     IPTVChannel(name="Football HD", attributes={"group-title": "Sports"}),
+            ... ])
+            >>> # The regex must match the whole field
+            >>> [ch.name for ch in pl.search(r".*news.*", case_sensitive=False)]  # any field
+            ['World News']
+            >>> [ch.name for ch in pl.search(r"Sports", where="attributes.group-title")]
+            ['Football HD']
+            >>> [ch.name for ch in pl.search(r".*HD", where=["name", "attributes.group-title"])]
+            ['Football HD']
         """
         compiled = re.compile(regex, 0 if case_sensitive else re.IGNORECASE)
         if where is None:
@@ -558,8 +611,11 @@ class M3UPlaylist:
             String representation of the playlist in M3U Plus format.
 
         Example:
-            >>> m3u_content = playlist.to_m3u_plus_playlist()
-            >>> print(m3u_content)
+            >>> pl = M3UPlaylist()
+            >>> pl.add_attribute("url-tvg", "http://example.com")
+            >>> channel = IPTVChannel(name="Channel 1", url="http://example.com/stream1", attributes={"tvg-id": "1"})
+            >>> pl.append_channel(channel)
+            >>> print(pl.to_m3u_plus_playlist(), end="")
             #EXTM3U url-tvg="http://example.com"
             #EXTINF:-1 tvg-id="1",Channel 1
             http://example.com/stream1
@@ -576,8 +632,10 @@ class M3UPlaylist:
             String representation of the playlist in M3U8 format (without extended attributes).
 
         Example:
-            >>> m3u8_content = playlist.to_m3u8_playlist()
-            >>> print(m3u8_content)
+            >>> pl = M3UPlaylist()
+            >>> channel = IPTVChannel(name="Channel 1", url="http://example.com/stream1", attributes={"tvg-id": "1"})
+            >>> pl.append_channel(channel)
+            >>> print(pl.to_m3u8_playlist(), end="")
             #EXTM3U
             #EXTINF:-1,Channel 1
             http://example.com/stream1
@@ -603,9 +661,9 @@ class M3UPlaylist:
             JSON string representation of the playlist.
 
         Example:
-            >>> json_data = playlist.to_json_playlist()
-            >>> data = json.loads(json_data)
-            >>> data["channels"][0]["name"]
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channel(IPTVChannel(name="Channel 1", url="http://example.com/stream1"))
+            >>> json.loads(pl.to_json_playlist())["channels"][0]["name"]
             'Channel 1'
         """
         return json.dumps(self.__to_dict())
@@ -617,9 +675,11 @@ class M3UPlaylist:
             A new M3UPlaylist instance with copied channels and attributes.
 
         Example:
-            >>> playlist_copy = playlist.copy()
-            >>> playlist_copy.length() == playlist.length()
-            True
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channel(IPTVChannel(name="News"))
+            >>> pl_copy = pl.copy()
+            >>> pl_copy == pl, pl_copy.get_channel(0) is pl.get_channel(0)
+            (True, False)
         """
         new_pl = type(self)()
         for channel in self.get_channels():
@@ -683,8 +743,8 @@ def loadl(rows: list[str]) -> M3UPlaylist:
 
     Example:
         >>> rows = ['#EXTM3U', '#EXTINF:-1,Channel 1', 'http://example.com']
-        >>> playlist = loadl(rows)
-        >>> playlist.length()
+        >>> pl = loadl(rows)
+        >>> pl.length()
         1
     """
     if not isinstance(rows, list):
@@ -743,8 +803,8 @@ def loads(string: str) -> M3UPlaylist:
 
     Example:
         >>> content = "#EXTM3U\\n#EXTINF:-1,Test\\nhttp://example.com"
-        >>> playlist = loads(content)
-        >>> playlist.length()
+        >>> pl = loads(content)
+        >>> pl.length()
         1
     """
     if isinstance(string, str):
@@ -768,9 +828,9 @@ def loadf(filename: str) -> M3UPlaylist:
         IOError: If there's an error reading the file.
 
     Example:
-        >>> playlist = loadf("my_channels.m3u")
-        >>> playlist.length()
-        150
+        >>> pl = loadf("tests/resources/m3u_plus.m3u")
+        >>> pl.length()
+        4
     """
     if not isinstance(filename, str):
         log.error("expected %s, got %s", str, type(filename))
@@ -794,9 +854,10 @@ def loadu(url: str) -> M3UPlaylist:
         URLException: If there's an error accessing the URL.
 
     Example:
-        >>> playlist = loadu("http://example.com/playlist.m3u")
-        >>> playlist.length()
-        200
+        Requires network access, so it's not run as a doctest::
+
+            pl = loadu("http://example.com/playlist.m3u")
+            pl.length()
     """
     if not isinstance(url, str):
         log.error("expected %s, got %s", str, type(url))
@@ -824,9 +885,11 @@ def loadj(json_dict: dict[str, Any]) -> M3UPlaylist:
         WrongTypeException: If json_dict is not a dictionary or doesn't match schema.
 
     Example:
-        >>> data = {"attributes": {}, "channels": [{"name": "Test", "url": "http://..."}]}
-        >>> playlist = loadj(data)
-        >>> playlist.length()
+        >>> channel = {
+        ...     "name": "Test", "duration": "-1", "url": "http://example.com", "attributes": {}, "extras": []
+        ... }
+        >>> pl = loadj({"attributes": {}, "channels": [channel]})
+        >>> pl.length()
         1
     """
     if not isinstance(json_dict, dict):
@@ -867,8 +930,8 @@ def loadjstr(json_str: str) -> M3UPlaylist:
 
     Example:
         >>> json_data = '{"attributes": {}, "channels": []}'
-        >>> playlist = loadjstr(json_data)
-        >>> playlist.length()
+        >>> pl = loadjstr(json_data)
+        >>> pl.length()
         0
     """
     if not isinstance(json_str, str):

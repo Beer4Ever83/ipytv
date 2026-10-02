@@ -74,6 +74,8 @@ branch = true
 # runs in the workers is measured and coverage is under-reported.
 concurrency = ["multiprocessing"]
 parallel = true
+# Idle pool workers (small playlists only keep one busy) legitimately collect nothing.
+disable_warnings = ["no-data-collected"]
 
 [tool.coverage.report]
 show_missing = true
@@ -81,4 +83,5 @@ skip_empty = true
 
 [tool.pytest.ini_options]
 python_files = "*_test.py"
-testpaths = ["tests"]
+testpaths = ["tests", "ipytv"]
+addopts = "--doctest-modules"

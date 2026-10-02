@@ -68,13 +68,18 @@ def extract_series(playlist: M3UPlaylist, exclude_single: bool = False) -> tuple
         - M3UPlaylist containing all channels that don't match series patterns
 
     Example:
-        >>> playlist = M3UPlaylist()
-        >>> # ... add channels like "Breaking Bad S01E01", "Breaking Bad S01E02" ...
-        >>> series_dict, non_series = extract_series(playlist)
+        >>> from ipytv.channel import IPTVChannel
+        >>> pl = M3UPlaylist()
+        >>> pl.append_channels([
+        ...     IPTVChannel(name="Breaking Bad S01E01", url="http://example.com/1"),
+        ...     IPTVChannel(name="Breaking Bad S01E02", url="http://example.com/2"),
+        ...     IPTVChannel(name="News", url="http://example.com/3"),
+        ... ])
+        >>> series_dict, non_series = extract_series(pl)
         >>> series_dict["breaking bad"].length()
-        12
+        2
         >>> non_series.length()  # channels that don't look like series
-        5
+        1
     """
     title_playlist_map: dict[str, M3UPlaylist] = {}
     not_series_playlist = M3UPlaylist()

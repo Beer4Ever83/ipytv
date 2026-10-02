@@ -59,7 +59,7 @@ def is_m3u_extinf_row(row: str) -> bool:
     Example:
         >>> is_m3u_extinf_row("#EXTINF:-1,Channel Name")
         True
-        >>> is_m3u_extinf_row("#EXTINF:-1 tvg-id=\"1\",Channel")
+        >>> is_m3u_extinf_row('#EXTINF:-1 tvg-id="1",Channel')
         False
     """
     return _M3U_EXTINF_PATTERN.search(row) is not None
