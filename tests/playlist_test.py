@@ -19,6 +19,7 @@ from ipytv.exceptions import (
     AttributeAlreadyPresentException,
     AttributeNotFoundException,
     IndexOutOfBoundsException,
+    IPyTVException,
     MalformedPlaylistException,
     URLException,
     WrongTypeException,
@@ -647,6 +648,25 @@ class TestM3UPlaylist(unittest.TestCase):
             pl[pl.length()]
         with self.assertRaises(IndexOutOfBoundsException):
             pl[-pl.length() - 1]
+
+    def test_out_of_bounds_index_is_an_index_error(self):
+        pl = M3UPlaylist()
+        with self.assertRaises(IndexError):
+            pl[0]
+        with self.assertRaises(IPyTVException):
+            pl[0]
+
+    def test_eq(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        self.assertEqual(pl1, pl2)
+        pl2.add_attribute("x-new", "value")
+        self.assertNotEqual(pl1, pl2)
+        pl3 = pl1.copy()
+        pl3[0] = IPTVChannel(name="other")
+        self.assertNotEqual(pl1, pl3)
+        self.assertNotEqual(pl1, pl1.get_channels())
+        self.assertNotEqual(pl1, None)
 
     def test_setitem(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")

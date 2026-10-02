@@ -107,12 +107,13 @@ class WrongTypeException(IPyTVException):
         super().__init__(message)
 
 
-class IndexOutOfBoundsException(IPyTVException):
+class IndexOutOfBoundsException(IPyTVException, IndexError):
     """Raised when attempting to access invalid playlist indices.
 
     This exception occurs when trying to access channels or other
     playlist elements using indices that are outside the valid
-    range of available items.
+    range of available items. It is also an IndexError, so it can be
+    handled like any other Python sequence index error.
     """
 
     def __init__(self, message: str = "Index out of bounds") -> None:

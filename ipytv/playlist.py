@@ -99,7 +99,7 @@ class M3UPlaylist:
             >>> pl.length()
             0
         """
-        return len(self.get_channels()) if self.get_channels() is not None else 0
+        return len(self.get_channels())
 
     def _check_attribute(self, name: str) -> None:
         """Check if an attribute exists, raise exception if not found.
@@ -704,12 +704,9 @@ class M3UPlaylist:
         Returns:
             True if playlists are equal, False otherwise.
         """
-        length = self.length()
-        if not isinstance(other, M3UPlaylist) or other.length() != length:
-            return False
-        if other.get_attributes() != self.get_attributes():
-            return False
-        return all(other.get_channel(i) == ch for i, ch in enumerate(self))
+        if not isinstance(other, M3UPlaylist):
+            return NotImplemented
+        return self.get_attributes() == other.get_attributes() and self.get_channels() == other.get_channels()
 
     def __str__(self) -> str:
         """Get string representation of the playlist.

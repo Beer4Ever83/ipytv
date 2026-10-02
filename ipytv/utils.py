@@ -98,7 +98,7 @@ def extract_series(playlist: M3UPlaylist, exclude_single: bool = False) -> tuple
         title_playlist_map[show_name].append_channel(channel)
 
     if exclude_single:
-        title_playlist_map = {k: v for k, v in title_playlist_map.items() if v.length() > 1}
+        title_playlist_map = {k: v for k, v in title_playlist_map.items() if len(v) > 1}
 
     return title_playlist_map, not_series_playlist
 
