@@ -101,7 +101,7 @@ from ipytv import playlist
 
 file = "~/Documents/my_playlist.m3u"
 pl = playlist.loadf(file)
-print(pl.length())
+print(len(pl))
 ```
 
 #### from a URL
@@ -113,7 +113,7 @@ from ipytv import playlist
 
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = playlist.loadu(url)
-print(pl.length())
+print(len(pl))
 ```
 
 #### From a string
@@ -127,7 +127,7 @@ string = """#EXTM3U
 #EXTINF:-1 tvg-id="Rai 1" tvg-name="Rai 1" group-title="RAI",Rai 1
 http://myown.link:80/luke/210274/78482"""
 pl = playlist.loads(string)
-print(pl.length())
+print(len(pl))
 ```
 
 #### From a list
@@ -143,7 +143,7 @@ rows = [
     "http://myown.link:80/luke/210274/78482",
 ]
 pl = playlist.loadl(rows)
-print(pl.length())
+print(len(pl))
 ```
 
 #### From a json string
@@ -187,7 +187,7 @@ json_str = """{
   ]
 }"""
 pl = playlist.loadj(json_str)
-print(pl.length())
+print(len(pl))
 ```
 
 ### M3UPlaylist class
@@ -275,7 +275,8 @@ following methods.
 
 #### Individually (by index)
 
-By using the `get_channel(index)` method:
+By indexing the playlist like a list (or, equivalently, with the `get_channel(index)`
+method):
 
 ```python
 from ipytv import playlist
@@ -283,12 +284,12 @@ from ipytv import playlist
 url = "https://iptv-org.github.io/iptv/categories/classic.m3u"
 pl = playlist.loadu(url)
 # Let's retrieve the first channel in the list
-channel = pl.get_channel(0)
+channel = pl[0]  # same as pl.get_channel(0)
 print(f'channel "{channel.name}": {channel.url}')
 # Negative indices count from the end: this is the last channel
-channel = pl.get_channel(-1)
-# The next line will throw IndexOutOfBoundsException
-channel = pl.get_channel(pl.length())
+channel = pl[-1]
+# The next line will throw IndexOutOfBoundsException (which is also an IndexError)
+channel = pl[len(pl)]
 ```
 
 #### Iteratively
@@ -330,15 +331,18 @@ channel = IPTVChannel()
 # Add a channel to the end of the list (last index)
 pl.append_channel(channel)
 # Insert a channel in the specified position (all succeeding channels are
-# shifted right by 1 position); inserting at pl.length() appends it
+# shifted right by 1 position); inserting at len(pl) appends it
 pl.insert_channel(0, channel)
 new_channel = IPTVChannel()
 # Replace the second channel of the playlist with a new channel
-pl.update_channel(1, new_channel)
+pl[1] = new_channel  # same as pl.update_channel(1, new_channel)
 # Remove the channel at the specified position (all succeeding channels are
 # shifted left by 1 position)
-old_channel = pl.remove_channel(0)
+del pl[0]  # like pl.remove_channel(0), which also returns the removed channel
 ```
+
+All the methods taking an index accept negative values, which count from the end
+of the playlist.
 
 There are also two methods that allow to add a list of channels (instead of single
 channels):
