@@ -239,26 +239,31 @@ class M3UPlaylist:
         log.info("attribute %s deleted", name)
         return attribute
 
-    def _check_index(self, index: int, allow_end: bool = False) -> None:
-        """Check if an index is valid for the current playlist.
+    def _resolve_index(self, index: int, allow_end: bool = False) -> int:
+        """Validate an index and return its non-negative equivalent (negative indices count from the end).
 
         Args:
             index: The index to validate.
             allow_end: If True, also accept length(), i.e. the position right after the last channel.
 
+        Returns:
+            The index, as a non-negative number.
+
         Raises:
             IndexOutOfBoundsException: If the index is out of bounds.
         """
         length = self.length()
-        if index < 0 or index > length or (index == length and not allow_end):
+        resolved = index + length if index < 0 else index
+        if not 0 <= resolved < (length + 1 if allow_end else length):
             log.error("the index %s is out of the (0, %s) range", str(index), str(length))
             raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
+        return resolved
 
     def get_channel(self, index: int) -> IPTVChannel:
         """Get a channel by its index position.
 
         Args:
-            index: The zero-based index of the channel to retrieve.
+            index: The zero-based index of the channel to retrieve; negative values count from the end.
 
         Returns:
             The IPTVChannel at the specified index.
@@ -272,7 +277,7 @@ class M3UPlaylist:
             >>> pl.get_channel(0).name
             'News'
         """
-        self._check_index(index)
+        index = self._resolve_index(index)
         return self.get_channels()[index]
 
     def get_channels(self) -> list[IPTVChannel]:
@@ -293,7 +298,7 @@ class M3UPlaylist:
         """Insert a channel at a specific position.
 
         Args:
-            index: The position where to insert the channel.
+            index: The position where to insert the channel; negative values count from the end.
             channel: The IPTVChannel to insert.
 
         Raises:
@@ -306,7 +311,7 @@ class M3UPlaylist:
             >>> [ch.name for ch in pl]
             ['News', 'Sports']
         """
-        self._check_index(index, allow_end=True)
+        index = self._resolve_index(index, allow_end=True)
         self.get_channels().insert(index, channel)
         log.info("channel %s inserted in position %s", channel, index)
 
@@ -314,7 +319,7 @@ class M3UPlaylist:
         """Insert multiple channels at a specific position.
 
         Args:
-            index: The position where to insert the channels.
+            index: The position where to insert the channels; negative values count from the end.
             chan_list: List of IPTVChannel objects to insert.
 
         Raises:
@@ -327,7 +332,7 @@ class M3UPlaylist:
             >>> [ch.name for ch in pl]
             ['News', 'Weather', 'Sports']
         """
-        self._check_index(index, allow_end=True)
+        index = self._resolve_index(index, allow_end=True)
         for i in range(len(chan_list), 0, -1):
             self.insert_channel(index, chan_list[i - 1])
         log.info("%s channels inserted to the playlist in position %s", len(chan_list), index)
@@ -366,7 +371,7 @@ class M3UPlaylist:
         """Replace a channel at a specific position.
 
         Args:
-            index: The position of the channel to replace.
+            index: The position of the channel to replace; negative values count from the end.
             channel: The new IPTVChannel to place at that position.
 
         Raises:
@@ -379,7 +384,7 @@ class M3UPlaylist:
             >>> pl.get_channel(0).name
             'New'
         """
-        self._check_index(index)
+        index = self._resolve_index(index)
         self._channels[index] = channel
         log.info("index %s has been updated with channel %s", str(index), channel)
 
@@ -387,7 +392,7 @@ class M3UPlaylist:
         """Remove a channel from the playlist.
 
         Args:
-            index: The position of the channel to remove.
+            index: The position of the channel to remove; negative values count from the end.
 
         Returns:
             The removed IPTVChannel object.
@@ -403,7 +408,7 @@ class M3UPlaylist:
             >>> pl.length()
             1
         """
-        self._check_index(index)
+        index = self._resolve_index(index)
         channel = self._channels[index]
         del self._channels[index]
         log.info("the channel with index %s has been deleted", str(index))
@@ -734,12 +739,8 @@ class M3UPlaylist:
         """
         return self.length()
 
-    def _normalize_index(self, index: int) -> int:
-        """Turn a negative index into the equivalent positive one, as Python sequences do."""
-        return index + self.length() if index < 0 else index
-
     def __getitem__(self, index: int) -> IPTVChannel:
-        """Return the channel at the given position, same as get_channel(), but negative indices are allowed.
+        """Return the channel at the given position, same as get_channel().
 
         Raises:
             IndexOutOfBoundsException: If the index is out of bounds.
@@ -750,10 +751,10 @@ class M3UPlaylist:
             >>> pl[0].name, pl[-1].name
             ('News', 'Sports')
         """
-        return self.get_channel(self._normalize_index(index))
+        return self.get_channel(index)
 
     def __setitem__(self, index: int, channel: IPTVChannel) -> None:
-        """Replace the channel at the given position, same as update_channel(), but negative indices are allowed.
+        """Replace the channel at the given position, same as update_channel().
 
         Raises:
             IndexOutOfBoundsException: If the index is out of bounds.
@@ -765,10 +766,10 @@ class M3UPlaylist:
             >>> pl[0].name
             'Sports'
         """
-        self.update_channel(self._normalize_index(index), channel)
+        self.update_channel(index, channel)
 
     def __delitem__(self, index: int) -> None:
-        """Remove the channel at the given position, same as remove_channel(), but negative indices are allowed.
+        """Remove the channel at the given position, same as remove_channel().
 
         Raises:
             IndexOutOfBoundsException: If the index is out of bounds.
@@ -780,7 +781,7 @@ class M3UPlaylist:
             >>> [ch.name for ch in pl]
             ['News']
         """
-        self.remove_channel(self._normalize_index(index))
+        self.remove_channel(index)
 
     def __copy__(self) -> Self:
         """Support copy.copy(), returning the same deep copy as copy()."""

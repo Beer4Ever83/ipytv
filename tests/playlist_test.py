@@ -603,6 +603,12 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(ch, test_data.m3u_plus_channel_2)
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl.get_channel, pl.length())
+        self.assertRaises(IndexOutOfBoundsException, pl.get_channel, -pl.length() - 1)
+
+    def test_get_channel_with_negative_index(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        self.assertIs(pl.get_channels()[-1], pl.get_channel(-1))
+        self.assertIs(pl.get_channels()[0], pl.get_channel(-pl.length()))
 
     def test_append_channel(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -639,7 +645,22 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(pl1.get_channels()[inserted_index:], pl2.get_channels()[inserted_index + 1 :])
         # Failure cases
         self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, pl2.length() + 1, new_channel)
-        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, -1, new_channel)
+        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, -pl2.length() - 1, new_channel)
+
+    def test_insert_channel_with_negative_index(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel")
+        pl2.insert_channel(-1, new_channel)
+        expected = pl1.get_channels()
+        expected.insert(-1, new_channel)
+        self.assertEqual(expected, pl2.get_channels())
+
+    def test_insert_channels_with_negative_index(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        pl2.insert_channels(-1, pl1.get_channels())
+        self.assertEqual(pl1.get_channels()[:-1] + pl1.get_channels() + pl1.get_channels()[-1:], pl2.get_channels())
 
     def test_insert_channel_at_end(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -733,6 +754,13 @@ class TestM3UPlaylist(unittest.TestCase):
                 self.assertEqual(ch, pl2.get_channel(i))
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl2.update_channel, pl2.length(), new_channel)
+        self.assertRaises(IndexOutOfBoundsException, pl2.update_channel, -pl2.length() - 1, new_channel)
+
+    def test_update_channel_with_negative_index(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel")
+        pl.update_channel(-1, new_channel)
+        self.assertIs(new_channel, pl.get_channels()[-1])
 
     def test_remove_channel(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -744,6 +772,13 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(expected_length - 1, pl.length())
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl.remove_channel, pl.length())
+        self.assertRaises(IndexOutOfBoundsException, pl.remove_channel, -pl.length() - 1)
+
+    def test_remove_channel_with_negative_index(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        self.assertEqual(pl1.get_channels()[-1], pl2.remove_channel(-1))
+        self.assertEqual(pl1.get_channels()[:-1], pl2.get_channels())
 
     def test_get_attribute(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")

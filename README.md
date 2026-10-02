@@ -285,8 +285,10 @@ pl = playlist.loadu(url)
 # Let's retrieve the first channel in the list
 channel = pl.get_channel(0)
 print(f'channel "{channel.name}": {channel.url}')
-# The next line will throw IndexOutOfBoundsException
+# Negative indices count from the end: this is the last channel
 channel = pl.get_channel(-1)
+# The next line will throw IndexOutOfBoundsException
+channel = pl.get_channel(pl.length())
 ```
 
 #### Iteratively
