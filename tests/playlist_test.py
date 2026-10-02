@@ -1,3 +1,4 @@
+import copy
 import itertools
 import json
 import os
@@ -670,6 +671,52 @@ class TestM3UPlaylist(unittest.TestCase):
         pl2 = pl1.copy()
         pl2.insert_channels(pl2.length(), pl1.get_channels())
         self.assertEqual(pl1.get_channels() * 2, pl2.get_channels())
+
+    def test_len(self):
+        self.assertEqual(0, len(M3UPlaylist()))
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        self.assertEqual(pl.length(), len(pl))
+
+    def test_getitem(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        self.assertIs(pl.get_channel(1), pl[1])
+        self.assertIs(pl.get_channel(pl.length() - 1), pl[-1])
+        with self.assertRaises(IndexOutOfBoundsException):
+            pl[pl.length()]
+        with self.assertRaises(IndexOutOfBoundsException):
+            pl[-pl.length() - 1]
+
+    def test_setitem(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel")
+        pl[1] = new_channel
+        self.assertIs(new_channel, pl.get_channel(1))
+        pl[-1] = new_channel
+        self.assertIs(new_channel, pl.get_channel(pl.length() - 1))
+        with self.assertRaises(IndexOutOfBoundsException):
+            pl[pl.length()] = new_channel
+
+    def test_delitem(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        del pl2[1]
+        self.assertEqual(pl1.get_channels()[:1] + pl1.get_channels()[2:], pl2.get_channels())
+        del pl2[-1]
+        self.assertEqual(pl1.get_channels()[:1] + pl1.get_channels()[2:-1], pl2.get_channels())
+        with self.assertRaises(IndexOutOfBoundsException):
+            del pl2[pl2.length()]
+
+    def test_repr(self):
+        pl = M3UPlaylist()
+        pl.add_attribute("x-tvg-url", "http://example.com/epg.xml")
+        pl.append_channel(IPTVChannel(name="News"))
+        self.assertEqual("<M3UPlaylist channels=1 attributes={'x-tvg-url': 'http://example.com/epg.xml'}>", repr(pl))
+
+    def test_copy_module(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl_copy = copy.copy(pl)
+        self.assertEqual(pl, pl_copy)
+        self.assertIsNot(pl.get_channel(0), pl_copy.get_channel(0))
 
     def test_update_channel(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")

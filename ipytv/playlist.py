@@ -725,6 +725,78 @@ class M3UPlaylist:
         """
         return iter(self.get_channels())
 
+    def __len__(self) -> int:
+        """Return the number of channels in the playlist, same as length().
+
+        Example:
+            >>> len(M3UPlaylist())
+            0
+        """
+        return self.length()
+
+    def _normalize_index(self, index: int) -> int:
+        """Turn a negative index into the equivalent positive one, as Python sequences do."""
+        return index + self.length() if index < 0 else index
+
+    def __getitem__(self, index: int) -> IPTVChannel:
+        """Return the channel at the given position, same as get_channel(), but negative indices are allowed.
+
+        Raises:
+            IndexOutOfBoundsException: If the index is out of bounds.
+
+        Example:
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channels([IPTVChannel(name="News"), IPTVChannel(name="Sports")])
+            >>> pl[0].name, pl[-1].name
+            ('News', 'Sports')
+        """
+        return self.get_channel(self._normalize_index(index))
+
+    def __setitem__(self, index: int, channel: IPTVChannel) -> None:
+        """Replace the channel at the given position, same as update_channel(), but negative indices are allowed.
+
+        Raises:
+            IndexOutOfBoundsException: If the index is out of bounds.
+
+        Example:
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channel(IPTVChannel(name="News"))
+            >>> pl[0] = IPTVChannel(name="Sports")
+            >>> pl[0].name
+            'Sports'
+        """
+        self.update_channel(self._normalize_index(index), channel)
+
+    def __delitem__(self, index: int) -> None:
+        """Remove the channel at the given position, same as remove_channel(), but negative indices are allowed.
+
+        Raises:
+            IndexOutOfBoundsException: If the index is out of bounds.
+
+        Example:
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channels([IPTVChannel(name="News"), IPTVChannel(name="Sports")])
+            >>> del pl[-1]
+            >>> [ch.name for ch in pl]
+            ['News']
+        """
+        self.remove_channel(self._normalize_index(index))
+
+    def __copy__(self) -> Self:
+        """Support copy.copy(), returning the same deep copy as copy()."""
+        return self.copy()
+
+    def __repr__(self) -> str:
+        """Return a short summary of the playlist, for debugging.
+
+        Example:
+            >>> pl = M3UPlaylist()
+            >>> pl.append_channel(IPTVChannel(name="News"))
+            >>> pl
+            <M3UPlaylist channels=1 attributes={}>
+        """
+        return f"<M3UPlaylist channels={self.length()} attributes={self.get_attributes()!r}>"
+
 
 def loadl(rows: list[str]) -> M3UPlaylist:
     """Load a playlist from a list of strings.
