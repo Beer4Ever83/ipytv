@@ -239,17 +239,18 @@ class M3UPlaylist:
         log.info("attribute %s deleted", name)
         return attribute
 
-    def _check_index(self, index: int) -> None:
+    def _check_index(self, index: int, allow_end: bool = False) -> None:
         """Check if an index is valid for the current playlist.
 
         Args:
             index: The index to validate.
+            allow_end: If True, also accept length(), i.e. the position right after the last channel.
 
         Raises:
             IndexOutOfBoundsException: If the index is out of bounds.
         """
         length = self.length()
-        if index < 0 or index >= length:
+        if index < 0 or index > length or (index == length and not allow_end):
             log.error("the index %s is out of the (0, %s) range", str(index), str(length))
             raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
 
@@ -305,7 +306,7 @@ class M3UPlaylist:
             >>> [ch.name for ch in pl]
             ['News', 'Sports']
         """
-        self._check_index(index)
+        self._check_index(index, allow_end=True)
         self.get_channels().insert(index, channel)
         log.info("channel %s inserted in position %s", channel, index)
 
@@ -326,7 +327,7 @@ class M3UPlaylist:
             >>> [ch.name for ch in pl]
             ['News', 'Weather', 'Sports']
         """
-        self._check_index(index)
+        self._check_index(index, allow_end=True)
         for i in range(len(chan_list), 0, -1):
             self.insert_channel(index, chan_list[i - 1])
         log.info("%s channels inserted to the playlist in position %s", len(chan_list), index)

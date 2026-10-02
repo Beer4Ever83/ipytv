@@ -636,8 +636,21 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(pl1.length() + 1, pl2.length())
         self.assertEqual(pl1.get_channels()[:inserted_index], pl2.get_channels()[:inserted_index])
         self.assertEqual(pl1.get_channels()[inserted_index:], pl2.get_channels()[inserted_index + 1 :])
-        # Failure case
-        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, pl2.length(), new_channel)
+        # Failure cases
+        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, pl2.length() + 1, new_channel)
+        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, -1, new_channel)
+
+    def test_insert_channel_at_end(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel")
+        pl.insert_channel(pl.length(), new_channel)
+        self.assertEqual(new_channel, pl.get_channels()[-1])
+
+    def test_insert_channel_in_empty_playlist(self):
+        pl = M3UPlaylist()
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel")
+        pl.insert_channel(0, new_channel)
+        self.assertEqual([new_channel], pl.get_channels())
 
     def test_insert_channels(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -650,7 +663,13 @@ class TestM3UPlaylist(unittest.TestCase):
         for i in range(pl1.length()):
             self.assertEqual(pl1.get_channel(i), pl2.get_channel(offset + i))
         # Failure case
-        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channels, pl2.length(), pl1.get_channels())
+        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channels, pl2.length() + 1, pl1.get_channels())
+
+    def test_insert_channels_at_end(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        pl2.insert_channels(pl2.length(), pl1.get_channels())
+        self.assertEqual(pl1.get_channels() * 2, pl2.get_channels())
 
     def test_update_channel(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")

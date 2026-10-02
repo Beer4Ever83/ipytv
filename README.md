@@ -328,7 +328,7 @@ channel = IPTVChannel()
 # Add a channel to the end of the list (last index)
 pl.append_channel(channel)
 # Insert a channel in the specified position (all succeeding channels are
-# shifted right by 1 position)
+# shifted right by 1 position); inserting at pl.length() appends it
 pl.insert_channel(0, channel)
 new_channel = IPTVChannel()
 # Replace the second channel of the playlist with a new channel
@@ -343,7 +343,7 @@ channels):
 
 ```python
 pl.append_channels([])
-pl.insert_channels([])
+pl.insert_channels(0, [])
 ```
 
 ### Searching for channels
