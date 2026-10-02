@@ -7,9 +7,9 @@ import tempfile
 import unittest
 from unittest import mock
 
-import httpretty
 import m3u8
 import requests
+import responses
 from deepdiff import DeepDiff
 
 import ipytv.playlist as playlist
@@ -265,94 +265,35 @@ class TestM3UPlaylist(unittest.TestCase):
         pl = playlist.loadf("tests/resources/m3u8.m3u")
         self.assertEqual(test_data.expected_m3u8, pl, "The two playlists are not equal")
 
-    def test_loadu_m3u_plus(self):
+    def _load_mocked_url(self, body: str) -> M3UPlaylist:
         url = "http://myown.link:80/luke/playlist.m3u"
+        with responses.RequestsMock() as mocked:
+            mocked.get(url, body=body, status=200, content_type="application/octet-stream")
+            return playlist.loadu(url)
+
+    def test_loadu_m3u_plus(self):
         with open("tests/resources/m3u_plus.m3u", encoding="utf-8") as content:
-            body = "".join(content.readlines())
-        with httpretty.enabled():
-            httpretty.register_uri(
-                httpretty.GET, url, adding_headers={"Content-Type": "application/octet-stream"}, body=body, status=200
-            )
-            pl = playlist.loadu(url)
-        httpretty.disable()
-        httpretty.reset()
+            pl = self._load_mocked_url(content.read())
         self.assertEqual(test_data.expected_m3u_plus, pl, "The two playlists are not equal")
 
     def test_loadu_m3u_plus_with_empty_playlist(self):
-        url = "http://myown.link:80/luke/playlist.m3u"
-        body = "#EXTM3U\n"
-        with httpretty.enabled():
-            httpretty.register_uri(
-                httpretty.GET, url, adding_headers={"Content-Type": "application/octet-stream"}, body=body, status=200
-            )
-            pl = playlist.loadu(url)
-        httpretty.disable()
-        httpretty.reset()
+        pl = self._load_mocked_url("#EXTM3U\n")
         self.assertEqual(0, pl.length(), "Expected an empty playlist")
 
     def test_loadu_m3u8(self):
-        url = "http://myown.link:80/luke/playlist.m3u"
         with open("tests/resources/m3u8.m3u", encoding="utf-8") as content:
-            body = "".join(content.readlines())
-        with httpretty.enabled():
-            httpretty.register_uri(
-                httpretty.GET, url, adding_headers={"Content-Type": "application/octet-stream"}, body=body, status=200
-            )
-            pl = playlist.loadu(url)
-        httpretty.disable()
-        httpretty.reset()
+            pl = self._load_mocked_url(content.read())
         self.assertEqual(test_data.expected_m3u8, pl, "The two playlists are not equal")
 
     def test_loadu_errors(self):
-        # For some reason the error 421 is not recognized by httpretty so it has been removed from the list
-        error_codes = [
-            "400",
-            "401",
-            "402",
-            "403",
-            "404",
-            "405",
-            "406",
-            "407",
-            "408",
-            "409",
-            "410",
-            "411",
-            "412",
-            "413",
-            "414",
-            "415",
-            "416",
-            "417",
-            "418",
-            "422",
-            "423",
-            "424",
-            "425",
-            "426",
-            "428",
-            "429",
-            "431",
-            "451",
-            "500",
-            "501",
-            "502",
-            "503",
-            "504",
-            "505",
-            "506",
-            "507",
-            "508",
-            "510",
-            "511",
-        ]
+        error_codes = [*range(400, 419), *range(421, 427), 428, 429, 431, 451, *range(500, 509), 510, 511]
         url = "http://myown.link:80/luke/playlist.m3u"
-        with httpretty.enabled():
+        with responses.RequestsMock() as mocked:
             for code in error_codes:
-                httpretty.register_uri(httpretty.GET, url, status=code)
-                self.assertRaises(URLException, playlist.loadu, url)
-        httpretty.disable()
-        httpretty.reset()
+                with self.subTest(code=code):
+                    mocked.get(url, status=code)
+                    self.assertRaises(URLException, playlist.loadu, url)
+                    mocked.reset()
 
     def test_loadjstr(self):
         expected_pl = playlist.loadf("tests/resources/m3u_plus.m3u")
