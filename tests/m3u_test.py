@@ -56,6 +56,13 @@ class TestM3U(unittest.TestCase):
         }
         self.assertEqual(expected, m3u.parse_attributes(attributes))
 
+    def test_get_m3u_plus_broken_attributes_with_nested_quotes(self):
+        row = '#EXTINF:-1 title="Show "Part 1"",Channel'
+        self.assertEqual({"title": "Show _Part 1_"}, m3u.get_m3u_plus_broken_attributes(row))
+
+    def test_get_m3u_plus_broken_attributes_with_non_extinf_row(self):
+        self.assertEqual({}, m3u.get_m3u_plus_broken_attributes("http://not.an/extinf/row"))
+
 
 if __name__ == "__main__":
     unittest.main()

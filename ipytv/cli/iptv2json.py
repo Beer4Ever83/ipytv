@@ -24,7 +24,7 @@ def iptv2json(input_m3u_file: str, no_sanitize: bool) -> None:
         no_sanitize: If True, skips sanitization of the playlist content
 
     Raises:
-        click.Abort: If an error occurs during playlist loading or processing
+        click.ClickException: If an error occurs during playlist loading or processing
     """
     sanitize = not no_sanitize
     with open(input_m3u_file, encoding="UTF-8") as in_file:
@@ -35,16 +35,10 @@ def iptv2json(input_m3u_file: str, no_sanitize: bool) -> None:
         pl = playlist.loadl(content)
         if sanitize:
             pl = doctor.M3UPlaylistDoctor.sanitize(pl)
-        json_pl = pl.to_json_playlist()
-        click.echo(json_pl)
-    # pylint: disable=W0703
-    # pylint: disable=W0133
     except Exception as e:
-        click.echo("Exception while loading the specified M3U playlist")
-        click.echo(f"Error: {e}")
-        click.Abort()
+        raise click.ClickException(f"cannot load the specified M3U playlist: {e}") from e
+    click.echo(pl.to_json_playlist())
 
 
 if __name__ == "__main__":
-    # pylint: disable=no-value-for-parameter
     iptv2json()

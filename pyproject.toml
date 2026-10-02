@@ -39,7 +39,14 @@ iptv2json = "ipytv.cli.iptv2json:iptv2json"
 json2iptv = "ipytv.cli.json2iptv:json2iptv"
 
 [dependency-groups]
-test = ["pytest>=8.3.2", "m3u8>=0.9.0", "httpretty>=1.1.3", "deepdiff>=5.5.0", "mmh3>=3.0.0"]
+test = [
+    "pytest>=8.3.2",
+    "coverage>=7.10",
+    "m3u8>=0.9.0",
+    "deepdiff>=5.5.0",
+    "mmh3>=3.0.0",
+    "responses>=0.25",
+]
 lint = ["ruff>=0.14.0", "mypy>=1.11.0", "types-jsonschema", "types-requests"]
 dev = [{ include-group = "test" }, { include-group = "lint" }]
 
@@ -67,6 +74,21 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.11"
 check_untyped_defs = true
 
+[tool.coverage.run]
+source = ["ipytv"]
+branch = true
+# The playlist loader parses in a process pool: without this, nothing that
+# runs in the workers is measured and coverage is under-reported.
+concurrency = ["multiprocessing"]
+parallel = true
+# Idle pool workers (small playlists only keep one busy) legitimately collect nothing.
+disable_warnings = ["no-data-collected"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+
 [tool.pytest.ini_options]
 python_files = "*_test.py"
-testpaths = ["tests"]
+testpaths = ["tests", "ipytv"]
+addopts = "--doctest-modules"

@@ -37,7 +37,10 @@ class TestJson2Iptv(unittest.TestCase):
         """Test behavior with unsupported JSON file."""
         input_json = "tests/resources/unsupported.json"
         result = self.runner.invoke(json2iptv, [input_json])
-        self.assertNotEqual(0, result.exit_code, result.output)
+        self.assertEqual(1, result.exit_code, result.output)
+        self.assertIsInstance(result.exception, SystemExit)
+        self.assertEqual("", result.stdout)
+        self.assertIn("Error:", result.stderr)
 
 
 if __name__ == "__main__":

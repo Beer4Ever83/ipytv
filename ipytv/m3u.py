@@ -59,7 +59,7 @@ def is_m3u_extinf_row(row: str) -> bool:
     Example:
         >>> is_m3u_extinf_row("#EXTINF:-1,Channel Name")
         True
-        >>> is_m3u_extinf_row("#EXTINF:-1 tvg-id=\"1\",Channel")
+        >>> is_m3u_extinf_row('#EXTINF:-1 tvg-id="1",Channel')
         False
     """
     return _M3U_EXTINF_PATTERN.search(row) is not None
@@ -135,8 +135,10 @@ def get_m3u_plus_broken_attributes(row: str) -> dict[str, str]:
     for i, token in enumerate(tokens):
         name = token.lstrip().rstrip('="')
         right = row.split(token)[1]
-        separator = tokens[i + 1] if i < len(tokens) - 1 else '",'
-        left = right.split(separator)[0].rstrip('"')
+        is_last = i == len(tokens) - 1
+        # Strip only the closing quote (further trailing quotes belong to the value); for the
+        # last attribute, the '",' separator has already consumed it.
+        left = right.split('",')[0] if is_last else right.split(tokens[i + 1])[0].removesuffix('"')
         # Let's replace misplaced double quotes with underscore
         attrs[name] = left.replace('"', "_")
     return attrs
@@ -268,7 +270,3 @@ def is_url_row(row: str) -> bool:
         False
     """
     return not is_m3u_header_row(row) and not is_comment_or_tag_row(row) and not is_empty_row(row)
-
-
-if __name__ == "__main__":
-    pass

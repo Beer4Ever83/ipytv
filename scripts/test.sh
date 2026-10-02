@@ -7,8 +7,10 @@ source "${my_dir}/common.sh"
 REPO_DIR=$(realpath "${my_dir}/..")
 
 pushd "${REPO_DIR}" >/dev/null || abort
-uv run pytest
+rm -f .coverage .coverage.*
+uv run coverage run -m pytest
 test_result=$?
+uv run coverage combine -q && uv run coverage report
 popd >/dev/null || abort
 
 exit "$test_result"
