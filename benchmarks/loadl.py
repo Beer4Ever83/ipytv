@@ -15,7 +15,7 @@ from pathlib import Path
 
 # 5k channels parse in-process on every OS; 500k use the process pool on every OS.
 SIZES = {5_000: 15, 500_000: 3}
-REGRESSION_THRESHOLD = 1.15
+REGRESSION_THRESHOLD = 1.05
 
 
 def make_rows(n: int) -> list[str]:
