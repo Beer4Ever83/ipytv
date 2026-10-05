@@ -7,7 +7,7 @@ import ipytv.playlist as playlist
 from ipytv.channel import IPTVChannel
 from ipytv.exceptions import IPyTVException
 from ipytv.playlist import M3UPlaylist
-from tests.playlist_test import produce_triples
+from tests.test_data import make_rows
 
 
 def _m3u_plus_body() -> list[str]:
@@ -75,7 +75,7 @@ class TestLogging(unittest.TestCase):
         previous_level = package_logger.level
         package_logger.setLevel(logging.WARNING)
         self.addCleanup(package_logger.setLevel, previous_level)
-        body = produce_triples(1000)
+        body = make_rows(1000, extinf=True, extra=True, url=True)
         with (
             mock.patch.object(playlist.log, "debug") as playlist_debug,
             mock.patch.object(ipytv.channel.log, "debug") as channel_debug,
@@ -85,7 +85,7 @@ class TestLogging(unittest.TestCase):
         self.assertLess(channel_debug.call_count, 5)
 
     def test_enabled_debug_logging_reports_each_row(self):
-        body = produce_triples(3)
+        body = make_rows(3, extinf=True, extra=True, url=True)
         with self.assertLogs("ipytv.playlist", level="DEBUG") as logs:
             playlist._populate(body)
         parsed_rows = [line for line in logs.output if "parsing row" in line]

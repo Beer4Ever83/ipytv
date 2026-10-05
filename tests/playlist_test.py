@@ -27,36 +27,7 @@ from ipytv.exceptions import (
 )
 from ipytv.playlist import M3UPlaylist
 from tests import test_data
-
-
-def produce_singles(n: int) -> list[str]:
-    out: list[str] = []
-    for i in range(n):
-        row = f"https://www.mywebsite.com/video/myvideo{i}.mp4"
-        out.append(row)
-    return out
-
-
-def produce_doubles(n: int) -> list[str]:
-    out: list[str] = []
-    for i in range(n):
-        row_1 = f'#EXTINF:-1 tvg-id="id_{i}" tvg-name="name_{i}" tvg-language="Italian" tvg-logo="https://i.imgur.com/{1}.png" tvg-country="IT" tvg-url="" group-title="Group",Channel {i}'
-        out.append(row_1)
-        row_2 = f"https://www.mywebsite.com/video/myvideo{i}.mp4"
-        out.append(row_2)
-    return out
-
-
-def produce_triples(n: int) -> list[str]:
-    out: list[str] = []
-    for i in range(n):
-        row_1 = f'#EXTINF:-1 tvg-id="id_{i}" tvg-name="name_{i}" tvg-language="Italian" tvg-logo="https://i.imgur.com/{1}.png" tvg-country="IT" tvg-url="" group-title="Group",Channel {i}'
-        out.append(row_1)
-        row_2 = f"#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) Gecko/20100101 Firefox/76.{i}"
-        out.append(row_2)
-        row_3 = f"https://www.mywebsite.com/video/myvideo{i}.mp4"
-        out.append(row_3)
-    return out
+from tests.test_data import make_rows
 
 
 class InProcessPool:
@@ -93,22 +64,22 @@ def count_extras(pl: M3UPlaylist) -> int:
 
 class TestM3UPlaylist(unittest.TestCase):
     def test_chunk_body_below_the_minimum_chunk_size(self):
-        body = produce_singles(50)
+        body = make_rows(50, url=True)
         self.assertEqual([{"beginning": 0, "end": 49}], playlist._chunk_body(body, 4))
 
     def test_chunk_body_0(self):
-        body = produce_singles(5)  # total 05 rows
-        body += produce_doubles(4)  # total 13 rows
-        body += produce_triples(5)  # total 28 rows
+        body = make_rows(5, url=True)  # total 05 rows
+        body += make_rows(4, extinf=True, url=True)  # total 13 rows
+        body += make_rows(5, extinf=True, extra=True, url=True)  # total 28 rows
         chunks = playlist._chunk_body(body, 2, enforce_min_size=False)
         self.assertEqual(2, len(chunks))
         self.assertEqual({"beginning": 0, "end": 15}, chunks[0])
         self.assertEqual({"beginning": 16, "end": 27}, chunks[1])
 
     def test_chunk_body_1(self):
-        body = produce_singles(5)  # total 05 rows
-        body += produce_doubles(4)  # total 13 rows
-        body += produce_triples(5)  # total 28 rows
+        body = make_rows(5, url=True)  # total 05 rows
+        body += make_rows(4, extinf=True, url=True)  # total 13 rows
+        body += make_rows(5, extinf=True, extra=True, url=True)  # total 28 rows
         chunks = playlist._chunk_body(body, 3, enforce_min_size=False)
         self.assertEqual(3, len(chunks))
         self.assertEqual({"beginning": 0, "end": 10}, chunks[0])
@@ -116,7 +87,7 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual({"beginning": 22, "end": 27}, chunks[2])
 
     def test_chunk_body_2(self):
-        body = produce_singles(50)  # total 50 rows
+        body = make_rows(50, url=True)  # total 50 rows
         chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
         self.assertEqual(5, len(chunks))
         self.assertEqual({"beginning": 0, "end": 9}, chunks[0])
@@ -126,7 +97,7 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual({"beginning": 40, "end": 49}, chunks[4])
 
     def test_chunk_body_3(self):
-        body = produce_singles(5)  # total 5 rows
+        body = make_rows(5, url=True)  # total 5 rows
         chunks = playlist._chunk_body(body, 5, enforce_min_size=False)
         self.assertEqual(5, len(chunks))
         self.assertEqual({"beginning": 0, "end": 0}, chunks[0])
@@ -136,18 +107,18 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual({"beginning": 4, "end": 4}, chunks[4])
 
     def test_chunk_body_4(self):
-        body = produce_singles(5)  # total 5 rows
-        body += produce_triples(1)  # total 8 rows
-        body += produce_singles(5)  # total 13 rows
+        body = make_rows(5, url=True)  # total 5 rows
+        body += make_rows(1, extinf=True, extra=True, url=True)  # total 8 rows
+        body += make_rows(5, url=True)  # total 13 rows
         chunks = playlist._chunk_body(body, 2, enforce_min_size=False)
         self.assertEqual(2, len(chunks))
         self.assertEqual({"beginning": 0, "end": 7}, chunks[0])
         self.assertEqual({"beginning": 8, "end": 12}, chunks[1])
 
     def test_chunk_body_5(self):
-        body = produce_doubles(3)  # total 6 rows
-        body += produce_triples(1)  # total 9 rows
-        body += produce_doubles(3)  # total 15 rows
+        body = make_rows(3, extinf=True, url=True)  # total 6 rows
+        body += make_rows(1, extinf=True, extra=True, url=True)  # total 9 rows
+        body += make_rows(3, extinf=True, url=True)  # total 15 rows
         chunks = playlist._chunk_body(body, 4, enforce_min_size=False)
         self.assertEqual(4, len(chunks))
         self.assertEqual({"beginning": 0, "end": 3}, chunks[0])
@@ -322,14 +293,14 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertTrue(any(ch.extras for ch in pl), "the test playlist should contain extra tags")
 
     def test_loadl_parses_small_playlists_in_process(self):
-        rows = ["#EXTM3U", *produce_triples(10)]
+        rows = ["#EXTM3U", *make_rows(10, extinf=True, extra=True, url=True)]
         with mock.patch("ipytv.playlist.mp.Pool") as pool_class:
             pl = playlist.loadl(rows)
         pool_class.assert_not_called()
         self.assertEqual(playlist._populate(rows[1:]), pl)
 
     def test_loadl_sends_each_worker_only_its_chunk(self):
-        rows = ["#EXTM3U", *produce_triples(1000)]
+        rows = ["#EXTM3U", *make_rows(1000, extinf=True, extra=True, url=True)]
         body = rows[1:]
         pool = InProcessPool()
         with (
@@ -343,7 +314,7 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(playlist._populate(body), pl)
 
     def test_loadl_parallel_threshold_depends_on_the_start_method(self):
-        rows = ["#EXTM3U", *produce_singles(40_000)]
+        rows = ["#EXTM3U", *make_rows(40_000, url=True)]
         for start_method, expect_pool in (("fork", True), ("forkserver", True), ("spawn", False), (None, None)):
             with (
                 self.subTest(start_method=start_method),
@@ -358,7 +329,12 @@ class TestM3UPlaylist(unittest.TestCase):
                 self.assertEqual(40_000, len(pl))
 
     def test_loadl_with_a_real_process_pool(self):
-        rows = ["#EXTM3U", *produce_triples(500), *produce_singles(500), *produce_doubles(500)]
+        rows = [
+            "#EXTM3U",
+            *make_rows(500, extinf=True, extra=True, url=True),
+            *make_rows(500, url=True),
+            *make_rows(500, extinf=True, url=True),
+        ]
         with mock.patch.dict(playlist._PARALLEL_PARSING_MIN_ROWS, ALWAYS_PARALLEL):
             pl = playlist.loadl(rows)
         self.assertEqual(1500, len(pl))
