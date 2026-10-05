@@ -32,13 +32,13 @@ import jsonschema
 import requests
 from requests import RequestException
 
-import ipytv.channel
 from ipytv import m3u
 from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.exceptions import (
     AttributeAlreadyPresentException,
     AttributeNotFoundException,
     IndexOutOfBoundsException,
+    MalformedExtinfException,
     MalformedPlaylistException,
     URLException,
     WrongTypeException,
@@ -1109,58 +1109,39 @@ def _parallel_parsing_min_rows() -> int:
     return _PARALLEL_PARSING_MIN_ROWS.get(start_method, _PARALLEL_PARSING_MIN_ROWS["spawn"])
 
 
-def _populate(rows: list[str], beginning: int = 0, end: int = -1) -> M3UPlaylist:
-    """Populate a playlist from a subset of rows.
+def _populate(rows: list[str]) -> M3UPlaylist:
+    """Populate a playlist from playlist body rows.
 
     Args:
-        rows: List of playlist rows to process.
-        beginning: Starting index for processing.
-        end: Ending index for processing.
+        rows: List of playlist rows to process, without the header.
 
     Returns:
-        A populated M3UPlaylist with channels from the specified range.
+        A populated M3UPlaylist with the channels found in the rows.
     """
     p_list = M3UPlaylist()
-    if end == -1:
-        end = len(rows) - 1
-    log.debug("populating playlist with rows from %s to %s", beginning, end)
     # Checked once, as per-row logging calls are expensive even when the level is disabled.
     debug = log.isEnabledFor(logging.DEBUG)
-    entry = []
-    previous_row = rows[beginning]
-    if m3u.is_comment_or_tag_row(previous_row) or m3u.is_url_row(previous_row):
-        entry.append(rows[beginning])
-    if m3u.is_url_row(previous_row):
-        _append_entry(entry, p_list)
-        entry = []
-    for row in rows[beginning + 1 : end + 1]:
+    channel = IPTVChannel()
+    previous_is_extinf = False
+    for row in rows:
         row = row.strip()
         if debug:
             log.debug("parsing row: %s", row)
-        if m3u.is_extinf_row(row):
-            if m3u.is_extinf_row(previous_row):
+        is_extinf = m3u.is_extinf_row(row)
+        if is_extinf:
+            if previous_is_extinf:
                 log.warning("adjacent #EXTINF rows detected")
-                _append_entry(entry, p_list)
-                entry = []
-            entry.append(row)
+                p_list.append_channel(channel)
+                channel = IPTVChannel()
+            try:
+                channel.parse_extinf_string(row)
+            except MalformedExtinfException:
+                log.warning("unparsable #EXTINF row, the channel is kept with its URL and extras only:\n%s", row)
         elif m3u.is_comment_or_tag_row(row):
-            entry.append(row)
-        elif m3u.is_url_row(row):
-            entry.append(row)
-            if debug:
-                log.debug("adding entry to the playlist: %s", entry)
-            _append_entry(entry, p_list)
-            entry = []
-        previous_row = row
+            channel.extras.append(row)
+        elif row:
+            channel.url = row
+            p_list.append_channel(channel)
+            channel = IPTVChannel()
+        previous_is_extinf = is_extinf
     return p_list
-
-
-def _append_entry(entry: list[str], pl: M3UPlaylist) -> None:
-    """Append a playlist entry to a playlist.
-
-    Args:
-        entry: List of strings representing a complete playlist entry.
-        pl: The M3UPlaylist to append the entry to.
-    """
-    channel = ipytv.channel.from_playlist_entry(entry)
-    pl.append_channel(channel)

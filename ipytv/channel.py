@@ -98,10 +98,8 @@ class IPTVChannel:
         match = m3u.match_m3u_plus_extinf_row(extinf_string)
         if match is not None:
             # Case of a well-formed EXTINF row
-            self.duration = match.group("duration_g")
-            attributes = match.group("attributes_g")
+            self.duration, attributes, self.name = match.group("duration_g", "attributes_g", "name_g")
             self.attributes = m3u.parse_attributes(attributes)
-            self.name = match.group("name_g")
             return
 
         match = m3u.match_m3u_plus_broken_extinf_row(extinf_string)

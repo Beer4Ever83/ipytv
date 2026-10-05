@@ -195,6 +195,39 @@ class TestM3UPlaylist(unittest.TestCase):
             pl.get_channels(),
         )
 
+    def test_populate_edge_cases(self):
+        checks = {
+            "extras before an #EXTINF row belong to its channel": (
+                ["#EXTRA", "#EXTINF:-1,A", "http://a"],
+                [IPTVChannel(url="http://a", name="A", extras=["#EXTRA"])],
+            ),
+            "a later #EXTINF row in the same entry overrides the earlier one": (
+                ["#EXTINF:-1,A", "", "#EXTINF:-1,B", "http://b"],
+                [IPTVChannel(url="http://b", name="B")],
+            ),
+            "a trailing entry without URL is dropped": (
+                ["#EXTINF:-1,A", "http://a", "#EXTRA", "#EXTINF:-1,B"],
+                [IPTVChannel(url="http://a", name="A")],
+            ),
+            "rows are stripped, the first one included": (
+                ["  #EXTRA  ", "  #EXTINF:-1,A  ", "  http://a  "],
+                [IPTVChannel(url="http://a", name="A", extras=["#EXTRA"])],
+            ),
+            "a URL without #EXTINF row is a channel": (
+                ["http://a", "http://b"],
+                [IPTVChannel(url="http://a"), IPTVChannel(url="http://b")],
+            ),
+        }
+        for description, (rows, expected) in checks.items():
+            with self.subTest(description):
+                self.assertEqual(expected, playlist._populate(rows).get_channels())
+
+    def test_populate_keeps_a_channel_with_an_unparsable_extinf_row(self):
+        with self.assertLogs("ipytv", level="WARNING") as logs:
+            pl = playlist._populate(["#EXTINF :-1,Bad", "#EXTRA", "http://bad"])
+        self.assertEqual([IPTVChannel(url="http://bad", extras=["#EXTRA"])], pl.get_channels())
+        self.assertIn("kept with its URL", logs.output[0])
+
     def test_loadl_m3u_plus_empty_playlist(self):
         pl = playlist.loadl(["#EXTM3U", ""])
         self.assertEqual(0, pl.length(), "The size of the playlist is not the expected one")

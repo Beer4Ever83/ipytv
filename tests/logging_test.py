@@ -89,7 +89,7 @@ class TestLogging(unittest.TestCase):
         with self.assertLogs("ipytv.playlist", level="DEBUG") as logs:
             playlist._populate(body)
         parsed_rows = [line for line in logs.output if "parsing row" in line]
-        self.assertEqual(len(body) - 1, len(parsed_rows))
+        self.assertEqual(len(body), len(parsed_rows))
 
 
 if __name__ == "__main__":
