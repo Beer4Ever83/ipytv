@@ -162,3 +162,22 @@ http://myown.link:80/luke/109163/78282
 #EXTINF:13.0   ,channel name 3
 http://myown.link:80/luke/109163/78283
 """
+
+
+def make_rows(n: int, *, extinf: bool = False, extra: bool = False, url: bool = False) -> list[str]:
+    """Build the body rows of a playlist with n entries, each made of the selected rows in this order."""
+    rows: list[str] = []
+    for i in range(n):
+        if extinf:
+            rows.append(
+                f'#EXTINF:-1 tvg-id="id_{i}" tvg-name="name_{i}" tvg-language="Italian" '
+                f'tvg-logo="https://i.imgur.com/{i}.png" tvg-country="IT" tvg-url="" group-title="Group",Channel {i}'
+            )
+        if extra:
+            rows.append(
+                "#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:76.0) "
+                f"Gecko/20100101 Firefox/76.{i}"
+            )
+        if url:
+            rows.append(f"https://www.mywebsite.com/video/myvideo{i}.mp4")
+    return rows
