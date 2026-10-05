@@ -2,6 +2,13 @@ name: Benchmark
 
 on:
   pull_request:
+    paths:
+      - "ipytv/**"
+      - "benchmarks/**"
+      - "scripts/benchmark.sh"
+      - ".github/workflows/benchmark.yml"
+      - "pyproject.toml"
+      - "uv.lock"
   workflow_dispatch:
     inputs:
       pypi_version:
