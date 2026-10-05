@@ -62,6 +62,25 @@ class TestIPTVChannel(unittest.TestCase):
             with self.assertRaises(MalformedExtinfException, msg=extinf_string):
                 ch.parse_extinf_string(extinf_string)
 
+    def test_parse_m3u_plus_extinf_string_with_quoting_issues(self):
+        ch = IPTVChannel()
+        ch.parse_extinf_string('#EXTINF:-1 tvg-id="x" tvg-name="Show "Part 1"" group-title="G",My Channel')
+        self.assertEqual("-1", ch.duration)
+        self.assertEqual("My Channel", ch.name)
+        self.assertEqual({"tvg-id": "x", "tvg-name": "Show _Part 1_", "group-title": "G"}, ch.attributes)
+
+    def test_parse_m3u_plus_extinf_string_with_quoting_issues_in_last_attribute(self):
+        ch = IPTVChannel()
+        ch.parse_extinf_string('#EXTINF:-1 tvg-id="x" tvg-name="Show "Part 1"",My Channel')
+        self.assertEqual("My Channel", ch.name)
+        self.assertEqual({"tvg-id": "x", "tvg-name": "Show _Part 1_"}, ch.attributes)
+
+    def test_constructor_normalizes_arguments(self):
+        ch = IPTVChannel(duration=-1, attributes=None, extras=None)  # type: ignore[arg-type]
+        self.assertEqual("-1", ch.duration)
+        self.assertEqual({}, ch.attributes)
+        self.assertEqual([], ch.extras)
+
     def test_parse_m3u_extinf_string(self):
         extinf_string = """#EXTINF:-1,SANTUÁRIO DE FÁTIMA"""
         expected_attributes = {}

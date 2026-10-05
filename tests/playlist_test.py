@@ -1,12 +1,15 @@
+import copy
 import itertools
 import json
 import os
 import re
 import tempfile
 import unittest
+from unittest import mock
 
-import httpretty
 import m3u8
+import requests
+import responses
 from deepdiff import DeepDiff
 
 import ipytv.playlist as playlist
@@ -16,6 +19,8 @@ from ipytv.exceptions import (
     AttributeAlreadyPresentException,
     AttributeNotFoundException,
     IndexOutOfBoundsException,
+    IPyTVException,
+    MalformedPlaylistException,
     URLException,
     WrongTypeException,
 )
@@ -139,6 +144,31 @@ class TestM3UPlaylist(unittest.TestCase):
         pl = playlist.loadl(new_buffer)
         self.assertEqual(expected_length, pl.length(), "The size of the playlist is not the expected one")
 
+    def test_loaders_reject_wrong_types(self):
+        loaders = [playlist.loadl, playlist.loads, playlist.loadf, playlist.loadu, playlist.loadj, playlist.loadjstr]
+        for loader in loaders:
+            with self.subTest(loader=loader.__name__), self.assertRaises(WrongTypeException):
+                loader(42)  # type: ignore[arg-type]
+
+    def test_loadl_without_rows(self):
+        for rows in ([], ["", "   "]):
+            with self.subTest(rows=rows), self.assertRaises(MalformedPlaylistException):
+                playlist.loadl(rows)
+
+    def test_loadl_without_header(self):
+        with self.assertRaises(MalformedPlaylistException):
+            playlist.loadl(['#EXTINF:-1 tvg-id="a",Channel', "http://a"])
+
+    def test_loadl_with_adjacent_extinf_rows(self):
+        pl = playlist.loadl(["#EXTM3U", '#EXTINF:-1 tvg-id="a",No URL', '#EXTINF:-1 tvg-id="b",With URL', "http://b"])
+        self.assertEqual(
+            [
+                IPTVChannel(name="No URL", attributes={"tvg-id": "a"}),
+                IPTVChannel(url="http://b", name="With URL", attributes={"tvg-id": "b"}),
+            ],
+            pl.get_channels(),
+        )
+
     def test_loadl_m3u_plus_empty_playlist(self):
         pl = playlist.loadl(["#EXTM3U", ""])
         self.assertEqual(0, pl.length(), "The size of the playlist is not the expected one")
@@ -224,98 +254,47 @@ class TestM3UPlaylist(unittest.TestCase):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         self.assertEqual(test_data.expected_m3u_plus, pl, "The two playlists are not equal")
 
+    def test_populate_with_extra_tags_logs_no_warnings(self):
+        with open("tests/resources/m3u_plus.m3u", encoding="utf-8") as file:
+            body = file.readlines()[1:]
+        # _populate is called directly because log records from the pool workers don't reach the caller.
+        with self.assertNoLogs("ipytv", level="WARNING"):
+            pl = playlist._populate(body)
+        self.assertTrue(any(ch.extras for ch in pl), "the test playlist should contain extra tags")
+
     def test_loadf_m3u8(self):
         pl = playlist.loadf("tests/resources/m3u8.m3u")
         self.assertEqual(test_data.expected_m3u8, pl, "The two playlists are not equal")
 
-    def test_loadu_m3u_plus(self):
+    def _load_mocked_url(self, body: str) -> M3UPlaylist:
         url = "http://myown.link:80/luke/playlist.m3u"
+        with responses.RequestsMock() as mocked:
+            mocked.get(url, body=body, status=200, content_type="application/octet-stream")
+            return playlist.loadu(url)
+
+    def test_loadu_m3u_plus(self):
         with open("tests/resources/m3u_plus.m3u", encoding="utf-8") as content:
-            body = "".join(content.readlines())
-        with httpretty.enabled():
-            httpretty.register_uri(
-                httpretty.GET, url, adding_headers={"Content-Type": "application/octet-stream"}, body=body, status=200
-            )
-            pl = playlist.loadu(url)
-        httpretty.disable()
-        httpretty.reset()
+            pl = self._load_mocked_url(content.read())
         self.assertEqual(test_data.expected_m3u_plus, pl, "The two playlists are not equal")
 
     def test_loadu_m3u_plus_with_empty_playlist(self):
-        url = "http://myown.link:80/luke/playlist.m3u"
-        body = "#EXTM3U\n"
-        with httpretty.enabled():
-            httpretty.register_uri(
-                httpretty.GET, url, adding_headers={"Content-Type": "application/octet-stream"}, body=body, status=200
-            )
-            pl = playlist.loadu(url)
-        httpretty.disable()
-        httpretty.reset()
+        pl = self._load_mocked_url("#EXTM3U\n")
         self.assertEqual(0, pl.length(), "Expected an empty playlist")
 
     def test_loadu_m3u8(self):
-        url = "http://myown.link:80/luke/playlist.m3u"
         with open("tests/resources/m3u8.m3u", encoding="utf-8") as content:
-            body = "".join(content.readlines())
-        with httpretty.enabled():
-            httpretty.register_uri(
-                httpretty.GET, url, adding_headers={"Content-Type": "application/octet-stream"}, body=body, status=200
-            )
-            pl = playlist.loadu(url)
-        httpretty.disable()
-        httpretty.reset()
+            pl = self._load_mocked_url(content.read())
         self.assertEqual(test_data.expected_m3u8, pl, "The two playlists are not equal")
 
     def test_loadu_errors(self):
-        # For some reason the error 421 is not recognized by httpretty so it has been removed from the list
-        error_codes = [
-            "400",
-            "401",
-            "402",
-            "403",
-            "404",
-            "405",
-            "406",
-            "407",
-            "408",
-            "409",
-            "410",
-            "411",
-            "412",
-            "413",
-            "414",
-            "415",
-            "416",
-            "417",
-            "418",
-            "422",
-            "423",
-            "424",
-            "425",
-            "426",
-            "428",
-            "429",
-            "431",
-            "451",
-            "500",
-            "501",
-            "502",
-            "503",
-            "504",
-            "505",
-            "506",
-            "507",
-            "508",
-            "510",
-            "511",
-        ]
+        error_codes = [*range(400, 419), *range(421, 427), 428, 429, 431, 451, *range(500, 509), 510, 511]
         url = "http://myown.link:80/luke/playlist.m3u"
-        with httpretty.enabled():
+        with responses.RequestsMock() as mocked:
             for code in error_codes:
-                httpretty.register_uri(httpretty.GET, url, status=code)
-                self.assertRaises(URLException, playlist.loadu, url)
-        httpretty.disable()
-        httpretty.reset()
+                with self.subTest(code=code):
+                    mocked.get(url, status=code)
+                    self.assertRaises(URLException, playlist.loadu, url)
+                    mocked.reset()
 
     def test_loadjstr(self):
         expected_pl = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -323,6 +302,17 @@ class TestM3UPlaylist(unittest.TestCase):
             json_str = "\n".join(json_file.readlines())
         pl = playlist.loadjstr(json_str)
         self.assertEqual(expected_pl, pl, "The two playlists are not equal")
+
+    def test_loadjstr_with_invalid_json(self):
+        with self.assertRaises(WrongTypeException):
+            playlist.loadjstr("{not json")
+
+    def test_loadu_connection_error(self):
+        with (
+            mock.patch("ipytv.playlist.requests.get", side_effect=requests.ConnectionError("unreachable")),
+            self.assertRaises(URLException),
+        ):
+            playlist.loadu("http://myown.link:80/luke/playlist.m3u")
 
     def test_loadjstr_with_unsupported_json(self):
         with open("tests/resources/unsupported.json") as json_file:
@@ -474,6 +464,14 @@ class TestM3UPlaylist(unittest.TestCase):
         result = M3UPlaylist._match_all(ch, re.compile(".*luke.*"))
         self.assertTrue(result)
 
+    def test_search_by_list_index(self):
+        pl = M3UPlaylist()
+        pl.append_channels(
+            [IPTVChannel(name="a", extras=["#EXTVLCOPT:x=1"]), IPTVChannel(name="b", extras=["#EXTGRP:news"])]
+        )
+        results = pl.search("#EXTGRP:.*", where="extras.0")
+        self.assertEqual(["b"], [ch.name for ch in results])
+
     def test_search(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
         results = pl.search(".*luke.*")
@@ -547,6 +545,12 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(ch, test_data.m3u_plus_channel_2)
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl.get_channel, pl.length())
+        self.assertRaises(IndexOutOfBoundsException, pl.get_channel, -pl.length() - 1)
+
+    def test_get_channel_with_negative_index(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        self.assertIs(pl.get_channels()[-1], pl.get_channel(-1))
+        self.assertIs(pl.get_channels()[0], pl.get_channel(-pl.length()))
 
     def test_append_channel(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -581,8 +585,36 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(pl1.length() + 1, pl2.length())
         self.assertEqual(pl1.get_channels()[:inserted_index], pl2.get_channels()[:inserted_index])
         self.assertEqual(pl1.get_channels()[inserted_index:], pl2.get_channels()[inserted_index + 1 :])
-        # Failure case
-        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, pl2.length(), new_channel)
+        # Failure cases
+        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, pl2.length() + 1, new_channel)
+        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channel, -pl2.length() - 1, new_channel)
+
+    def test_insert_channel_with_negative_index(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel")
+        pl2.insert_channel(-1, new_channel)
+        expected = pl1.get_channels()
+        expected.insert(-1, new_channel)
+        self.assertEqual(expected, pl2.get_channels())
+
+    def test_insert_channels_with_negative_index(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        pl2.insert_channels(-1, pl1.get_channels())
+        self.assertEqual(pl1.get_channels()[:-1] + pl1.get_channels() + pl1.get_channels()[-1:], pl2.get_channels())
+
+    def test_insert_channel_at_end(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel")
+        pl.insert_channel(pl.length(), new_channel)
+        self.assertEqual(new_channel, pl.get_channels()[-1])
+
+    def test_insert_channel_in_empty_playlist(self):
+        pl = M3UPlaylist()
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel")
+        pl.insert_channel(0, new_channel)
+        self.assertEqual([new_channel], pl.get_channels())
 
     def test_insert_channels(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -595,7 +627,78 @@ class TestM3UPlaylist(unittest.TestCase):
         for i in range(pl1.length()):
             self.assertEqual(pl1.get_channel(i), pl2.get_channel(offset + i))
         # Failure case
-        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channels, pl2.length(), pl1.get_channels())
+        self.assertRaises(IndexOutOfBoundsException, pl2.insert_channels, pl2.length() + 1, pl1.get_channels())
+
+    def test_insert_channels_at_end(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        pl2.insert_channels(pl2.length(), pl1.get_channels())
+        self.assertEqual(pl1.get_channels() * 2, pl2.get_channels())
+
+    def test_len(self):
+        self.assertEqual(0, len(M3UPlaylist()))
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        self.assertEqual(pl.length(), len(pl))
+
+    def test_getitem(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        self.assertIs(pl.get_channel(1), pl[1])
+        self.assertIs(pl.get_channel(pl.length() - 1), pl[-1])
+        with self.assertRaises(IndexOutOfBoundsException):
+            pl[pl.length()]
+        with self.assertRaises(IndexOutOfBoundsException):
+            pl[-pl.length() - 1]
+
+    def test_out_of_bounds_index_is_an_index_error(self):
+        pl = M3UPlaylist()
+        with self.assertRaises(IndexError):
+            pl[0]
+        with self.assertRaises(IPyTVException):
+            pl[0]
+
+    def test_eq(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        self.assertEqual(pl1, pl2)
+        pl2.add_attribute("x-new", "value")
+        self.assertNotEqual(pl1, pl2)
+        pl3 = pl1.copy()
+        pl3[0] = IPTVChannel(name="other")
+        self.assertNotEqual(pl1, pl3)
+        self.assertNotEqual(pl1, pl1.get_channels())
+        self.assertNotEqual(pl1, None)
+
+    def test_setitem(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel")
+        pl[1] = new_channel
+        self.assertIs(new_channel, pl.get_channel(1))
+        pl[-1] = new_channel
+        self.assertIs(new_channel, pl.get_channel(pl.length() - 1))
+        with self.assertRaises(IndexOutOfBoundsException):
+            pl[pl.length()] = new_channel
+
+    def test_delitem(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        del pl2[1]
+        self.assertEqual(pl1.get_channels()[:1] + pl1.get_channels()[2:], pl2.get_channels())
+        del pl2[-1]
+        self.assertEqual(pl1.get_channels()[:1] + pl1.get_channels()[2:-1], pl2.get_channels())
+        with self.assertRaises(IndexOutOfBoundsException):
+            del pl2[pl2.length()]
+
+    def test_repr(self):
+        pl = M3UPlaylist()
+        pl.add_attribute("x-tvg-url", "http://example.com/epg.xml")
+        pl.append_channel(IPTVChannel(name="News"))
+        self.assertEqual("<M3UPlaylist channels=1 attributes={'x-tvg-url': 'http://example.com/epg.xml'}>", repr(pl))
+
+    def test_copy_module(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl_copy = copy.copy(pl)
+        self.assertEqual(pl, pl_copy)
+        self.assertIsNot(pl.get_channel(0), pl_copy.get_channel(0))
 
     def test_update_channel(self):
         pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -612,6 +715,13 @@ class TestM3UPlaylist(unittest.TestCase):
                 self.assertEqual(ch, pl2.get_channel(i))
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl2.update_channel, pl2.length(), new_channel)
+        self.assertRaises(IndexOutOfBoundsException, pl2.update_channel, -pl2.length() - 1, new_channel)
+
+    def test_update_channel_with_negative_index(self):
+        pl = playlist.loadf("tests/resources/m3u_plus.m3u")
+        new_channel = IPTVChannel(url="http://127.0.0.1", name="new channel")
+        pl.update_channel(-1, new_channel)
+        self.assertIs(new_channel, pl.get_channels()[-1])
 
     def test_remove_channel(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")
@@ -623,6 +733,13 @@ class TestM3UPlaylist(unittest.TestCase):
         self.assertEqual(expected_length - 1, pl.length())
         # Failure case
         self.assertRaises(IndexOutOfBoundsException, pl.remove_channel, pl.length())
+        self.assertRaises(IndexOutOfBoundsException, pl.remove_channel, -pl.length() - 1)
+
+    def test_remove_channel_with_negative_index(self):
+        pl1 = playlist.loadf("tests/resources/m3u_plus.m3u")
+        pl2 = pl1.copy()
+        self.assertEqual(pl1.get_channels()[-1], pl2.remove_channel(-1))
+        self.assertEqual(pl1.get_channels()[:-1], pl2.get_channels())
 
     def test_get_attribute(self):
         pl = playlist.loadf("tests/resources/m3u_plus.m3u")

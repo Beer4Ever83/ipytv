@@ -140,10 +140,8 @@ class M3UDoctor:
             List of M3U rows with formatting issues corrected.
 
         Example:
-            >>> rows = ['#EXTINF:-1 tvg-id=123 ,Channel']
-            >>> fixed = M3UDoctor.sanitize(rows)
-            >>> fixed[0]
-            '#EXTINF:-1 tvg-id="123",Channel'
+            >>> M3UDoctor.sanitize(['#EXTINF:-1 tvg-id=123,Channel', '#EXTINF:-1 ,Other'])
+            ['#EXTINF:-1 tvg-id="123",Channel', '#EXTINF:-1,Other']
         """
         fixed = M3UDoctor._fix_split_quoted_string(m3u_rows)
         fixed = M3UDoctor._fix_unquoted_numeric_attributes(fixed)
@@ -287,7 +285,3 @@ class M3UPlaylistDoctor:
         for chan in playlist:
             new_playlist.append_channel(IPTVChannelDoctor.sanitize(chan))
         return new_playlist
-
-
-if __name__ == "__main__":
-    pass
