@@ -1,0 +1,48 @@
+name: Benchmark
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      pypi_version:
+        description: "Compare with this PyPI release (e.g. 1.0.0) instead of main"
+        required: false
+        default: ""
+
+concurrency:
+  group: benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  loadl:
+    strategy:
+      fail-fast: false
+      matrix:
+        # One job per multiprocessing start method: fork, forkserver and spawn (macOS and Windows).
+        include:
+          - { os: ubuntu-latest, python-version: "3.13" }
+          - { os: ubuntu-latest, python-version: "3.14" }
+          - { os: macos-latest, python-version: "3.14" }
+          - { os: windows-latest, python-version: "3.14" }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # hatch-vcs needs tags; the base branch is needed for the comparison
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Benchmark
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PYPI_VERSION: ${{ inputs.pypi_version }}
+        run: |
+          if [[ -n "${PYPI_VERSION}" ]]; then
+              scripts/benchmark.sh --pypi "${PYPI_VERSION}"
+          else
+              scripts/benchmark.sh --base "origin/${BASE_REF:-main}"
+          fi
