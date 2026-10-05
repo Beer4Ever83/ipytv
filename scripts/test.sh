@@ -11,7 +11,7 @@ rm -f .coverage .coverage.*
 uv run coverage run -m pytest
 test_result=$?
 uv run coverage combine -q && uv run coverage report
-if [ -n "${GITHUB_STEP_SUMMARY}" ]; then
+if [[ -n "${GITHUB_STEP_SUMMARY}" ]]; then
     { echo "## Coverage"; echo; uv run coverage report --format=markdown; } >>"${GITHUB_STEP_SUMMARY}"
 fi
 popd >/dev/null || abort
