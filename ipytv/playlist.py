@@ -32,13 +32,13 @@ import jsonschema
 import requests
 from requests import RequestException
 
-import ipytv.channel
 from ipytv import m3u
 from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.exceptions import (
     AttributeAlreadyPresentException,
     AttributeNotFoundException,
     IndexOutOfBoundsException,
+    MalformedExtinfException,
     MalformedPlaylistException,
     URLException,
     WrongTypeException,
@@ -46,10 +46,12 @@ from ipytv.exceptions import (
 from ipytv.m3u import M3U_HEADER_TAG
 
 log = logging.getLogger(__name__)
-log.addHandler(logging.NullHandler())
 
 # The value of __MIN_CHUNK_SIZE cannot be smaller than 2
 __MIN_CHUNK_SIZE = 100
+# Below this many rows, starting a process pool costs more than it saves. Measured break-even points: a
+# spawned worker re-imports everything, so spawn (macOS and Windows default) needs much larger playlists.
+_PARALLEL_PARSING_MIN_ROWS = {"fork": 30_000, "forkserver": 30_000, "spawn": 600_000}
 
 _CHANNEL_FIELDS = tuple(f.name for f in fields(IPTVChannel))
 
@@ -111,7 +113,6 @@ class M3UPlaylist:
             AttributeNotFoundException: If the attribute doesn't exist.
         """
         if name not in self._attributes:
-            log.error("the attribute %s does not exist", name)
             raise AttributeNotFoundException(f"the attribute {name} does not exist")
 
     def get_attribute(self, name: str) -> str:
@@ -167,9 +168,7 @@ class M3UPlaylist:
         """
         if name not in self.get_attributes():
             self._attributes[str(name)] = str(value)
-            log.info("attribute added: %s: %s", name, value)
         else:
-            log.error("the attribute %s is already present with value %s", name, self.get_attribute(name))
             raise AttributeAlreadyPresentException(
                 f"the attribute {name} is already present with value {self.get_attribute(name)}"
             )
@@ -211,7 +210,6 @@ class M3UPlaylist:
         """
         self._check_attribute(name)
         self._attributes[name] = value
-        log.info("attribute %s updated to value %s", name, value)
 
     def remove_attribute(self, name: str) -> str:
         """Remove an attribute from the playlist.
@@ -236,7 +234,6 @@ class M3UPlaylist:
         self._check_attribute(name)
         attribute = self.get_attribute(name)
         del self._attributes[name]
-        log.info("attribute %s deleted", name)
         return attribute
 
     def _resolve_index(self, index: int, allow_end: bool = False) -> int:
@@ -255,7 +252,6 @@ class M3UPlaylist:
         length = self.length()
         resolved = index + length if index < 0 else index
         if not 0 <= resolved < (length + 1 if allow_end else length):
-            log.error("the index %s is out of the (0, %s) range", str(index), str(length))
             raise IndexOutOfBoundsException(f"the index {index} is out of the (0, {length}) range")
         return resolved
 
@@ -313,7 +309,6 @@ class M3UPlaylist:
         """
         index = self._resolve_index(index, allow_end=True)
         self.get_channels().insert(index, channel)
-        log.info("channel %s inserted in position %s", channel, index)
 
     def insert_channels(self, index: int, chan_list: list[IPTVChannel]) -> None:
         """Insert multiple channels at a specific position.
@@ -335,7 +330,6 @@ class M3UPlaylist:
         index = self._resolve_index(index, allow_end=True)
         for i in range(len(chan_list), 0, -1):
             self.insert_channel(index, chan_list[i - 1])
-        log.info("%s channels inserted to the playlist in position %s", len(chan_list), index)
 
     def append_channel(self, channel: IPTVChannel) -> None:
         """Add a channel to the end of the playlist.
@@ -350,7 +344,6 @@ class M3UPlaylist:
             1
         """
         self.get_channels().append(channel)
-        log.info("channel added: %s", channel)
 
     def append_channels(self, chan_list: list[IPTVChannel]) -> None:
         """Add multiple channels to the end of the playlist.
@@ -365,7 +358,6 @@ class M3UPlaylist:
             2
         """
         self._channels += chan_list
-        log.info("%s channels appended to the playlist", len(chan_list))
 
     def update_channel(self, index: int, channel: IPTVChannel) -> None:
         """Replace a channel at a specific position.
@@ -386,7 +378,6 @@ class M3UPlaylist:
         """
         index = self._resolve_index(index)
         self._channels[index] = channel
-        log.info("index %s has been updated with channel %s", str(index), channel)
 
     def remove_channel(self, index: int) -> IPTVChannel:
         """Remove a channel from the playlist.
@@ -411,7 +402,6 @@ class M3UPlaylist:
         index = self._resolve_index(index)
         channel = self._channels[index]
         del self._channels[index]
-        log.info("the channel with index %s has been deleted", str(index))
         return channel
 
     def _build_header(self) -> str:
@@ -819,44 +809,34 @@ def loadl(rows: list[str]) -> M3UPlaylist:
         1
     """
     if not isinstance(rows, list):
-        log.error("expected %s, got %s", type([]), type(rows))
         raise WrongTypeException("Wrong type: List expected")
     rows = _remove_blank_rows(rows)
     pl_len = len(rows)
     if pl_len < 1:
-        log.error("a playlist should have at least 1 row")
         raise MalformedPlaylistException("a playlist should have at least 1 row")
     header = rows[0].strip()
     if not m3u.is_m3u_header_row(header):
-        log.error('the playlist\'s first row should start with "%s", but it\'s "%s"', M3U_HEADER_TAG, header)
         raise MalformedPlaylistException(f"Missing or misplaced {M3U_HEADER_TAG} row")
     out_pl = M3UPlaylist()
     out_pl.add_attributes(_parse_header(header))
     # We're parsing an empty playlist, so we return an empty playlist object
     if pl_len <= 1:
         return out_pl
-    cores = mp.cpu_count()
-    log.debug("%s cores detected", cores)
     body = rows[1:]
+    if len(body) < _parallel_parsing_min_rows():
+        log.debug("parsing %s rows in the current process", len(body))
+        out_pl.append_channels(_populate(body).get_channels())
+        return out_pl
+    cores = mp.cpu_count()
     chunks = _chunk_body(body, cores)
-    results: list[AsyncResult] = []
-    log.debug("spawning a pool of processes (one per core) to parse the playlist")
+    log.debug("parsing %s rows in %s chunks with a pool of %s processes", len(body), len(chunks), cores)
     with mp.Pool(processes=cores) as pool:
-        for chunk in chunks:
-            beginning = chunk["beginning"]
-            end = chunk["end"]
-            log.debug('assigning a "populate" task (beginning: %s, end: %s) to a process in the pool', beginning, end)
-            result = pool.apply_async(_populate, (body, beginning, end))
-            results.append(result)
-        log.debug("closing workers")
-        pool.close()
-        log.debug("workers closed")
-        log.debug("waiting for workers termination")
-        pool.join()
-        log.debug("workers terminated")
+        # Each task gets only its own rows: sending the whole body to every worker costs more than the parsing.
+        results: list[AsyncResult] = [
+            pool.apply_async(_populate, (body[chunk["beginning"] : chunk["end"] + 1],)) for chunk in chunks
+        ]
         for result in results:
-            p_list = result.get()
-            out_pl.append_channels(p_list.get_channels())
+            out_pl.append_channels(result.get().get_channels())
     return out_pl
 
 
@@ -880,7 +860,6 @@ def loads(string: str) -> M3UPlaylist:
     """
     if isinstance(string, str):
         return loadl(string.split("\n"))
-    log.error("expected %s, got %s", str, type(string))
     raise WrongTypeException("Wrong type: string expected")
 
 
@@ -904,7 +883,6 @@ def loadf(filename: str) -> M3UPlaylist:
         4
     """
     if not isinstance(filename, str):
-        log.error("expected %s, got %s", str, type(filename))
         raise WrongTypeException("Wrong type: string expected")
     with open(filename, encoding="utf-8") as file:
         buffer = file.readlines()
@@ -931,7 +909,6 @@ def loadu(url: str) -> M3UPlaylist:
             pl.length()
     """
     if not isinstance(url, str):
-        log.error("expected %s, got %s", str, type(url))
         raise WrongTypeException("Wrong type: string expected")
     try:
         response = requests.get(url, timeout=10)
@@ -939,7 +916,6 @@ def loadu(url: str) -> M3UPlaylist:
             return loads(response.text)
         raise URLException(f"Failure while opening {url}.\nResponse status code: {response.status_code}")
     except RequestException as exception:
-        log.error("failure while opening %s: %s", url, exception)
         raise URLException(f"Failure while opening {url}.\nError: {exception}") from exception
 
 
@@ -964,7 +940,6 @@ def loadj(json_dict: dict[str, Any]) -> M3UPlaylist:
         1
     """
     if not isinstance(json_dict, dict):
-        log.error("expected %s, got %s", dict, type(json_dict))
         raise WrongTypeException("Wrong type: json dict expected")
     schema = _get_json_schema()
     try:
@@ -1006,12 +981,10 @@ def loadjstr(json_str: str) -> M3UPlaylist:
         0
     """
     if not isinstance(json_str, str):
-        log.error("expected %s, got %s", str, type(json_str))
         raise WrongTypeException("Wrong type: string expected")
     try:
         data = json.loads(json_str)
     except json.JSONDecodeError as e:
-        log.error("failure while decoding the JSON string: %s", e)
         raise WrongTypeException("The input string should be a valid JSON string.") from e
     return loadj(data)
 
@@ -1130,58 +1103,45 @@ def _chunk_body(rows: list[str], chunk_count: int, enforce_min_size: bool = True
     return chunk_list
 
 
-def _populate(rows: list[str], beginning: int = 0, end: int = -1) -> M3UPlaylist:
-    """Populate a playlist from a subset of rows.
+def _parallel_parsing_min_rows() -> int:
+    # allow_none avoids fixing the start method as a side effect; the first entry is the platform default.
+    start_method = mp.get_start_method(allow_none=True) or mp.get_all_start_methods()[0]
+    return _PARALLEL_PARSING_MIN_ROWS.get(start_method, _PARALLEL_PARSING_MIN_ROWS["spawn"])
+
+
+def _populate(rows: list[str]) -> M3UPlaylist:
+    """Populate a playlist from playlist body rows.
 
     Args:
-        rows: List of playlist rows to process.
-        beginning: Starting index for processing.
-        end: Ending index for processing.
+        rows: List of playlist rows to process, without the header.
 
     Returns:
-        A populated M3UPlaylist with channels from the specified range.
+        A populated M3UPlaylist with the channels found in the rows.
     """
     p_list = M3UPlaylist()
-    if end == -1:
-        end = len(rows) - 1
-    log.debug("populating playlist with rows from %s to %s", beginning, end)
-    entry = []
-    previous_row = rows[beginning]
-    if m3u.is_comment_or_tag_row(previous_row) or m3u.is_url_row(previous_row):
-        entry.append(rows[beginning])
-        log.debug("chunk starting with a url, comment or tag row")
-    if m3u.is_url_row(previous_row):
-        _append_entry(entry, p_list)
-        entry = []
-        log.debug("adding entry to the playlist: %s", entry)
-    for row in rows[beginning + 1 : end + 1]:
+    # Checked once, as per-row logging calls are expensive even when the level is disabled.
+    debug = log.isEnabledFor(logging.DEBUG)
+    channel = IPTVChannel()
+    previous_is_extinf = False
+    for row in rows:
         row = row.strip()
-        log.debug("parsing row: %s", row)
-        if m3u.is_extinf_row(row):
-            if m3u.is_extinf_row(previous_row):
+        if debug:
+            log.debug("parsing row: %s", row)
+        is_extinf = m3u.is_extinf_row(row)
+        if is_extinf:
+            if previous_is_extinf:
                 log.warning("adjacent #EXTINF rows detected")
-                _append_entry(entry, p_list)
-                log.debug("adding entry to the playlist: %s", entry)
-                entry = []
-            entry.append(row)
+                p_list.append_channel(channel)
+                channel = IPTVChannel()
+            try:
+                channel.parse_extinf_string(row)
+            except MalformedExtinfException:
+                log.warning("unparsable #EXTINF row, the channel is kept with its URL and extras only:\n%s", row)
         elif m3u.is_comment_or_tag_row(row):
-            entry.append(row)
-            log.debug("comment or extra tag row added to the current entry:\n%s", row)
-        elif m3u.is_url_row(row):
-            entry.append(row)
-            log.debug("adding entry to the playlist: %s", entry)
-            _append_entry(entry, p_list)
-            entry = []
-        previous_row = row
+            channel.extras.append(row)
+        elif row:
+            channel.url = row
+            p_list.append_channel(channel)
+            channel = IPTVChannel()
+        previous_is_extinf = is_extinf
     return p_list
-
-
-def _append_entry(entry: list[str], pl: M3UPlaylist) -> None:
-    """Append a playlist entry to a playlist.
-
-    Args:
-        entry: List of strings representing a complete playlist entry.
-        pl: The M3UPlaylist to append the entry to.
-    """
-    channel = ipytv.channel.from_playlist_entry(entry)
-    pl.append_channel(channel)

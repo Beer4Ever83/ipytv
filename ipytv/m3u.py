@@ -179,9 +179,7 @@ def parse_attributes(attributes: str) -> dict[str, str]:
         >>> parse_attributes('url-tvg="http://e.com/g.xml?a=1&b=2"')
         {'url-tvg': 'http://e.com/g.xml?a=1&b=2'}
     """
-    return {
-        match.group("name_g"): match.group("value_g") for match in _M3U_QUOTED_ATTRIBUTE_PATTERN.finditer(attributes)
-    }
+    return dict(_M3U_QUOTED_ATTRIBUTE_PATTERN.findall(attributes))
 
 
 def parse_header_attributes(header: str) -> dict[str, str]:

@@ -1,6 +1,7 @@
 import copy
 import itertools
 import json
+import multiprocessing as mp
 import os
 import re
 import tempfile
@@ -58,6 +59,27 @@ def produce_triples(n: int) -> list[str]:
     return out
 
 
+class InProcessPool:
+    """Stand-in for multiprocessing.Pool that runs the tasks synchronously and records their arguments."""
+
+    def __init__(self, processes: int | None = None) -> None:
+        self.task_args: list[tuple] = []
+
+    def __enter__(self) -> "InProcessPool":
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        return None
+
+    def apply_async(self, func, args):
+        self.task_args.append(args)
+        result = func(*args)
+        return mock.Mock(get=mock.Mock(return_value=result))
+
+
+ALWAYS_PARALLEL = {"fork": 0, "forkserver": 0, "spawn": 0}
+
+
 def strip_blank_lines(rows: list) -> list:
     return list(itertools.filterfalse(m3u.is_empty_row, rows))
 
@@ -70,6 +92,10 @@ def count_extras(pl: M3UPlaylist) -> int:
 
 
 class TestM3UPlaylist(unittest.TestCase):
+    def test_chunk_body_below_the_minimum_chunk_size(self):
+        body = produce_singles(50)
+        self.assertEqual([{"beginning": 0, "end": 49}], playlist._chunk_body(body, 4))
+
     def test_chunk_body_0(self):
         body = produce_singles(5)  # total 05 rows
         body += produce_doubles(4)  # total 13 rows
@@ -169,6 +195,39 @@ class TestM3UPlaylist(unittest.TestCase):
             pl.get_channels(),
         )
 
+    def test_populate_edge_cases(self):
+        checks = {
+            "extras before an #EXTINF row belong to its channel": (
+                ["#EXTRA", "#EXTINF:-1,A", "http://a"],
+                [IPTVChannel(url="http://a", name="A", extras=["#EXTRA"])],
+            ),
+            "a later #EXTINF row in the same entry overrides the earlier one": (
+                ["#EXTINF:-1,A", "", "#EXTINF:-1,B", "http://b"],
+                [IPTVChannel(url="http://b", name="B")],
+            ),
+            "a trailing entry without URL is dropped": (
+                ["#EXTINF:-1,A", "http://a", "#EXTRA", "#EXTINF:-1,B"],
+                [IPTVChannel(url="http://a", name="A")],
+            ),
+            "rows are stripped, the first one included": (
+                ["  #EXTRA  ", "  #EXTINF:-1,A  ", "  http://a  "],
+                [IPTVChannel(url="http://a", name="A", extras=["#EXTRA"])],
+            ),
+            "a URL without #EXTINF row is a channel": (
+                ["http://a", "http://b"],
+                [IPTVChannel(url="http://a"), IPTVChannel(url="http://b")],
+            ),
+        }
+        for description, (rows, expected) in checks.items():
+            with self.subTest(description):
+                self.assertEqual(expected, playlist._populate(rows).get_channels())
+
+    def test_populate_keeps_a_channel_with_an_unparsable_extinf_row(self):
+        with self.assertLogs("ipytv", level="WARNING") as logs:
+            pl = playlist._populate(["#EXTINF :-1,Bad", "#EXTRA", "http://bad"])
+        self.assertEqual([IPTVChannel(url="http://bad", extras=["#EXTRA"])], pl.get_channels())
+        self.assertIn("kept with its URL", logs.output[0])
+
     def test_loadl_m3u_plus_empty_playlist(self):
         pl = playlist.loadl(["#EXTM3U", ""])
         self.assertEqual(0, pl.length(), "The size of the playlist is not the expected one")
@@ -261,6 +320,49 @@ class TestM3UPlaylist(unittest.TestCase):
         with self.assertNoLogs("ipytv", level="WARNING"):
             pl = playlist._populate(body)
         self.assertTrue(any(ch.extras for ch in pl), "the test playlist should contain extra tags")
+
+    def test_loadl_parses_small_playlists_in_process(self):
+        rows = ["#EXTM3U", *produce_triples(10)]
+        with mock.patch("ipytv.playlist.mp.Pool") as pool_class:
+            pl = playlist.loadl(rows)
+        pool_class.assert_not_called()
+        self.assertEqual(playlist._populate(rows[1:]), pl)
+
+    def test_loadl_sends_each_worker_only_its_chunk(self):
+        rows = ["#EXTM3U", *produce_triples(1000)]
+        body = rows[1:]
+        pool = InProcessPool()
+        with (
+            mock.patch.dict(playlist._PARALLEL_PARSING_MIN_ROWS, ALWAYS_PARALLEL),
+            mock.patch("ipytv.playlist.mp.cpu_count", return_value=4),
+            mock.patch("ipytv.playlist.mp.Pool", return_value=pool),
+        ):
+            pl = playlist.loadl(rows)
+        self.assertEqual(4, len(pool.task_args))
+        self.assertEqual(len(body), sum(len(args[0]) for args in pool.task_args))
+        self.assertEqual(playlist._populate(body), pl)
+
+    def test_loadl_parallel_threshold_depends_on_the_start_method(self):
+        rows = ["#EXTM3U", *produce_singles(40_000)]
+        for start_method, expect_pool in (("fork", True), ("forkserver", True), ("spawn", False), (None, None)):
+            with (
+                self.subTest(start_method=start_method),
+                mock.patch("ipytv.playlist.mp.get_start_method", return_value=start_method),
+                mock.patch("ipytv.playlist.mp.Pool", return_value=InProcessPool()) as pool_class,
+            ):
+                pl = playlist.loadl(rows)
+                if expect_pool is None:
+                    # No start method set yet: the platform default decides, without fixing it as a side effect.
+                    expect_pool = mp.get_all_start_methods()[0] != "spawn"
+                self.assertEqual(expect_pool, pool_class.called)
+                self.assertEqual(40_000, len(pl))
+
+    def test_loadl_with_a_real_process_pool(self):
+        rows = ["#EXTM3U", *produce_triples(500), *produce_singles(500), *produce_doubles(500)]
+        with mock.patch.dict(playlist._PARALLEL_PARSING_MIN_ROWS, ALWAYS_PARALLEL):
+            pl = playlist.loadl(rows)
+        self.assertEqual(1500, len(pl))
+        self.assertEqual(playlist._populate(rows[1:]), pl)
 
     def test_loadf_m3u8(self):
         pl = playlist.loadf("tests/resources/m3u8.m3u")

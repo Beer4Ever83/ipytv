@@ -21,7 +21,6 @@ from ipytv import m3u
 from ipytv.exceptions import MalformedExtinfException
 
 log = logging.getLogger(__name__)
-log.addHandler(logging.NullHandler())
 
 
 class IPTVAttr(StrEnum):
@@ -99,14 +98,8 @@ class IPTVChannel:
         match = m3u.match_m3u_plus_extinf_row(extinf_string)
         if match is not None:
             # Case of a well-formed EXTINF row
-            log.info("parsing a well-formed EXTINF row:\n%s", extinf_string)
-            self.duration = match.group("duration_g")
-            log.info("duration: %s", self.duration)
-            attributes = match.group("attributes_g")
+            self.duration, attributes, self.name = match.group("duration_g", "attributes_g", "name_g")
             self.attributes = m3u.parse_attributes(attributes)
-            log.info("attributes: %s", self.attributes)
-            self.name = match.group("name_g")
-            log.info("name: %s", self.name)
             return
 
         match = m3u.match_m3u_plus_broken_extinf_row(extinf_string)
@@ -114,15 +107,11 @@ class IPTVChannel:
             # Case of a broken #EXTINF row (with quoting issues)
             log.warning("parsing an EXTINF row with quoting issues:\n%s", extinf_string)
             self.duration = match.group("duration_g")
-            log.info("duration: %s", self.duration)
             self.attributes = m3u.get_m3u_plus_broken_attributes(extinf_string)
-            log.info("attributes: %s", self.attributes)
             self.name = match.group("name_g")
-            log.info("name: %s", self.name)
             return
 
         # This EXTINF row can't be parsed
-        log.error("malformed #EXTINF row: %s", extinf_string)
         raise MalformedExtinfException(f"Malformed #EXTINF string:\n{extinf_string}")
 
     def __str__(self) -> str:
@@ -246,12 +235,9 @@ def from_playlist_entry(entry: list[str]) -> IPTVChannel:
             try:
                 channel.parse_extinf_string(row)
             except MalformedExtinfException:
-                log.warning("Skipping the following entry as it contains a malformed #EXTINF row:\n%s", entry)
-            log.info("#EXTINF row found")
+                log.warning("unparsable #EXTINF row, the channel is kept with its URL and extras only:\n%s", entry)
         elif m3u.is_comment_or_tag_row(row):
             channel.extras.append(row)
-            log.debug("comment or extra tag row added to the channel's extras:\n%s", row)
         elif m3u.is_url_row(row):
             channel.url = row
-            log.info("URL row found")
     return channel
