@@ -576,15 +576,23 @@ for show_title, pl in series_map.items():
 IPyTV supports python's
 standard [logging system](https://docs.python.org/3/library/logging.html).
 
-To enable IPyTV's logging, add a logging configuration to your application:
+IPyTV logs nothing unless your application configures logging. It uses two levels:
+- `WARNING`: problems in the parsed playlist (e.g. an `#EXTINF` row that can't be parsed);
+- `DEBUG`: row-by-row details of the parsing.
+
+Errors are reported by raising exceptions, not by logging them.
 
 ```python
 import logging
 from ipytv import playlist
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 pl = playlist.loadu("https://iptv-org.github.io/iptv/categories/classic.m3u")
 ```
+
+Large playlists are parsed by a pool of worker processes. Depending on the
+platform, log records emitted by the workers may not reach your logging
+configuration.
 
 ### Object serialization
 An M3UPlaylist object can be serialized into the following formats:

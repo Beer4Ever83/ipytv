@@ -10,16 +10,12 @@ Classes:
     M3UPlaylistDoctor: Applies fixes to entire M3U playlists
 """
 
-import logging
 import re
 import urllib.parse
 
 from ipytv import m3u
 from ipytv.channel import IPTVAttr, IPTVChannel
 from ipytv.playlist import M3UPlaylist
-
-log = logging.getLogger(__name__)
-log.addHandler(logging.NullHandler())
 
 # Pre-compiled regular expressions for better performance
 _SPLIT_QUOTED_STRING_PATTERN = re.compile(r"^\s*\"")
